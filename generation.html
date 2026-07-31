@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AOS – Generation Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Inter',sans-serif;background:#f7faff;color:#111827}
+body{display:flex;flex-direction:column;overflow:hidden;height:100vh}
+button{cursor:pointer;border:none;background:none;font-family:inherit}
+input,textarea,select{font-family:inherit}
+a{text-decoration:none;color:inherit}
+
+/* TOPBAR */
+#topbar{height:56px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;z-index:100}
+#topbar .logo{display:flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none}
+#topbar .logo-box{width:32px;height:32px;background:#2563eb;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#topbar .logo-text{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:16px;color:#111827}
+.breadcrumb{font-size:14px;color:#9ca3af;display:flex;align-items:center;gap:6px}
+.breadcrumb a{color:#9ca3af;text-decoration:none}
+.breadcrumb a:hover{color:#2563eb}
+.breadcrumb span{color:#374151;font-weight:500}
+.back-btn-top{display:flex;align-items:center;gap:6px;padding:6px 12px;background:#f3f4f6;border-radius:8px;font-size:13px;font-weight:600;color:#374151;text-decoration:none;margin-left:8px;transition:background 0.2s}
+.back-btn-top:hover{background:#e5e7eb}
+#topbar .right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.ai-badge{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+.icon-btn{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#6b7280}
+.icon-btn:hover{background:#f3f4f6}
+.avatar{width:32px;height:32px;border-radius:50%;background:#2563eb;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0;cursor:pointer}
+
+/* USER DROPDOWN */
+#user-dropdown{position:fixed;top:56px;right:12px;width:200px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:999;display:none;padding:6px 0}
+#user-dropdown.open{display:block}
+.dd-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:14px;color:#374151;cursor:pointer}
+.dd-item:hover{background:#f9fafb}
+.dd-item.danger{color:#ef4444}
+.dd-sep{height:1px;background:#f3f4f6;margin:4px 0}
+
+/* TABS BAR */
+#tabs-bar{height:48px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:stretch;padding:0 16px;flex-shrink:0}
+.tab-btn{padding:0 18px;font-size:14px;font-weight:500;color:#6b7280;border-bottom:2px solid transparent;cursor:pointer;display:flex;align-items:center;gap:7px;transition:color 0.2s,border-color 0.2s;background:none;border-left:none;border-right:none;border-top:none}
+.tab-btn:hover{color:#374151}
+.tab-btn.active{color:#2563eb;border-bottom:2px solid #2563eb;font-weight:600}
+
+/* MAIN AREA */
+#main-area{flex:1;display:flex;overflow:hidden}
+.tab-content{display:none;flex:1;overflow:hidden}
+.tab-content.active{display:flex}
+
+/* LEFT PANEL */
+.left-panel{width:360px;background:#fff;border-right:1px solid #e5e7eb;padding:24px;overflow-y:auto;flex-shrink:0;display:flex;flex-direction:column;gap:16px}
+.left-panel h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:700;color:#111827;margin-bottom:4px}
+.form-label{font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;display:block}
+.form-textarea{width:100%;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-size:14px;color:#111827;outline:none;resize:vertical;min-height:100px;line-height:1.6;transition:border-color 0.2s}
+.form-textarea:focus{border-color:#2563eb;background:#fff}
+.form-select{width:100%;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-size:14px;color:#111827;outline:none;cursor:pointer;transition:border-color 0.2s;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.form-select:focus{border-color:#2563eb;background-color:#fff}
+.gen-btn{width:100%;background:#2563eb;color:#fff;border-radius:10px;padding:12px;font-size:15px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s;margin-top:4px}
+.gen-btn:hover{background:#1d4ed8}
+.gen-btn:disabled{opacity:0.6;cursor:not-allowed}
+
+/* RIGHT PANEL */
+.right-panel{flex:1;background:#f7faff;padding:24px;overflow-y:auto;display:flex;flex-direction:column}
+.right-panel h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:700;color:#111827;margin-bottom:16px}
+
+/* GALLERY */
+#img-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.gallery-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:#9ca3af;text-align:center;flex:1}
+.gallery-empty svg{margin-bottom:12px;opacity:0.4}
+.gallery-empty p{font-size:14px}
+.gallery-img{border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;background:#fff;aspect-ratio:1;display:flex;align-items:center;justify-content:center;position:relative}
+.gallery-img img{width:100%;height:100%;object-fit:cover}
+
+/* SKELETON */
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.skeleton{background:linear-gradient(90deg,#e5e7eb 25%,#f3f4f6 50%,#e5e7eb 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:12px}
+.skeleton-img{aspect-ratio:1;border-radius:12px}
+.skeleton-text{height:14px;border-radius:6px;margin-bottom:8px}
+.skeleton-text.short{width:60%}
+
+/* VIDEO PREVIEW */
+.video-preview{background:#111827;aspect-ratio:16/9;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:14px;margin-top:8px}
+
+/* DOC TYPE GRID */
+.doc-type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:4px}
+.doc-type-btn{border:1.5px solid #e5e7eb;border-radius:8px;padding:8px 6px;font-size:12px;font-weight:600;color:#374151;text-align:center;cursor:pointer;transition:all 0.15s;background:#f9fafb}
+.doc-type-btn:hover{border-color:#2563eb;color:#2563eb;background:#eff6ff}
+.doc-type-btn.selected{background:#2563eb;color:#fff;border-color:#2563eb}
+
+/* DOC PREVIEW */
+.doc-preview-area{flex:1;background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:24px;min-height:300px;font-size:14px;color:#374151;line-height:1.7}
+.doc-preview-area.empty{display:flex;align-items:center;justify-content:center;color:#9ca3af;font-style:italic}
+
+/* SLIDES GRID */
+.slides-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.slide-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#6b7280;cursor:pointer;transition:box-shadow 0.2s}
+.slide-card:hover{box-shadow:0 4px 12px rgba(37,99,235,0.12)}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:#111827;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;opacity:0;transition:all 0.3s;z-index:9999;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.form-group{display:flex;flex-direction:column}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <a href="mode-selection.html" class="logo">
+    <div class="logo-box">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="#fff"/><rect x="11" y="1" width="6" height="6" rx="1.5" fill="#fff"/><rect x="1" y="11" width="6" height="6" rx="1.5" fill="#fff"/><rect x="11" y="11" width="6" height="6" rx="1.5" fill="#fff"/></svg>
+    </div>
+    <span class="logo-text">AOS</span>
+  </a>
+  <a href="mode-selection.html" class="back-btn-top">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back to Dashboard
+  </a>
+  <div class="breadcrumb">
+    <a href="mode-selection.html">Dashboard</a>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    <span>Generation Studio</span>
+  </div>
+  <div class="right">
+    <span class="ai-badge">AI Ready</span>
+    <button class="icon-btn" title="Notifications">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </button>
+    <button class="icon-btn" title="Help">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </button>
+    <div class="avatar" id="topbar-avatar" onclick="toggleDropdown()">U</div>
+  </div>
+</div>
+
+<!-- USER DROPDOWN -->
+<div id="user-dropdown">
+  <div class="dd-item">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
+  </div>
+  <div class="dd-item" onclick="window.location.href='mode-selection.html'">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </div>
+  <div class="dd-sep"></div>
+  <div class="dd-item danger" onclick="performLogout()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    Sign Out
+  </div>
+</div>
+
+<!-- TABS BAR -->
+<div id="tabs-bar">
+  <button class="tab-btn active" id="tab-btn-images" onclick="switchTab('images')">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+    Images
+  </button>
+  <button class="tab-btn" id="tab-btn-videos" onclick="switchTab('videos')">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+    Videos
+  </button>
+  <button class="tab-btn" id="tab-btn-documents" onclick="switchTab('documents')">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    Documents
+  </button>
+  <button class="tab-btn" id="tab-btn-presentations" onclick="switchTab('presentations')">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    Presentations
+  </button>
+</div>
+
+<!-- MAIN AREA -->
+<div id="main-area">
+
+  <!-- IMAGES TAB -->
+  <div class="tab-content active" id="tab-images">
+    <div class="left-panel">
+      <h2>Generate Image</h2>
+      <div class="form-group">
+        <label class="form-label">Prompt</label>
+        <textarea class="form-textarea" id="img-prompt" placeholder="Describe the image you want to generate..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Style</label>
+        <select class="form-select" id="img-style">
+          <option value="realistic">Realistic</option>
+          <option value="artistic">Artistic</option>
+          <option value="anime">Anime</option>
+          <option value="watercolor">Watercolor</option>
+          <option value="oilpainting">Oil Painting</option>
+          <option value="digitalart">Digital Art</option>
+          <option value="sketch">Sketch</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Aspect Ratio</label>
+        <select class="form-select" id="img-ratio">
+          <option value="1:1">1:1 Square</option>
+          <option value="16:9">16:9 Landscape</option>
+          <option value="9:16">9:16 Portrait</option>
+          <option value="4:3">4:3 Standard</option>
+          <option value="3:2">3:2 Photo</option>
+        </select>
+      </div>
+      <button class="gen-btn" id="img-gen-btn" onclick="generateImage()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Generate Image
+      </button>
+    </div>
+    <div class="right-panel">
+      <h2>Gallery</h2>
+      <div id="img-gallery">
+        <div class="gallery-empty" id="img-gallery-empty">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <p>Your generated images will appear here</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIDEOS TAB -->
+  <div class="tab-content" id="tab-videos">
+    <div class="left-panel">
+      <h2>Generate Video</h2>
+      <div class="form-group">
+        <label class="form-label">Prompt</label>
+        <textarea class="form-textarea" id="vid-prompt" placeholder="Describe the video you want to generate..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Duration</label>
+        <select class="form-select" id="vid-duration">
+          <option value="5">5 seconds</option>
+          <option value="10">10 seconds</option>
+          <option value="15">15 seconds</option>
+          <option value="30">30 seconds</option>
+          <option value="60">1 minute</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Resolution</label>
+        <select class="form-select" id="vid-res">
+          <option value="720p">720p HD</option>
+          <option value="1080p">1080p Full HD</option>
+          <option value="4k">4K Ultra HD</option>
+        </select>
+      </div>
+      <button class="gen-btn" id="vid-gen-btn" onclick="generateVideo()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Generate Video
+      </button>
+    </div>
+    <div class="right-panel">
+      <h2>Preview</h2>
+      <div class="video-preview" id="vid-preview">
+        <div style="text-align:center">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:8px;opacity:0.4"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <p>Video preview will appear here</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOCUMENTS TAB -->
+  <div class="tab-content" id="tab-documents">
+    <div class="left-panel">
+      <h2>Generate Document</h2>
+      <div class="form-group">
+        <label class="form-label">Document Type</label>
+        <div class="doc-type-grid">
+          <button class="doc-type-btn selected" id="doctype-pdf" onclick="selectDocType(this,'PDF')">PDF</button>
+          <button class="doc-type-btn" id="doctype-word" onclick="selectDocType(this,'Word')">Word</button>
+          <button class="doc-type-btn" id="doctype-excel" onclick="selectDocType(this,'Excel')">Excel</button>
+          <button class="doc-type-btn" id="doctype-ppt" onclick="selectDocType(this,'PowerPoint')">PPT</button>
+          <button class="doc-type-btn" id="doctype-resume" onclick="selectDocType(this,'Resume')">Resume</button>
+          <button class="doc-type-btn" id="doctype-invoice" onclick="selectDocType(this,'Invoice')">Invoice</button>
+          <button class="doc-type-btn" id="doctype-biz" onclick="selectDocType(this,'Business Plan')">Biz Plan</button>
+          <button class="doc-type-btn" id="doctype-research" onclick="selectDocType(this,'Research')">Research</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Prompt</label>
+        <textarea class="form-textarea" id="doc-prompt" placeholder="Describe what you want in the document..."></textarea>
+      </div>
+      <button class="gen-btn" id="doc-gen-btn" onclick="generateDocument()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Generate Document
+      </button>
+    </div>
+    <div class="right-panel">
+      <h2>Document Preview</h2>
+      <div class="doc-preview-area empty" id="doc-preview">
+        Document preview will appear here after generation...
+      </div>
+    </div>
+  </div>
+
+  <!-- PRESENTATIONS TAB -->
+  <div class="tab-content" id="tab-presentations">
+    <div class="left-panel">
+      <h2>Generate Presentation</h2>
+      <div class="form-group">
+        <label class="form-label">Prompt</label>
+        <textarea class="form-textarea" id="pres-prompt" placeholder="Describe your presentation topic and key points..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Number of Slides</label>
+        <select class="form-select" id="pres-slides">
+          <option value="5">5 slides</option>
+          <option value="8" selected>8 slides</option>
+          <option value="10">10 slides</option>
+          <option value="15">15 slides</option>
+          <option value="20">20 slides</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Theme</label>
+        <select class="form-select" id="pres-theme">
+          <option value="modern">Modern</option>
+          <option value="minimal">Minimal</option>
+          <option value="bold">Bold</option>
+          <option value="corporate">Corporate</option>
+          <option value="creative">Creative</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Template</label>
+        <select class="form-select" id="pres-template">
+          <option value="standard">Standard</option>
+          <option value="pitch">Pitch Deck</option>
+          <option value="report">Report</option>
+          <option value="tutorial">Tutorial</option>
+        </select>
+      </div>
+      <button class="gen-btn" id="pres-gen-btn" onclick="generatePresentation()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Generate Presentation
+      </button>
+    </div>
+    <div class="right-panel">
+      <h2>Slide Preview</h2>
+      <div class="slides-grid" id="slides-grid">
+        <div class="gallery-empty" style="grid-column:1/-1">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4;margin-bottom:8px"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <p style="font-size:13px;color:#9ca3af">Slides will appear here after generation</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://gdqapoopqijohrtovjza.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcWFwb29wcWlqb2hydG92anphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MjcyNzAsImV4cCI6MjEwMDUwMzI3MH0.mQsxKSmGBC3EfGLbuG2c5zAAzJKKIkq8wzsKzoO8oyI';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let selectedDocType = 'PDF';
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function initSession() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) { window.location.href = 'index.html'; return; }
+  const user = session.user;
+  const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User';
+  const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+  const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+
+  const avatarEl = document.getElementById('topbar-avatar');
+  if (avatarUrl) {
+    avatarEl.innerHTML = `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+    avatarEl.style.background = 'transparent';
+  } else {
+    avatarEl.textContent = initials;
+  }
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const tc = document.getElementById('tab-' + name);
+  const tb = document.getElementById('tab-btn-' + name);
+  if (tc) tc.classList.add('active');
+  if (tb) tb.classList.add('active');
+}
+
+function selectDocType(btn, type) {
+  document.querySelectorAll('.doc-type-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedDocType = type;
+}
+
+function generateImage() {
+  const prompt = document.getElementById('img-prompt').value.trim();
+  if (!prompt) { showToast('Please enter a prompt first'); return; }
+  const gallery = document.getElementById('img-gallery');
+  const btn = document.getElementById('img-gen-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  const emptyState = document.getElementById('img-gallery-empty');
+  if (emptyState) emptyState.remove();
+  const skelWrapper = document.createElement('div');
+  skelWrapper.className = 'skeleton skeleton-img';
+  skelWrapper.style.cssText = 'aspect-ratio:1;border-radius:12px;min-height:180px';
+  gallery.appendChild(skelWrapper);
+  // API INTEGRATION POINT: Replace timeout with actual image generation API call
+  setTimeout(() => {
+    skelWrapper.remove();
+    const style = document.getElementById('img-style').value;
+    const ratio = document.getElementById('img-ratio').value;
+    const colors = ['#dbeafe','#fce7f3','#d1fae5','#fef3c7','#ede9fe','#fee2e2'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const item = document.createElement('div');
+    item.className = 'gallery-img';
+    item.innerHTML = `<div style="background:${color};width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;padding:12px;text-align:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span style="font-size:11px;color:#6b7280;font-weight:500">${esc(style)} · ${esc(ratio)}</span></div>`;
+    gallery.appendChild(item);
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate Image';
+    showToast('Image generated!');
+  }, 2000);
+}
+
+function generateVideo() {
+  const prompt = document.getElementById('vid-prompt').value.trim();
+  if (!prompt) { showToast('Please enter a prompt first'); return; }
+  const btn = document.getElementById('vid-gen-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  const preview = document.getElementById('vid-preview');
+  preview.innerHTML = '<div class="skeleton" style="width:100%;height:100%;border-radius:14px"></div>';
+  // API INTEGRATION POINT: Replace timeout with actual video generation API call
+  setTimeout(() => {
+    const dur = document.getElementById('vid-duration').value;
+    const res = document.getElementById('vid-res').value;
+    preview.innerHTML = `<div style="text-align:center;padding:20px"><div style="background:#1f2937;border-radius:10px;padding:20px;margin-bottom:12px"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div><p style="color:#9ca3af;font-size:13px">Video preview (${esc(dur)}s · ${esc(res)})</p><p style="color:#6b7280;font-size:12px;margin-top:4px">${esc(prompt.slice(0,60))}${prompt.length>60?'...':''}</p></div>`;
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate Video';
+    showToast('Video generated!');
+  }, 2000);
+}
+
+function generateDocument() {
+  const prompt = document.getElementById('doc-prompt').value.trim();
+  if (!prompt) { showToast('Please enter a prompt first'); return; }
+  const btn = document.getElementById('doc-gen-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  const preview = document.getElementById('doc-preview');
+  preview.classList.add('skeleton');
+  preview.classList.remove('empty');
+  preview.textContent = '';
+  // API INTEGRATION POINT: Replace timeout with actual document generation API call
+  setTimeout(() => {
+    preview.classList.remove('skeleton');
+    const docContent = [
+      `<strong style="font-size:18px;display:block;margin-bottom:16px">${esc(selectedDocType)} Document</strong>`,
+      `<p style="margin-bottom:12px;color:#6b7280;font-size:12px">Generated from prompt: "${esc(prompt.slice(0,80))}${prompt.length>80?'...':''}"</p>`,
+      '<hr style="border:none;border-top:1px solid #e5e7eb;margin-bottom:16px">',
+      '<p style="margin-bottom:10px">This is an AI-generated document based on your prompt. In a production environment, this would contain the actual content generated by your AI model.</p>',
+      '<p style="margin-bottom:10px">The document would include relevant sections, properly formatted text, and all the information requested in your prompt.</p>',
+      '<strong style="display:block;margin:14px 0 8px">Key Sections</strong>',
+      '<ul style="padding-left:18px;line-height:1.8"><li>Introduction and Overview</li><li>Main Content Section</li><li>Supporting Details</li><li>Conclusion and Next Steps</li></ul>'
+    ].join('');
+    preview.innerHTML = docContent;
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate Document';
+    showToast(`${selectedDocType} document generated!`);
+  }, 2000);
+}
+
+function generatePresentation() {
+  const prompt = document.getElementById('pres-prompt').value.trim();
+  if (!prompt) { showToast('Please enter a prompt first'); return; }
+  const btn = document.getElementById('pres-gen-btn');
+  btn.disabled = true;
+  btn.textContent = 'Generating...';
+  const count = parseInt(document.getElementById('pres-slides').value);
+  const theme = document.getElementById('pres-theme').value;
+  const grid = document.getElementById('slides-grid');
+  grid.innerHTML = Array.from({length:count},(_,i)=>`<div class="skeleton skeleton-img" style="aspect-ratio:16/9;border-radius:10px"></div>`).join('');
+  // API INTEGRATION POINT: Replace timeout with actual presentation generation API call
+  setTimeout(() => {
+    const bgColors = {modern:'#1e3a8a',minimal:'#f8fafc',bold:'#111827',corporate:'#1e40af',creative:'#4f46e5'};
+    const bgColor = bgColors[theme] || '#1e3a8a';
+    const textColor = theme === 'minimal' ? '#111827' : '#ffffff';
+    const slideTitles = ['Title Slide','Introduction','Key Points','Overview','Analysis','Details','Results','Summary','Conclusion','Thank You'];
+    grid.innerHTML = Array.from({length:count},(_,i)=>`
+      <div class="slide-card" style="background:${bgColor};border-color:${bgColor}60">
+        <div style="text-align:center;padding:8px">
+          <div style="font-size:10px;color:${textColor};opacity:0.6;margin-bottom:4px">Slide ${i+1}</div>
+          <div style="font-size:11px;color:${textColor};font-weight:600">${slideTitles[i]||'Slide '+(i+1)}</div>
+        </div>
+      </div>`).join('');
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate Presentation';
+    showToast(`${count}-slide presentation generated!`);
+  }, 2000);
+}
+
+function toggleDropdown() {
+  document.getElementById('user-dropdown').classList.toggle('open');
+}
+
+async function performLogout() {
+  await supabase.auth.signOut();
+  window.location.href = 'index.html';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('user-dropdown');
+  const av = document.getElementById('topbar-avatar');
+  if (dd.classList.contains('open') && !dd.contains(e.target) && !av.contains(e.target)) {
+    dd.classList.remove('open');
+  }
+});
+
+document.addEventListener('DOMContentLoaded', initSession);
+</script>
+</body>
+</html>

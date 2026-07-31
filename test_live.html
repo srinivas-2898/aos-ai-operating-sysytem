@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AOS Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5a623 0%, #f8b4d9 40%, #c084fc 70%, #818cf8 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      color: #111827;
+      overflow-y: auto;
+      /* Restores natural page scrolling */
+      overflow-x: hidden;
+    }
+
+    /* ─── HEADER ─── */
+    .header {
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 48px;
+      width: 100%;
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-box {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #7c3aed, #c084fc);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      font-size: 22px;
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+    }
+
+    .logo-text-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      font-size: 24px;
+      /* Increased font size */
+      line-height: 1.1;
+      background: linear-gradient(135deg, #111827, #374151);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo-subtitle {
+      font-size: 11px;
+      color: #374151;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    /* ─── CENTER NAVIGATION SEGMENT ─── */
+    .nav-segment {
+      display: flex;
+      background: rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 4px;
+      border-radius: 99px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .segment-btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1f2937;
+      border: none;
+      background: transparent;
+      padding: 6px 20px;
+      border-radius: 99px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .segment-btn.active {
+      background: #111827;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+    }
+
+    .segment-btn:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.5);
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background: #10b981;
+      border-radius: 50%;
+    }
+
+    .user-profile-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-display-name {
+      font-family: 'Inter', sans-serif;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #111827;
+      background: rgba(255, 255, 255, 0.45);
+      padding: 6px 14px;
+      border-radius: 99px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    .logout-btn-header {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: #4b5563;
+      background: rgba(255, 255, 255, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 6px 14px;
+      border-radius: 99px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .logout-btn-header:hover {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.25);
+    }
+
+    /* ─── VIEW CONTAINERS (MOVED TOP & CONSTRAINED) ─── */
+    .view-container {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      /* Aligns content to top */
+      padding: 32px 40px 48px;
+      width: 100%;
+      max-width: 1140px;
+      margin: 0 auto;
+      animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .view-container.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ─── TYPOGRAPHY ─── */
+    .top-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #7c3aed;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    .title-h1 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      font-size: 38px;
+      text-align: center;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    .lead-p {
+      font-size: 14px;
+      color: #374151;
+      text-align: center;
+      margin-bottom: 32px;
+      font-weight: 500;
+      max-width: 600px;
+      line-height: 1.5;
+    }
+
+    /* ─── VIEW 1: HOME WORKSPACE CHOOSE (2 CARDS) ─── */
+    .cards-choose-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      /* Increased gap */
+      width: 100%;
+      max-width: 880px;
+      margin-bottom: 24px;
+    }
+
+    .card-choose {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1.5px solid rgba(255, 255, 255, 0.6);
+      border-radius: 24px;
+      padding: 32px;
+      /* Slightly decreased padding for smaller card size */
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+    }
+
+    .card-choose:hover {
+      transform: translateY(-4px);
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+      border-color: rgba(255, 255, 255, 0.85);
+    }
+
+    .card-choose-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .mode-label {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .color-dev {
+      color: #b45309;
+    }
+
+    .color-project {
+      color: #6d28d9;
+    }
+
+    .arrow-indicator {
+      color: #9ca3af;
+      transition: transform 0.2s ease, color 0.2s;
+    }
+
+    .card-choose:hover .arrow-indicator {
+      transform: translateX(4px);
+      color: #111827;
+    }
+
+    .card-icon-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+
+    .bg-dev {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    .bg-project {
+      background: #ede9fe;
+      color: #7c3aed;
+    }
+
+    .card-title-text {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      /* Slightly decreased */
+      margin-bottom: 8px;
+    }
+
+    .card-desc-text {
+      font-size: 13.5px;
+      /* Slightly decreased */
+      color: #4b5563;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .card-action-btn {
+      height: 38px;
+      padding: 0 20px;
+      border-radius: 99px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      align-self: flex-start;
+      transition: all 0.2s;
+    }
+
+    .btn-dev {
+      background: linear-gradient(135deg, #c2410c, #f5a623);
+      color: #fff;
+    }
+
+    .btn-project {
+      background: linear-gradient(135deg, #7c3aed, #c084fc);
+      color: #fff;
+    }
+
+    /* ─── VIEW 2: DEVELOPER WORKSPACE (2X2 GRID, MOVED TOP, SPACED, SMALLER) ─── */
+    .cards-dev-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 30px;
+      /* Increased space between cards */
+      width: 100%;
+      max-width: 920px;
+      margin-top: 10px;
+      /* Pushes the cards closer to the top */
+      margin-bottom: 28px;
+    }
+
+    .card-dev-pillar {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1.5px solid rgba(255, 255, 255, 0.6);
+      border-radius: 20px;
+      padding: 22px 24px;
+      /* Decreased size of cards */
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.03);
+    }
+
+    .card-dev-pillar:hover {
+      transform: translateY(-3px);
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.06);
+      border-color: rgba(255, 255, 255, 0.85);
+    }
+
+    .pillar-meta {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #7c3aed;
+      text-transform: uppercase;
+    }
+
+    .pillar-icon-box {
+      width: 36px;
+      /* Decreased size */
+      height: 36px;
+      background: #faf4eb;
+      color: #b45309;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 12px 0;
+    }
+
+    .pillar-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      /* Decreased size */
+      margin-bottom: 6px;
+      color: #111827;
+    }
+
+    .pillar-desc {
+      font-size: 13px;
+      /* Decreased size */
+      color: #4b5563;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    .pillar-link {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: #b45309;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: gap 0.2s;
+      align-self: flex-start;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .card-dev-pillar:hover .pillar-link {
+      gap: 10px;
+    }
+
+    /* ─── BOTTOM INFO FOOTER ─── */
+    .workspace-footer {
+      font-size: 12px;
+      color: #374151;
+      text-align: center;
+      font-weight: 600;
+      margin-top: auto;
+      padding-top: 16px;
+    }
+
+    /* ─── MODAL (COMING SOON) ─── */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 20px;
+      padding: 32px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.15);
+      transform: translateY(12px) scale(0.97);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.15);
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(124, 58, 237, 0.1);
+      color: #7c3aed;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    .modal-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .modal-text {
+      font-size: 14px;
+      color: #4b5563;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .modal-close-btn {
+      width: 100%;
+      height: 44px;
+      background: #111827;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .modal-close-btn:hover {
+      background: #374151;
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 768px) {
+      .header {
+        padding: 0 20px;
+        height: 70px;
+      }
+
+      .logo-title {
+        font-size: 20px;
+      }
+
+      .status-badge {
+        display: none;
+      }
+
+      .segment-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+
+      .view-container {
+        padding: 24px 20px 32px;
+      }
+
+      .title-h1 {
+        font-size: 28px;
+      }
+
+      .lead-p {
+        font-size: 13px;
+        margin-bottom: 20px;
+      }
+
+      .cards-choose-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      .cards-dev-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+    }
+    /* ─── VIEW 4: AI CHAT (FULL SCREEN LAYOUT) ─── */
+    .view-container-chat {
+      display: none;
+      width: 100%;
+      flex-grow: 1;
+      min-height: calc(100vh - 76px);
+      padding: 0;
+      margin: 0;
+      background: #f8fafc;
+      z-index: 10;
+    }
+
+    .view-container-chat.active {
+      display: flex;
+    }
+
+    .chat-layout {
+      display: flex;
+      width: 100%;
+      min-height: 100%;
+      background: transparent;
+    }
+
+    /* Sidebar */
+    .chat-sidebar {
+      width: 280px;
+      background: #ffffff;
+      border-right: 1px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .chat-sidebar.collapsed {
+      width: 72px;
+      padding: 20px 10px;
+    }
+
+    .chat-sidebar.collapsed .sidebar-text,
+    .chat-sidebar.collapsed .sidebar-section-title {
+      display: none;
+    }
+
+    .sidebar-header-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+
+    .hamburger-btn {
+      background: transparent;
+      border: none;
+      color: #475569;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      border-radius: 8px;
+    }
+
+    .hamburger-btn:hover {
+      background: #f1f5f9;
+    }
+
+    .sidebar-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: #334155;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.2s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidebar-btn:hover {
+      background: #f1f5f9;
+    }
+
+    .new-chat-btn {
+      background: #111827;
+      color: #ffffff;
+    }
+
+    .new-chat-btn:hover {
+      background: #1f2937;
+    }
+
+    .sidebar-section {
+      margin-top: 24px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .sidebar-section-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+      padding: 0 12px;
+    }
+
+    /* Main Chat Area */
+    .chat-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .chat-header-banner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .chat-welcome-name {
+      color: #7c3aed;
+      margin-left: 8px;
+    }
+
+    .chat-center-content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .chat-big-title {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 32px;
+      font-weight: 800;
+      color: #1e293b;
+      text-align: center;
+      max-width: 600px;
+      line-height: 1.3;
+    }
+
+    /* Chat Input Panel */
+    .chat-input-wrapper {
+      padding: 24px;
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .chat-input-box {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 16px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    }
+
+    .chat-input-field {
+      flex: 1;
+      border: none;
+      outline: none;
+      resize: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      color: #334155;
+      padding: 8px 0;
+      max-height: 120px;
+      background: transparent;
+    }
+
+    .chat-input-field::placeholder {
+      color: #94a3b8;
+    }
+
+    .chat-icon-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: #64748b;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .chat-icon-btn:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+
+    .chat-send-btn {
+      background: #111827;
+      color: #ffffff;
+    }
+
+    .chat-send-btn:hover {
+      background: #374151;
+      color: #ffffff;
+    }
+    /* Mobile experience refinements */
+    @media (max-width: 768px) {
+      body { background: #f8fafc; overflow-y: auto; }
+
+      .header {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        height: auto;
+        min-height: 64px;
+        padding: 12px 16px 10px;
+        flex-wrap: wrap;
+        gap: 10px;
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(14px);
+      }
+
+      .header-left { flex: 1; min-width: 0; }
+      .logo-box { width: 34px; height: 34px; border-radius: 10px; }
+      .logo-subtitle, .user-display-name { display: none; }
+      .header-right { flex: 0 0 auto; }
+      .logout-btn-header { min-height: 38px; padding: 0 12px; font-size: 12px; }
+      .nav-segment {
+        order: 3; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr);
+        gap: 4px; padding: 4px; border-radius: 12px; background: #f1f5f9;
+      }
+      .segment-btn { min-height: 38px; padding: 6px 4px; border-radius: 9px; }
+      .view-container { padding: 28px 16px 36px; }
+      .top-badge { margin-bottom: 12px; }
+      .title-h1 { font-size: 30px; line-height: 1.15; }
+      .lead-p { max-width: 310px; margin-left: auto; margin-right: auto; line-height: 1.55; }
+      .cards-choose-grid, .cards-dev-grid { gap: 14px; }
+      .card-choose, .card-dev-pillar { min-height: 0; padding: 22px; border-radius: 20px; }
+      .card-action-btn, .pillar-link { min-height: 46px; }
+      .workspace-footer { margin-top: 24px; line-height: 1.5; }
+      .view-container-chat { position: fixed; top: 0; bottom: 0; min-height: 100dvh; }
+      .chat-layout { min-height: 100dvh; }
+      .chat-sidebar { display: none; }
+      .chat-main { width: 100%; min-width: 0; }
+      .chat-header-banner { padding: 18px 16px; }
+      .chat-header-banner h1 { font-size: 21px; }
+      .chat-header-banner p { font-size: 13px; line-height: 1.5; }
+      .chat-messages { padding: 18px 16px; }
+      .chat-input-wrapper { padding: 12px 16px max(16px, env(safe-area-inset-bottom)); }
+      .chat-input-box { border-radius: 16px; }
+      .chat-input-field { min-height: 46px; font-size: 16px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo-box">A</div>
+      <div class="logo-text-group">
+        <span class="logo-title">AOS</span>
+        <span class="logo-subtitle" id="logo-workspace-subtitle">Developer Workspace</span>
+      </div>
+    </div>
+
+    <!-- Center Segment Tabs -->
+    <div class="nav-segment">
+      <button class="segment-btn active" id="tab-home" onclick="switchView('choose')">Home</button>
+      <button class="segment-btn" id="tab-dev" onclick="switchView('developer')">Developer</button>
+      <button class="segment-btn" id="tab-project" onclick="switchView('project')">Project</button>
+    </div>
+
+    <div class="header-right">
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        AI Ready
+      </div>
+      <div class="user-profile-group">
+        <span class="user-display-name" id="user-display-name">Loading...</span>
+        <button class="logout-btn-header" id="avatar-btn" title="Click to Log Out">Log Out</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- VIEW 1: CHOOSE WORKSPACE (HOME) -->
+  <div class="view-container active" id="view-choose">
+    <div class="top-badge" id="welcome-user-badge">Welcome back</div>
+    <h1 class="title-h1">Choose Your Workspace</h1>
+    <p class="lead-p">Select how you want to build with AOS.</p>
+
+    <div class="cards-choose-grid">
+
+      <!-- Developer Card -->
+      <div class="card-choose" onclick="switchView('developer')">
+        <div>
+          <div class="card-choose-header">
+            <span class="mode-label color-dev">Developer Mode</span>
+            <svg class="arrow-indicator" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </div>
+          <div class="card-icon-circle bg-dev">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 18 22 12 16 6" />
+              <polyline points="8 6 2 12 8 18" />
+            </svg>
+          </div>
+          <h2 class="card-title-text">Code Editor</h2>
+          <p class="card-desc-text">Build, edit, debug and ship software with the full AOS developer workspace.</p>
+        </div>
+        <button class="card-action-btn btn-dev">
+          Enter Developer Mode
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Project Card -->
+      <div class="card-choose" onclick="switchView('project')">
+        <div>
+          <div class="card-choose-header">
+            <span class="mode-label color-project">Project Mode</span>
+            <svg class="arrow-indicator" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </div>
+          <div class="card-icon-circle bg-project">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path
+                d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+            </svg>
+          </div>
+          <h2 class="card-title-text">AI Assistant</h2>
+          <p class="card-desc-text">Describe your idea in plain language and let AOS orchestrate agents to build it for
+            you.</p>
+        </div>
+        <button class="card-action-btn btn-project">
+          Start Project
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+    <p class="workspace-footer">You can switch workspaces anytime from the header tab.</p>
+  </div>
+
+  <!-- VIEW 2: DEVELOPER WORKSPACE (4 PILLARS, COMPACT 2X2 GRID AT TOP) -->
+  <div class="view-container" id="view-developer">
+    <div class="top-badge">✨ Developer Mode</div>
+
+    <!-- 4 Cards Grid - Optimized size and spaces, aligned at top -->
+    <div class="cards-dev-grid">
+
+      <!-- Pillar 1 -->
+      <div class="card-dev-pillar" onclick="switchView('chat')">
+        <div>
+          <div class="card-choose-header">
+            <span class="pillar-meta">01 · Conversation</span>
+            <svg class="arrow-indicator" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </div>
+          <div class="pillar-icon-box" style="background: #faf4eb; color: #b45309;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </div>
+          <h2 class="pillar-title">AI Chat</h2>
+          <p class="pillar-desc">Talk with AI models for coding, debugging, planning, documentation and project
+            management.</p>
+        </div>
+        <button class="pillar-link">
+          Open AI Chat
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Pillar 2 -->
+      <div class="card-dev-pillar" onclick="window.location.href='generation.html'">
+        <div>
+          <div class="card-choose-header">
+            <span class="pillar-meta">02 · Creation</span>
+            <svg class="arrow-indicator" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </div>
+          <div class="pillar-icon-box" style="background: #ede9fe; color: #7c3aed;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path
+                d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+            </svg>
+          </div>
+          <h2 class="pillar-title">Generation Studio</h2>
+          <p class="pillar-desc">Generate Images, Videos, PDFs, Word, Excel, PowerPoint, Logos, Posters and other
+            AI-generated content.</p>
+        </div>
+        <button class="pillar-link" style="color: #7c3aed;">
+          Open Generation Studio
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Pillar 3 -->
+      <div class="card-dev-pillar" onclick="window.location.href='ide.html'">
+        <div>
+          <div class="card-choose-header">
+            <span class="pillar-meta">03 · Engineering</span>
+            <svg class="arrow-indicator" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </div>
+          <div class="pillar-icon-box" style="background: #e0f2fe; color: #0369a1;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 18 22 12 16 6" />
+              <polyline points="8 6 2 12 8 18" />
+            </svg>
+          </div>
+          <h2 class="pillar-title">Development Studio</h2>
+          <p class="pillar-desc">Open the AOS IDE to build, edit, debug and manage software projects.</p>
+        </div>
+        <button class="pillar-link" style="color: #0369a1;">
+          Open IDE
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Pillar 4 -->
+      <div class="card-dev-pillar" onclick="window.location.href='deploy.html'">
+        <div>
+          <div class="card-choose-header">
+            <span class="pillar-meta">04 · Shipping</span>
+            <svg class="arrow-indicator" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5">
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
+          </div>
+          <div class="pillar-icon-box" style="background: #f0fdf4; color: #15803d;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
+          <h2 class="pillar-title">Publish & Deploy</h2>
+          <p class="pillar-desc">Deploy applications using GitHub, Firebase, Vercel, Netlify, Railway and other
+            supported platforms.</p>
+        </div>
+        <button class="pillar-link" style="color: #15803d;">
+          Open Deployment
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+          </svg>
+        </button>
+      </div>
+
+    </div>
+
+    <p class="workspace-footer">You can switch workspaces anytime from the header tab.</p>
+  </div>
+
+  <!-- VIEW 3: PROJECT WORKSPACE -->
+  <div class="view-container" id="view-project">
+    <div class="top-badge">✨ Project Mode</div>
+
+    <div class="cards-dev-grid">
+      <div class="card-dev-pillar"
+        style="grid-column: span 2; justify-content: center; align-items: center; text-align: center; padding: 40px;"
+        onclick="window.location.href='mode-selection.html'">
+        <div class="pillar-icon-box"
+          style="margin: 0 auto 20px; width: 44px; height: 44px; background: #ede9fe; color: #7c3aed;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+          </svg>
+        </div>
+        <h2 class="pillar-title" style="font-size: 22px; margin-bottom: 12px;">Orchestrator Sandbox</h2>
+        <p class="pillar-desc" style="max-width: 500px; font-size: 14px; margin-bottom: 24px;">Configure agent
+          parameters, connect GitHub repositories, and define task backlogs using plain-text requests.</p>
+        <button class="card-action-btn btn-project" style="align-self: center;">Initialize Orchestration -></button>
+      </div>
+    </div>
+
+    <p class="workspace-footer">You can switch workspaces anytime from the header tab.</p>
+  <!-- VIEW 4: AI CHAT WORKSPACE -->
+  <div class="view-container-chat" id="view-chat">
+    <div class="chat-layout">
+      <!-- Sidebar -->
+      <div class="chat-sidebar" id="chatSidebar">
+        <div class="sidebar-header-row">
+          <button class="hamburger-btn" onclick="toggleChatSidebar()" title="Toggle Sidebar">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+        </div>
+        
+        <button class="sidebar-btn new-chat-btn" onclick="startNewChat()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span class="sidebar-text">New Chat</span>
+        </button>
+        
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Recent Chats</div>
+          <button class="sidebar-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="sidebar-text">Landing page redesign</span></button>
+          <button class="sidebar-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="sidebar-text">Postgres schema for users</span></button>
+          <button class="sidebar-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="sidebar-text">React native auth setup</span></button>
+          <button class="sidebar-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="sidebar-text">Stripe integration logic</span></button>
+          <button class="sidebar-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="sidebar-text">API documentation</span></button>
+        </div>
+
+        <button class="sidebar-btn" style="margin-top:auto;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+          <span class="sidebar-text">All Chats</span>
+        </button>
+      </div>
+
+      <!-- Main Chat Area -->
+      <div class="chat-main">
+        <div class="chat-header-banner">
+          AOS <span class="chat-welcome-name" id="chat-welcome-name">Welcome</span>
+        </div>
+        
+        <div class="chat-center-content">
+          <h2 class="chat-big-title">Start conversation with AOS AI</h2>
+        </div>
+
+        <div class="chat-input-wrapper">
+          <div class="chat-input-box">
+            <!-- Hidden File Input -->
+            <input type="file" id="chat-file-upload" multiple style="display: none;" />
+            <button class="chat-icon-btn" onclick="document.getElementById('chat-file-upload').click()" title="Upload File">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            </button>
+            <button class="chat-icon-btn" title="Voice Input">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+            
+            <input type="text" class="chat-input-field" placeholder="Describe what you want to build..." />
+            
+            <button class="chat-icon-btn chat-send-btn" title="Send">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMING SOON MODAL -->
+  <div class="modal-overlay" id="coming-soon-modal" onclick="closeModal()">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <div class="modal-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+      </div>
+      <h3 class="modal-title" id="modal-title">Coming Soon!</h3>
+      <p class="modal-text" id="modal-text">This workspace environment will come in a week. Stay tuned!</p>
+      <button class="modal-close-btn" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://gdqapoopqijohrtovjza.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcWFwb29wcWlqb2hydG92anphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MjcyNzAsImV4cCI6MjEwMDUwMzI3MH0.mQsxKSmGBC3EfGLbuG2c5zAAzJKKIkq8wzsKzoO8oyI'
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+    // Log Out functionality
+    const performLogout = async (e) => {
+      if (e) e.preventDefault();
+      await supabaseClient.auth.signOut();
+      window.location.href = 'index.html';
+    };
+
+    document.getElementById('avatar-btn').addEventListener('click', performLogout);
+
+    // Fetch user details on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        if (error || !session) {
+          window.location.href = 'index.html';
+          return;
+        }
+
+        const user = session.user;
+        const fullName = user.user_metadata?.full_name || user.user_metadata?.display_name || user.email || 'User';
+
+        // Update name badge at the center
+        const nameBadge = document.getElementById('welcome-user-badge');
+        if (nameBadge) {
+          nameBadge.textContent = `Welcome, ${fullName}`;
+        }
+
+        // Update chat welcome name
+        const chatName = document.getElementById('chat-welcome-name');
+        if (chatName) {
+          chatName.textContent = `Welcome, ${fullName}`;
+        }
+
+        // Update name in header
+        const headerName = document.getElementById('user-display-name');
+        if (headerName) {
+          headerName.textContent = fullName;
+        }
+      } catch (err) {
+        console.error('Session retrieval error:', err);
+        window.location.href = 'index.html';
+      }
+    });
+
+    // Switching views
+    function switchView(viewName) {
+      // Deactivate all views and segments
+      document.querySelectorAll('.view-container, .view-container-chat').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.segment-btn').forEach(el => el.classList.remove('active'));
+
+      // Activate target view
+      const viewEl = document.getElementById(`view-${viewName}`);
+      if (viewEl) viewEl.classList.add('active');
+
+      // Update segment button highlight
+      let tabBtn;
+      let subtitleText = '';
+      if (viewName === 'choose') {
+        tabBtn = document.getElementById('tab-home');
+        subtitleText = 'Workspace Environment';
+      } else if (viewName === 'developer') {
+        tabBtn = document.getElementById('tab-dev');
+        subtitleText = 'Developer Workspace';
+      } else if (viewName === 'project') {
+        tabBtn = document.getElementById('tab-project');
+        subtitleText = 'Project Workspace';
+      } else if (viewName === 'chat') {
+        subtitleText = 'AI Chat';
+      }
+
+      if (tabBtn) tabBtn.classList.add('active');
+      document.getElementById('logo-workspace-subtitle').textContent = subtitleText;
+    }
+
+    // Coming soon modal triggers
+    function triggerComingSoon(mode, tool) {
+      document.getElementById('modal-title').textContent = `${tool} Coming Soon`;
+      document.getElementById('modal-text').innerHTML = `The full feature environment for <strong>${mode}</strong> will come in a week. Stay tuned!`;
+      document.getElementById('coming-soon-modal').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('coming-soon-modal').classList.remove('active');
+    }
+
+    // Chat functionalities
+    function toggleChatSidebar() {
+      document.getElementById('chatSidebar').classList.toggle('collapsed');
+    }
+
+    function startNewChat() {
+      const input = document.querySelector('.chat-input-field');
+      if (input) input.value = '';
+    }
+
+    // Default view state check
+    switchView('choose');
+  </script>
+</body>
+
+</html>

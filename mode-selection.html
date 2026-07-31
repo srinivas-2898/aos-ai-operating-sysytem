@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AOS – Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Inter',sans-serif;background:#f7faff;color:#111827}
+body{display:flex;flex-direction:column;overflow:hidden;height:100vh}
+button{cursor:pointer;border:none;background:none;font-family:inherit}
+input,textarea,select{font-family:inherit}
+a{text-decoration:none;color:inherit}
+
+/* TOPBAR */
+#topbar{height:56px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;z-index:100;position:relative}
+#topbar .logo{display:flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none}
+#topbar .logo-box{width:32px;height:32px;background:#2563eb;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#topbar .logo-text{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:16px;color:#111827}
+#hamburger-btn{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#6b7280}
+#hamburger-btn:hover{background:#f3f4f6}
+#topbar .search-wrap{flex:1;max-width:400px;position:relative}
+#topbar .search-wrap input{width:100%;height:36px;background:#f3f4f6;border:1.5px solid transparent;border-radius:10px;padding:0 12px 0 36px;font-size:14px;color:#111827;outline:none;transition:border-color 0.2s}
+#topbar .search-wrap input:focus{border-color:#2563eb;background:#fff}
+#topbar .search-wrap .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9ca3af;pointer-events:none}
+#topbar .right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.ai-badge{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+.icon-btn{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#6b7280}
+.icon-btn:hover{background:#f3f4f6}
+#user-btn{display:flex;align-items:center;gap:8px;padding:4px 8px;border-radius:10px;cursor:pointer}
+#user-btn:hover{background:#f3f4f6}
+.avatar{width:32px;height:32px;border-radius:50%;background:#2563eb;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0}
+#topbar-name{font-size:14px;font-weight:500;color:#111827}
+.chevron{color:#9ca3af}
+
+/* USER DROPDOWN */
+#user-dropdown{position:fixed;top:56px;right:12px;width:200px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:999;display:none;padding:6px 0}
+#user-dropdown.open{display:block}
+.dd-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:14px;color:#374151;cursor:pointer}
+.dd-item:hover{background:#f9fafb}
+.dd-item.danger{color:#ef4444}
+.dd-sep{height:1px;background:#f3f4f6;margin:4px 0}
+
+/* APP SHELL */
+#app-shell{display:flex;flex:1;overflow:hidden}
+#chat-shell{display:none;flex:1;overflow:hidden;width:100%;height:100%}
+#chat-shell.active{display:flex !important}
+
+/* SIDEBAR */
+#main-sidebar{width:200px;background:#fff;border-right:1px solid #e5e7eb;display:flex;flex-direction:column;flex-shrink:0;transition:width 0.2s;overflow:hidden}
+#main-sidebar.collapsed{width:64px;align-items:center}
+#main-sidebar.collapsed .nav-text{display:none}
+#main-sidebar.collapsed .nav-item{padding:10px;justify-content:center}
+#main-sidebar.collapsed .nav-item span:first-child{margin-right:0 !important}
+.sidebar-nav{flex:1;padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:14px;font-weight:500;color:#374151;cursor:pointer;white-space:nowrap;text-decoration:none}
+.nav-item:hover{background:#f3f4f6}
+.nav-item.active{background:#eff6ff;color:#2563eb}
+.nav-item svg{flex-shrink:0}
+/* VIEW AREA */
+#view-area{flex:1;overflow-y:auto;background:#f7faff;padding:24px}
+.view{display:none}
+.view.active{display:block}
+
+/* DASHBOARD */
+.greeting{font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:700;color:#111827;margin-bottom:4px}
+.greeting-sub{font-size:14px;color:#6b7280;margin-bottom:20px}
+.create-btn{background:#2563eb;color:#fff;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:600;margin-bottom:24px;display:inline-flex;align-items:center;gap:8px}
+.create-btn:hover{background:#1d4ed8}
+.section-title{font-size:16px;font-weight:700;color:#111827;margin-bottom:14px}
+.feature-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.feature-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:20px;cursor:pointer;transition:box-shadow 0.2s,transform 0.2s;text-decoration:none;display:block}
+.feature-card:hover{box-shadow:0 8px 24px rgba(37,99,235,0.12);transform:translateY(-2px)}
+.feature-card .fc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.feature-card h3{font-size:14px;font-weight:700;color:#111827;margin-bottom:4px}
+.feature-card p{font-size:12px;color:#6b7280;line-height:1.5}
+.bottom-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.dash-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:20px}
+.dash-card h3{font-size:14px;font-weight:700;color:#111827;margin-bottom:14px}
+.empty-state{text-align:center;padding:24px 12px;color:#9ca3af;font-size:13px}
+.empty-state svg{margin:0 auto 8px;display:block;opacity:0.4}
+.proj-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6}
+.proj-item:last-child{border-bottom:none}
+.proj-item-name{font-size:13px;font-weight:600;color:#111827}
+.proj-item-tech{font-size:11px;color:#9ca3af}
+.proj-item-del{color:#ef4444;opacity:0.6}
+.proj-item-del:hover{opacity:1}
+
+/* PROJECTS VIEW */
+.view-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.view-header h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:700;color:#111827}
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.project-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:20px;position:relative}
+.project-card h3{font-size:15px;font-weight:700;color:#111827;margin-bottom:4px}
+.project-card .pc-desc{font-size:13px;color:#6b7280;margin-bottom:12px;line-height:1.5}
+.project-card .pc-tech{display:inline-block;background:#eff6ff;color:#2563eb;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600}
+.pc-del{position:absolute;top:12px;right:12px;color:#ef4444;opacity:0.5;font-size:12px}
+.pc-del:hover{opacity:1}
+.pc-url{font-size:11px;color:#2563eb;margin-top:8px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* SETTINGS VIEW */
+.settings-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:24px;max-width:500px}
+.settings-card h3{font-size:16px;font-weight:700;color:#111827;margin-bottom:16px}
+.settings-row{margin-bottom:14px}
+.settings-row label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
+.settings-row .val{font-size:14px;color:#111827;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:8px 12px}
+
+/* CHAT SHELL REDESIGN */
+#chat-shell{display:none;flex:1;overflow:hidden;width:100%;height:100%;background:#f7faff}
+#chat-shell.active{display:flex !important}
+
+/* CHAT SIDEBAR */
+#chat-sidebar{width:260px;background:#fff;border-right:1px solid #e5e7eb;display:flex;flex-direction:column;flex-shrink:0}
+.chat-sb-header{padding:16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f3f4f6}
+.chat-sb-title{font-size:15px;font-weight:700;color:#111827}
+.new-chat-btn{width:32px;height:32px;border-radius:8px;border:1px solid #e5e7eb;display:flex;align-items:center;justify-content:center;color:#6b7280;background:#fff;transition:all 0.2s}
+.new-chat-btn:hover{background:#f3f4f6;color:#111827}
+.chat-sb-search{padding:12px 16px}
+.chat-sb-search input{width:100%;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px 12px;font-size:13px;outline:none}
+.chat-sb-search input:focus{border-color:#2563eb;background:#fff}
+#chat-sessions-list{flex:1;overflow-y:auto;padding:0 8px 16px 8px;display:flex;flex-direction:column;gap:16px}
+.chat-section{display:flex;flex-direction:column}
+.chat-section-title{font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;padding:0 8px;margin-bottom:6px}
+.session-item{padding:8px;border-radius:8px;font-size:13px;color:#374151;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;justify-content:space-between}
+.session-item:hover{background:#f3f4f6}
+.session-item.active-session{background:#eff6ff;color:#2563eb;font-weight:600}
+.session-options{opacity:0;color:#9ca3af;padding:4px;border-radius:4px}
+.session-item:hover .session-options{opacity:1}
+.session-options:hover{background:#e5e7eb;color:#111827}
+.chat-sb-user{padding:16px;border-top:1px solid #e5e7eb;display:flex;align-items:center;gap:10px}
+.chat-sb-user .avatar{width:36px;height:36px}
+.chat-sb-user .user-info{flex:1;overflow:hidden}
+.chat-sb-user .name{font-size:14px;font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-sb-user .email{font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* CHAT MAIN */
+#chat-main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#fff;margin:16px;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.04);border:1px solid #f3f4f6}
+.chat-header{height:64px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;padding:0 24px;gap:16px}
+.chat-header .back-btn{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#6b7280;background:#f9fafb}
+.chat-header .back-btn:hover{background:#f3f4f6}
+.chat-header-title{flex:1;display:flex;align-items:center;gap:12px}
+.chat-header-title h2{font-size:18px;font-weight:700;color:#111827}
+.chat-tag{background:#eff6ff;color:#2563eb;font-size:11px;font-weight:600;padding:4px 10px;border-radius:12px}
+.chat-header-actions{display:flex;align-items:center;gap:8px}
+.chat-header-actions button{width:36px;height:36px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;display:flex;align-items:center;justify-content:center;color:#6b7280}
+.chat-header-actions button:hover{background:#f9fafb}
+
+#messages-area{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:24px}
+.chat-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#9ca3af;text-align:center}
+.chat-empty svg{margin-bottom:16px;opacity:0.4}
+.msg{display:flex;flex-direction:column;max-width:85%}
+.msg.user{align-self:flex-end}
+.msg.ai{align-self:flex-start}
+.msg-bubble{padding:16px;border-radius:16px;font-size:15px;line-height:1.6;color:#111827}
+.msg.user .msg-bubble{background:#f3f4f6;border-bottom-right-radius:4px}
+.msg.ai .msg-bubble{background:#fff;border:1px solid #e5e7eb;border-bottom-left-radius:4px}
+
+.chat-input-wrapper{padding:24px;background:#fff}
+.chat-input-box{border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.02);overflow:hidden;transition:border-color 0.2s}
+.chat-input-box:focus-within{border-color:#2563eb;box-shadow:0 4px 12px rgba(37,99,235,0.08)}
+.chat-input-box textarea{width:100%;border:none;padding:16px;font-size:15px;resize:none;outline:none;max-height:150px;background:transparent}
+.chat-input-toolbar{display:flex;align-items:center;justify-content:space-between;padding:8px 16px 16px 16px}
+.chat-tools{display:flex;align-items:center;gap:8px}
+.chat-tool-btn{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;font-size:13px;font-weight:500;color:#6b7280;background:#f9fafb}
+.chat-tool-btn:hover{background:#f3f4f6;color:#111827}
+.chat-send-area{display:flex;align-items:center;gap:12px}
+.chat-send-btn{width:40px;height:40px;border-radius:10px;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;transition:background 0.2s}
+.chat-send-btn:hover{background:#1d4ed8}
+.chat-disclaimer{text-align:center;font-size:12px;color:#9ca3af;margin-top:16px}
+
+/* CHAT RIGHT PANEL */
+#chat-right-panel{width:280px;background:#fff;border-left:1px solid #e5e7eb;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.cr-section{padding:24px 20px;border-bottom:1px solid #f3f4f6}
+.cr-title{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:700;color:#111827;margin-bottom:16px}
+.cr-select{width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;background:#f9fafb;margin-bottom:16px}
+.tools-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tool-card{background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:12px;text-align:center;cursor:pointer;transition:all 0.2s}
+.tool-card:hover{background:#fff;border-color:#2563eb;box-shadow:0 4px 12px rgba(37,99,235,0.08)}
+.tool-card svg{color:#2563eb;margin-bottom:8px}
+.tool-card span{display:block;font-size:11px;font-weight:600;color:#374151}
+.info-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:12px}
+.info-row .lbl{color:#6b7280}.info-row .val{color:#111827;font-weight:500}
+.info-link{font-size:12px;color:#2563eb;font-weight:500;cursor:pointer}
+.attach-item{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #e5e7eb;border-radius:10px}
+.attach-icon{width:32px;height:32px;background:#fef2f2;color:#ef4444;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.attach-info{flex:1}
+.attach-name{font-size:13px;font-weight:600;color:#111827;margin-bottom:2px}
+.attach-size{font-size:11px;color:#9ca3af}
+.send-btn:hover{background:#1d4ed8}
+.attach-btn{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#9ca3af}
+.attach-btn:hover{background:#f3f4f6;color:#6b7280}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;padding:28px;width:460px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:700;color:#111827;margin-bottom:20px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
+.form-group input,.form-group textarea,.form-group select{width:100%;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-size:14px;outline:none;color:#111827;background:#f9fafb}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:#2563eb;background:#fff}
+.form-group textarea{resize:vertical;min-height:80px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.btn-cancel{padding:10px 20px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-weight:600;color:#374151}
+.btn-cancel:hover{background:#f3f4f6}
+.btn-primary{padding:10px 20px;background:#2563eb;color:#fff;border-radius:10px;font-size:14px;font-weight:600}
+.btn-primary:hover{background:#1d4ed8}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:#111827;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;opacity:0;transition:all 0.3s;z-index:9999;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* INFO MODAL */
+#info-modal .modal{max-width:400px}
+/* PROJECT SELECT MODAL */
+#project-select-modal .modal{max-width:500px}
+.ps-list{max-height:200px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:16px}
+.ps-item{padding:12px;border-bottom:1px solid #e5e7eb;cursor:pointer;transition:background 0.2s}
+.ps-item:last-child{border-bottom:none}
+.ps-item:hover{background:#f9fafb}
+.ps-item.selected{background:#eff6ff;border-color:#bfdbfe}
+.ps-item-name{font-size:14px;font-weight:700;color:#111827;margin-bottom:4px}
+.ps-item-desc{font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ps-or{text-align:center;font-size:14px;color:#9ca3af;margin:16px 0;position:relative}
+.ps-or::before,.ps-or::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:#e5e7eb}
+.ps-or::before{left:0}.ps-or::after{right:0}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <a href="mode-selection.html" class="logo">
+    <div class="logo-box">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="#fff"/><rect x="11" y="1" width="6" height="6" rx="1.5" fill="#fff"/><rect x="1" y="11" width="6" height="6" rx="1.5" fill="#fff"/><rect x="11" y="11" width="6" height="6" rx="1.5" fill="#fff"/></svg>
+    </div>
+    <span class="logo-text">AOS</span>
+  </a>
+  <button id="hamburger-btn" onclick="toggleSidebar()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="search-wrap">
+    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" placeholder="Search projects, files...">
+  </div>
+  <div class="right">
+    <span class="ai-badge">AI Ready</span>
+    <button class="icon-btn" title="Notifications">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </button>
+    <button class="icon-btn" title="Help">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </button>
+    <button id="user-btn" onclick="toggleUserDropdown()">
+      <div class="avatar user-avatar" id="topbar-avatar" data-avatar="true">U</div>
+      <span id="topbar-name" class="username" data-username="true">User</span>
+      <svg class="chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- USER DROPDOWN -->
+<div id="user-dropdown">
+  <div class="dd-item">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
+  </div>
+  <div class="dd-item" onclick="switchView('settings');closeDropdown()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Settings
+  </div>
+  <div class="dd-sep"></div>
+  <div class="dd-item danger" onclick="performLogout()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    Sign Out
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app-shell">
+  <!-- SIDEBAR -->
+  <div id="main-sidebar">
+    <nav class="sidebar-nav">
+      <div class="nav-item active" id="nav-dashboard" onclick="switchView('dashboard')">
+        <span style="font-size:18px;margin-right:4px">🏠</span> <span class="nav-text">Dashboard</span>
+      </div>
+      <div class="nav-item" id="nav-projects" onclick="switchView('projects')">
+        <span style="font-size:18px;margin-right:4px">📁</span> <span class="nav-text">Projects</span>
+      </div>
+      <a class="nav-item" href="ide.html" id="nav-developer">
+        <span style="font-size:18px;margin-right:4px">💻</span> <span class="nav-text">Code Review</span>
+      </a>
+      <a class="nav-item" href="#" onclick="openChatStartModal(event); return false;" id="nav-chat">
+        <span style="font-size:18px;margin-right:4px">💬</span> <span class="nav-text">AI Chat</span>
+      </a>
+      <a class="nav-item" href="deploy.html" id="nav-deploy">
+        <span style="font-size:18px;margin-right:4px">🚀</span> <span class="nav-text">Deploy</span>
+      </a>
+      <div class="nav-item" id="nav-settings" onclick="switchView('settings')">
+        <span style="font-size:18px;margin-right:4px">⚙️</span> <span class="nav-text">Settings</span>
+      </div>
+    </nav>
+  </div>
+
+  <!-- VIEW AREA -->
+  <div id="view-area">
+    <!-- DASHBOARD VIEW -->
+    <div class="view active" id="view-dashboard">
+      <h2 class="greeting" id="greeting-text">Welcome, User!</h2>
+      <p class="greeting-sub">What would you like to build today?</p>
+      <button class="create-btn" onclick="openCreateProject()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Create Project
+      </button>
+      <p class="section-title">AI Tools</p>
+      <div class="feature-grid">
+        <a class="feature-card" href="#" onclick="openChatStartModal(event); return false;">
+          <div class="fc-icon" style="background:#eff6ff;color:#2563eb">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h3>AI Chat</h3>
+          <p>Collaborate with AI to brainstorm, debug, and write code.</p>
+        </a>
+        <a class="feature-card" href="generation.html">
+          <div class="fc-icon" style="background:linear-gradient(135deg, #a855f7, #7e22ce); color:#fff; box-shadow: 0 4px 12px rgba(168,85,247,0.25);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <h3>Generation Studio</h3>
+          <p>Create images, videos, documents and more with AI.</p>
+        </a>
+        <a class="feature-card" href="ide.html">
+          <div class="fc-icon" style="background:linear-gradient(135deg, #22c55e, #15803d); color:#fff; box-shadow: 0 4px 12px rgba(34,197,94,0.25);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <h3>Development Studio</h3>
+          <p>Build, review and debug code with AI assistance.</p>
+        </a>
+        <a class="feature-card" href="deploy.html">
+          <div class="fc-icon" style="background:linear-gradient(135deg, #f97316, #c2410c); color:#fff; box-shadow: 0 4px 12px rgba(249,115,22,0.25);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><path d="M21 16v5h-5"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+          </div>
+          <h3>Publish &amp; Deploy</h3>
+          <p>Deploy your projects to the web in minutes.</p>
+        </a>
+      </div>
+      <div class="bottom-grid">
+        <div class="dash-card">
+          <h3>Recent Projects</h3>
+          <div id="dash-projects"></div>
+        </div>
+        <div class="dash-card">
+          <h3>Recent Activity</h3>
+          <div class="empty-state">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <p>No activity yet</p>
+          </div>
+        </div>
+        <div class="dash-card">
+          <h3>AI Usage</h3>
+          <div class="empty-state">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            <p>No usage data yet</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROJECTS VIEW -->
+    <div class="view" id="view-projects">
+      <div class="view-header">
+        <h2>Projects</h2>
+        <button class="create-btn" onclick="openCreateProject()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Project
+        </button>
+      </div>
+      <div class="projects-grid" id="projects-grid"></div>
+    </div>
+
+    <!-- DEVELOPER VIEW -->
+    <div class="view" id="view-developer">
+      <div class="view-header"><h2>Code Review Tools</h2></div>
+      <div class="feature-grid">
+          <a class="feature-card" href="#" onclick="openChatStartModal(event); return false;">
+            <div class="fc-icon" style="background:#eff6ff;color:#2563eb">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <h3>AI Chat</h3>
+            <p>Debug and brainstorm with context-aware AI</p>
+          </a>
+        <a class="feature-card" href="generation.html">
+          <div class="fc-icon" style="background:linear-gradient(135deg, #a855f7, #7e22ce); color:#fff; box-shadow: 0 4px 12px rgba(168,85,247,0.25);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <h3>Generation Studio</h3>
+          <p>Generate code, docs and assets with AI.</p>
+        </a>
+        <a class="feature-card" href="ide.html">
+          <div class="fc-icon" style="background:linear-gradient(135deg, #22c55e, #15803d); color:#fff; box-shadow: 0 4px 12px rgba(34,197,94,0.25);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          </div>
+          <h3>Development Studio</h3>
+          <p>Build and debug with full AI assistance.</p>
+        </a>
+        <a class="feature-card" href="deploy.html">
+          <div class="fc-icon" style="background:linear-gradient(135deg, #f97316, #c2410c); color:#fff; box-shadow: 0 4px 12px rgba(249,115,22,0.25);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><path d="M21 16v5h-5"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+          </div>
+          <h3>Publish &amp; Deploy</h3>
+          <p>Deploy projects to production easily.</p>
+        </a>
+      </div>
+    </div>
+
+    <!-- SETTINGS VIEW -->
+    <div class="view" id="view-settings">
+      <div class="view-header"><h2>Settings</h2></div>
+      <div class="settings-card">
+        <h3>Account Information</h3>
+        <div class="settings-row">
+          <label>Full Name</label>
+          <div class="val username" id="settings-name" data-username="true">—</div>
+        </div>
+        <div class="settings-row">
+          <label>Email Address</label>
+          <div class="val user-email" id="settings-email" data-email="true">—</div>
+        </div>
+        <div class="settings-row">
+          <label>User ID</label>
+          <div class="val" id="settings-uid">—</div>
+        </div>
+      </div>
+      <!-- CHAT SHELL -->
+  <div id="chat-shell">
+    <div id="chat-sidebar">
+      <div class="chat-sb-header">
+        <span class="chat-sb-title">Conversations</span>
+        <button class="new-chat-btn" onclick="startNewChat()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+      <div class="chat-sb-search">
+        <input type="text" placeholder="Search in chat...">
+      </div>
+      <div id="chat-sessions-list">
+        <!-- Dynamically populated -->
+      </div>
+      <div class="chat-sb-user" onclick="toggleDropdown()">
+        <div class="avatar" id="chat-sb-avatar">U</div>
+        <div class="user-info">
+          <div class="name" id="chat-sb-name">User Name</div>
+          <div class="email" id="chat-sb-email">user@example.com</div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    
+    <div id="chat-main">
+      <div class="chat-header">
+        <button class="back-btn" onclick="switchView('dashboard')" title="Back to dashboard">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="chat-header-title">
+          <h2 id="current-project-title">Project Name</h2>
+          <span class="chat-tag">Development</span>
+        </div>
+        <div class="chat-header-actions">
+          <button><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+          <button><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
+          <button><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+        </div>
+      </div>
+      
+      <div id="messages-area">
+        <div class="chat-empty" id="chat-empty-state">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <p style="font-size:16px;font-weight:600;color:#374151">How can I help you today?</p>
+        </div>
+      </div>
+      
+      <div class="chat-input-wrapper">
+        <div class="chat-input-box">
+          <textarea id="chat-input" placeholder="Ask anything... (Shift + Enter for new line)" rows="1" onkeydown="handleChatKey(event)" oninput="autoResize(this)"></textarea>
+          <div class="chat-input-toolbar">
+            <div class="chat-tools">
+              <button class="chat-tool-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg> Attach File</button>
+              <button class="chat-tool-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Upload Image</button>
+              <button class="chat-tool-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg> Voice Input</button>
+            </div>
+            <div class="chat-send-area">
+              <select class="cr-select" style="margin:0;padding:6px 12px;width:auto">
+                <option>GPT-4o</option>
+                <option>Claude 3.5</option>
+                <option>Gemini Pro</option>
+              </select>
+              <button class="chat-send-btn" onclick="sendChatMessage()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="chat-disclaimer">AOS can make mistakes. Please verify important information.</div>
+      </div>
+    </div>
+    
+    <div id="chat-right-panel">
+      <div class="cr-section">
+        <div class="cr-title">
+          <span><svg style="vertical-align:-2px;margin-right:6px" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> AI Assistant</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>
+        </div>
+        <label style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:8px;display:block">Model</label>
+        <select class="cr-select">
+          <option>GPT-4o</option>
+          <option>Claude 3.5 Sonnet</option>
+        </select>
+        <div class="tools-grid">
+          <div class="tool-card"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg><span>Code Generation</span></div>
+          <div class="tool-card"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg><span>Explain Code</span></div>
+          <div class="tool-card"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span>Fix Bug</span></div>
+          <div class="tool-card"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l2-9 4 18 2-9h4"/></svg><span>Refactor Code</span></div>
+          <div class="tool-card"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>Optimize Code</span></div>
+          <div class="tool-card"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span>Write Tests</span></div>
+        </div>
+      </div>
+      <div class="cr-section">
+        <div class="cr-title">Conversation Info</div>
+        <div class="info-row"><span class="lbl">Created</span><span class="val">Today, 2:30 PM</span></div>
+        <div class="info-row"><span class="lbl">Model</span><span class="val">GPT-4o</span></div>
+        <div class="info-row"><span class="lbl">Messages</span><span class="val">2</span></div>
+        <div class="info-row"><span class="lbl">Tokens Used</span><span class="val">1,245</span></div>
+        <div class="info-link" style="margin-top:12px">View full details →</div>
+      </div>
+      <div class="cr-section">
+        <div class="cr-title">Attachments (1)</div>
+        <div class="attach-item">
+          <div class="attach-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <div class="attach-info">
+            <div class="attach-name">requirements.pdf</div>
+            <div class="attach-size">120 KB</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT START MODAL -->
+<div class="modal-overlay" id="chat-start-modal">
+  <div class="modal" style="max-width:460px; position:relative;">
+    <button onclick="closeChatStartModal()" style="position:absolute; top:20px; right:20px; color:#9ca3af; background:none; border:none; cursor:pointer;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+    
+    <h2>Start a Chat</h2>
+    
+    <!-- Tab Headers (Buttons) -->
+    <div style="display:flex; gap:12px; margin-bottom: 24px;">
+      <button id="tab-new-proj" onclick="switchChatStartTab('new')" style="flex:1; padding:10px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; background:#2563eb; color:#fff; border:1px solid #2563eb;">New Project</button>
+      <button id="tab-exist-proj" onclick="switchChatStartTab('exist')" style="flex:1; padding:10px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; background:#fff; color:#374151; border:1px solid #e5e7eb;">Existing Project</button>
+    </div>
+    
+    <!-- Tab Content: New Project -->
+    <div id="chat-start-new" style="display:block">
+      <div class="form-group">
+        <label>Project Name <span style="color:#ef4444">*</span></label>
+        <input type="text" id="chat-new-proj-name" placeholder="e.g. E-commerce App">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="chat-new-proj-desc" placeholder="Brief details about what you want to build..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" style="width:100%" onclick="submitChatStartNew()">Create</button>
+      </div>
+    </div>
+    
+    <!-- Tab Content: Existing Project -->
+    <div id="chat-start-exist" style="display:none">
+      <div class="ps-list" id="chat-exist-list" style="margin-bottom:0">
+        <!-- populated dynamically -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE PROJECT MODAL -->
+<div class="modal-overlay" id="create-modal">
+  <div class="modal">
+    <h2>Create New Project</h2>
+    <div class="form-group">
+      <label>Project Name <span style="color:#ef4444">*</span></label>
+      <input type="text" id="proj-name" placeholder="My Awesome App">
+    </div>
+    <div class="form-group">
+      <label>Description</label>
+      <textarea id="proj-desc" placeholder="Brief description of your project..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Technology Stack</label>
+      <input type="text" id="proj-tech" placeholder="React, Node.js, MongoDB...">
+    </div>
+    <div class="form-group">
+      <label>Deploy URL</label>
+      <input type="url" id="proj-url" placeholder="https://myapp.vercel.app">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCreateProject()">Cancel</button>
+      <button class="btn-primary" onclick="submitCreateProject()">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECT SELECT MODAL (FOR CHAT) -->
+<div class="modal-overlay" id="project-select-modal">
+  <div class="modal">
+    <h2>Select Project for Chat</h2>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Chats are tied to a specific project. Select an existing project or create a new one.</p>
+    
+    <div class="ps-list" id="ps-list">
+      <!-- Populated dynamically -->
+    </div>
+
+    <div class="ps-or">OR</div>
+    
+    <div class="form-group">
+      <label>New Project Name</label>
+      <input type="text" id="new-chat-proj-name" placeholder="e.g. E-commerce App">
+    </div>
+    <div class="form-group">
+      <label>New Project Description</label>
+      <input type="text" id="new-chat-proj-desc" placeholder="What is it about?">
+    </div>
+    
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeProjectSelectModal()">Cancel</button>
+      <button class="btn-primary" onclick="submitProjectSelect()">Start Chatting</button>
+    </div>
+  </div>
+</div>
+
+<!-- INFO MODAL -->
+<div class="modal-overlay" id="info-modal">
+  <div class="modal">
+    <h2 id="info-modal-title">Info</h2>
+    <p id="info-modal-body"></p>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeInfoModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ===== FRONTEND with Auth — localStorage for data, Supabase for auth ===== */
+
+const SUPABASE_URL = 'https://gdqapoopqijohrtovjza.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcWFwb29wcWlqb2hydG92anphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MjcyNzAsImV4cCI6MjEwMDUwMzI3MH0.mQsxKSmGBC3EfGLbuG2c5zAAzJKKIkq8wzsKzoO8oyI';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let cachedProjects = [];
+let currentUser = null;
+let currentChatProjectId = null;
+let chatSessions = [];
+let activeChatIndex = -1;
+let currentMessages = [];
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function genId() {
+  return 'proj_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+}
+
+/* ---------- localStorage helpers ---------- */
+function saveProjectsToStorage() {
+  if (!currentUser) return;
+  localStorage.setItem('aos_projects_' + currentUser.id, JSON.stringify(cachedProjects));
+}
+function loadProjectsFromStorage() {
+  if (!currentUser) return;
+  try {
+    cachedProjects = JSON.parse(localStorage.getItem('aos_projects_' + currentUser.id)) || [];
+  } catch(e) { cachedProjects = []; }
+}
+
+/* ---------- Init ---------- */
+async function initUser() {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error || !session) { window.location.href = 'index.html'; return; }
+  
+  currentUser = session.user;
+  
+  const name = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email?.split('@')[0] || 'User';
+  const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'U';
+  const avatarUrl = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture;
+
+  ['user-avatar', 'user-btn-avatar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      if (avatarUrl) {
+        el.innerHTML = `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+        el.style.background = 'transparent';
+      } else {
+        el.textContent = initials;
+      }
+    }
+  });
+
+  const nameEl = document.getElementById('user-name');
+  const emailEl = document.getElementById('user-email');
+  if (nameEl) nameEl.textContent = name;
+  if (emailEl) emailEl.textContent = currentUser.email || '';
+
+  loadProjectsFromStorage();
+  renderDashProjects();
+}
+
+function loadProjects() { return cachedProjects; }
+
+/* ---------- View switching ---------- */
+function switchView(name) {
+  if (name === 'chat') {
+    document.getElementById('app-shell').style.display = 'none';
+    document.getElementById('chat-shell').classList.add('active');
+    return;
+  }
+  document.getElementById('app-shell').style.display = 'flex';
+  document.getElementById('chat-shell').classList.remove('active');
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const v = document.getElementById('view-' + name);
+  if (v) v.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const nav = document.getElementById('nav-' + name);
+  if (nav) nav.classList.add('active');
+  if (name === 'dashboard') renderDashProjects();
+  if (name === 'projects') renderProjectsView();
+}
+
+function toggleSidebar() {
+  document.getElementById('main-sidebar').classList.toggle('collapsed');
+}
+
+function toggleChatSidebar() {
+  document.getElementById('chat-sidebar').classList.toggle('expanded');
+}
+
+/* ---------- Dashboard projects ---------- */
+function renderDashProjects() {
+  const projects = loadProjects();
+  const el = document.getElementById('dash-projects');
+  if (!projects.length) {
+    el.innerHTML = '<div class="empty-state"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><p>No projects yet</p></div>';
+    return;
+  }
+  el.innerHTML = projects.slice(0,3).map((p,i) => `
+    <div class="proj-item">
+      <div><div class="proj-item-name">${esc(p.name)}</div><div class="proj-item-tech">${esc(p.tech_stack||'')}</div></div>
+      <button class="proj-item-del" onclick="deleteProject(${i})" title="Delete">✕</button>
+    </div>`).join('');
+}
+
+function renderProjectsView() {
+  const projects = loadProjects();
+  const el = document.getElementById('projects-grid');
+  if (!projects.length) {
+    el.innerHTML = '<div class="empty-state" style="grid-column:1/-1;padding:40px"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg><p>No projects yet. Create your first project!</p></div>';
+    return;
+  }
+  el.innerHTML = projects.map((p,i) => `
+    <div class="project-card">
+      <button class="pc-del" onclick="deleteProject(${i})" title="Delete">✕</button>
+      <h3>${esc(p.name)}</h3>
+      <p class="pc-desc">${esc(p.description||'No description')}</p>
+      ${p.tech_stack ? `<span class="pc-tech">${esc(p.tech_stack)}</span>` : ''}
+      ${p.deploy_url ? `<a class="pc-url" href="${esc(p.deploy_url)}" target="_blank">${esc(p.deploy_url)}</a>` : ''}
+    </div>`).join('');
+}
+
+/* ---------- Create project (dashboard modal) ---------- */
+function openCreateProject() {
+  document.getElementById('proj-name').value = '';
+  document.getElementById('proj-desc').value = '';
+  document.getElementById('proj-tech').value = '';
+  document.getElementById('proj-url').value = '';
+  document.getElementById('create-modal').classList.add('open');
+}
+
+function closeCreateProject() {
+  document.getElementById('create-modal').classList.remove('open');
+}
+
+function submitCreateProject() {
+  const name = document.getElementById('proj-name').value.trim();
+  if (!name) { showToast('Project name is required'); return; }
+  const newProj = {
+    id: genId(),
+    name,
+    description: document.getElementById('proj-desc').value.trim(),
+    tech_stack: document.getElementById('proj-tech').value.trim(),
+    deploy_url: document.getElementById('proj-url').value.trim(),
+    created_at: new Date().toISOString()
+  };
+  cachedProjects.unshift(newProj);
+  saveProjectsToStorage();
+  closeCreateProject();
+  renderDashProjects();
+  renderProjectsView();
+  showToast('Project created!');
+}
+
+/* ---------- Project select modal (old chat flow) ---------- */
+let selectedChatProjectId = null;
+
+function openProjectSelectModal() {
+  const projects = loadProjects();
+  const listEl = document.getElementById('ps-list');
+  selectedChatProjectId = null;
+  document.getElementById('new-chat-proj-name').value = '';
+  document.getElementById('new-chat-proj-desc').value = '';
+  if (!projects.length) {
+    listEl.innerHTML = '<div style="padding:16px;text-align:center;color:#9ca3af;font-size:13px">No existing projects</div>';
+  } else {
+    listEl.innerHTML = projects.map(p => `
+      <div class="ps-item" id="ps-item-${p.id}" onclick="selectChatProject('${p.id}')">
+        <div class="ps-item-name">${esc(p.name)}</div>
+        <div class="ps-item-desc">${esc(p.description || 'No description')}</div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('project-select-modal').classList.add('open');
+}
+
+function closeProjectSelectModal() {
+  document.getElementById('project-select-modal').classList.remove('open');
+}
+
+function selectChatProject(id) {
+  selectedChatProjectId = id;
+  document.querySelectorAll('.ps-item').forEach(el => el.classList.remove('selected'));
+  const el = document.getElementById('ps-item-' + id);
+  if (el) el.classList.add('selected');
+}
+
+function submitProjectSelect() {
+  const newName = document.getElementById('new-chat-proj-name').value.trim();
+  const newDesc = document.getElementById('new-chat-proj-desc').value.trim();
+  if (newName) {
+    const newProj = { id: genId(), name: newName, description: newDesc, created_at: new Date().toISOString() };
+    cachedProjects.unshift(newProj);
+    saveProjectsToStorage();
+    selectedChatProjectId = newProj.id;
+    renderDashProjects();
+    renderProjectsView();
+  }
+  if (!selectedChatProjectId) { showToast('Please select or create a project'); return; }
+  closeProjectSelectModal();
+  window.location.href = 'chat.html?project_id=' + selectedChatProjectId;
+}
+
+/* ---------- Delete project ---------- */
+function deleteProject(i) {
+  const proj = cachedProjects[i];
+  if (!proj) return;
+  cachedProjects.splice(i, 1);
+  saveProjectsToStorage();
+  renderDashProjects();
+  renderProjectsView();
+  showToast('Project deleted');
+}
+
+/* ---------- In-page chat (chat-shell) ---------- */
+function loadChatSessionsFromDB() {
+  if (!currentChatProjectId || !currentUser) return;
+  try {
+    const all = JSON.parse(localStorage.getItem('aos_chats_' + currentUser.id + '_' + currentChatProjectId)) || [];
+    chatSessions = all;
+  } catch(e) { chatSessions = []; }
+  renderChatSidebar();
+  if (chatSessions.length > 0) openChatSession(0);
+  else startNewChat();
+}
+
+function saveChatSessionToDB(sessionIndex) {
+  if (sessionIndex < 0 || sessionIndex >= chatSessions.length || !currentUser) return;
+  localStorage.setItem('aos_chats_' + currentUser.id + '_' + currentChatProjectId, JSON.stringify(chatSessions));
+}
+
+function renderChatSidebar() {
+  const el = document.getElementById('chat-sessions-list');
+  if (!chatSessions.length) {
+    el.innerHTML = '<div style="padding:16px 10px;font-size:13px;color:#9ca3af;text-align:center">No conversations yet</div>';
+    return;
+  }
+  el.innerHTML = `
+    <div class="chat-section">
+      <div class="chat-section-title">Previous Chats</div>
+      ${chatSessions.map((s,i) => `
+        <div class="session-item${i===activeChatIndex?' active-session':''}" onclick="openChatSession(${i})">
+          <div style="flex:1;overflow:hidden;text-overflow:ellipsis">${esc(s.title||'Conversation '+(i+1))}</div>
+          <svg class="session-options" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+        </div>`).join('')}
+    </div>`;
+}
+
+function startNewChat() {
+  activeChatIndex = -1;
+  currentMessages = [];
+  const area = document.getElementById('messages-area');
+  area.innerHTML = '<div class="chat-empty" id="chat-empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>Start a conversation with AI</p></div>';
+  document.getElementById('chat-input').value = '';
+  renderChatSidebar();
+}
+
+function openChatSession(i) {
+  activeChatIndex = i;
+  currentMessages = chatSessions[i].messages || [];
+  const area = document.getElementById('messages-area');
+  if (!currentMessages.length) {
+    area.innerHTML = '<div class="chat-empty" id="chat-empty-state"><svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p style="font-size:16px;font-weight:600;color:#374151">How can I help you today?</p></div>';
+  } else {
+    area.innerHTML = currentMessages.map(m =>
+      `<div class="msg ${m.role}"><div class="msg-bubble">${esc(m.content)}</div></div>`).join('');
+    area.scrollTop = area.scrollHeight;
+  }
+  renderChatSidebar();
+}
+
+function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const emptyState = document.getElementById('chat-empty-state');
+  if (emptyState) emptyState.remove();
+  currentMessages.push({ role: 'user', content: text });
+  const area = document.getElementById('messages-area');
+  const userDiv = document.createElement('div');
+  userDiv.className = 'msg user';
+  userDiv.innerHTML = `<div class="msg-bubble">${esc(text)}</div>`;
+  area.appendChild(userDiv);
+  area.scrollTop = area.scrollHeight;
+  input.value = '';
+  autoResize(input);
+  setTimeout(() => {
+    const responses = [
+      'That\'s a great question! Let me help you with that.',
+      'I can assist with that. Here\'s what I suggest...',
+      'Interesting! Based on your request, I would recommend...',
+      'Sure! Here\'s a thoughtful response to your message.',
+      'I understand what you\'re looking for. Let me explain...'
+    ];
+    const reply = responses[Math.floor(Math.random() * responses.length)];
+    currentMessages.push({ role: 'ai', content: reply });
+    const aiDiv = document.createElement('div');
+    aiDiv.className = 'msg ai';
+    aiDiv.innerHTML = `<div class="msg-bubble">${esc(reply)}</div>`;
+    area.appendChild(aiDiv);
+    area.scrollTop = area.scrollHeight;
+    if (activeChatIndex === -1) {
+      const session = { id: genId(), title: text.slice(0,40) + (text.length>40?'...':''), messages: currentMessages };
+      chatSessions.unshift(session);
+      activeChatIndex = 0;
+      saveChatSessionToDB(0);
+    } else {
+      chatSessions[activeChatIndex].messages = currentMessages;
+      saveChatSessionToDB(activeChatIndex);
+    }
+    renderChatSidebar();
+  }, 800);
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+/* ---------- UI helpers ---------- */
+function toggleUserDropdown() {
+  document.getElementById('user-dropdown').classList.toggle('open');
+}
+
+function closeDropdown() {
+  document.getElementById('user-dropdown').classList.remove('open');
+}
+
+function showModal(title, body) {
+  document.getElementById('info-modal-title').textContent = title;
+  document.getElementById('info-modal-body').textContent = body;
+  document.getElementById('info-modal').classList.add('open');
+}
+
+function closeInfoModal() {
+  document.getElementById('info-modal').classList.remove('open');
+}
+
+async function performLogout() {
+  await supabase.auth.signOut();
+  window.location.href = 'index.html';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ---------- Click-outside handlers ---------- */
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('user-dropdown');
+  const btn = document.getElementById('user-btn');
+  if (dd.classList.contains('open') && !dd.contains(e.target) && !btn.contains(e.target)) closeDropdown();
+});
+
+document.getElementById('create-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeCreateProject();
+});
+
+document.getElementById('project-select-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeProjectSelectModal();
+});
+
+/* ========== CHAT START MODAL (AI Chat button) ========== */
+function openChatStartModal(e) {
+  if (e) e.preventDefault();
+  document.getElementById('chat-start-modal').classList.add('open');
+  switchChatStartTab('new');
+  loadChatExistProjects();
+}
+
+function closeChatStartModal() {
+  document.getElementById('chat-start-modal').classList.remove('open');
+}
+
+function switchChatStartTab(tab) {
+  const newBtn = document.getElementById('tab-new-proj');
+  const existBtn = document.getElementById('tab-exist-proj');
+  if (tab === 'new') {
+    newBtn.style.background = '#2563eb';
+    newBtn.style.color = '#fff';
+    newBtn.style.borderColor = '#2563eb';
+    existBtn.style.background = '#fff';
+    existBtn.style.color = '#374151';
+    existBtn.style.borderColor = '#e5e7eb';
+    document.getElementById('chat-start-new').style.display = 'block';
+    document.getElementById('chat-start-exist').style.display = 'none';
+  } else {
+    existBtn.style.background = '#2563eb';
+    existBtn.style.color = '#fff';
+    existBtn.style.borderColor = '#2563eb';
+    newBtn.style.background = '#fff';
+    newBtn.style.color = '#374151';
+    newBtn.style.borderColor = '#e5e7eb';
+    document.getElementById('chat-start-exist').style.display = 'block';
+    document.getElementById('chat-start-new').style.display = 'none';
+  }
+}
+
+function loadChatExistProjects() {
+  const listEl = document.getElementById('chat-exist-list');
+  loadProjectsFromStorage();
+  if (!cachedProjects.length) {
+    listEl.innerHTML = '<div style="padding:16px;text-align:center;color:#9ca3af;font-size:13px">No existing projects found. Create a new one!</div>';
+    return;
+  }
+  listEl.innerHTML = cachedProjects.map(p => `
+    <div class="ps-item" onclick="submitChatStartExist('${p.id}')">
+      <div class="ps-item-name">${esc(p.name)}</div>
+      <div class="ps-item-desc">${esc(p.description || 'No description')}</div>
+    </div>
+  `).join('');
+}
+
+function submitChatStartNew() {
+  const name = document.getElementById('chat-new-proj-name').value.trim();
+  const desc = document.getElementById('chat-new-proj-desc').value.trim();
+  if (!name) { showToast('Project Name is required.'); return; }
+
+  const newProj = { id: genId(), name: name, description: desc, created_at: new Date().toISOString() };
+  cachedProjects.unshift(newProj);
+  saveProjectsToStorage();
+
+  closeChatStartModal();
+  window.location.href = 'chat.html?project_id=' + newProj.id;
+}
+
+function submitChatStartExist(projectId) {
+  closeChatStartModal();
+  window.location.href = 'chat.html?project_id=' + projectId;
+}
+
+document.getElementById('chat-start-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeChatStartModal();
+});
+
+/* ---------- Boot ---------- */
+document.addEventListener('DOMContentLoaded', initUser);
+</script>
+</body>
+</html>

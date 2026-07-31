@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AOS — Sign In</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      background: #f4f7fb;
+      background-image: 
+        radial-gradient(circle at -10% -10%, #e0eaff 0%, transparent 50%),
+        radial-gradient(circle at 50% 110%, #e0eaff 0%, transparent 50%);
+      color: #111827;
+      overflow-x: hidden;
+    }
+
+    .container {
+      display: flex;
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* --- LEFT PANE --- */
+    .left-pane {
+      flex: 1;
+      padding: 60px 80px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 80px;
+    }
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      background: #2563eb;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .brand-logo svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: #fff;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .brand-text { display: flex; flex-direction: column; }
+    .brand-name { font-size: 26px; font-weight: 800; color: #111827; line-height: 1.1; letter-spacing: -0.5px; }
+    .brand-sub  { font-size: 13px; color: #6b7280; margin-top: 2px; font-weight: 500; }
+
+    .hero-content {
+      max-width: 480px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-content h1 {
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -1px;
+      margin-bottom: 24px;
+      color: #111827;
+    }
+
+    .hero-content h1 .highlight {
+      color: #2563eb;
+    }
+
+    .hero-content > p {
+      font-size: 16px;
+      color: #4b5563;
+      line-height: 1.6;
+      margin-bottom: 48px;
+      font-weight: 500;
+    }
+
+    .feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      background: #eff6ff;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #2563eb;
+      flex-shrink: 0;
+    }
+    
+    .feature-icon svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .feature-text h4 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+
+    .feature-text p {
+      font-size: 14px;
+      color: #6b7280;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    /* --- RIGHT PANE --- */
+    .right-pane {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 48px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.03);
+      border: 1px solid rgba(229,231,235,0.5);
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+    
+    .panel-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .panel-header h2 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #111827;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .panel-header p {
+      font-size: 15px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .error-msg, .success-msg {
+      display: none;
+      font-size: 14px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+    .error-msg { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+    .success-msg { background: #f0fdf4; border: 1px solid #bbf7d0; color: #16a34a; }
+
+    .field { margin-bottom: 20px; }
+
+    .field label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 8px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper .input-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: #9ca3af;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+      height: 52px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 0 44px 0 48px;
+      font-size: 15px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #111827;
+      background: #fff;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .input-wrapper input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 4px rgba(37,99,235,0.1);
+    }
+
+    .input-wrapper input::placeholder { color: #9ca3af; font-weight: 500; }
+
+    .input-wrapper .pwd-toggle {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #9ca3af;
+      display: flex;
+      align-items: center;
+      padding: 4px;
+      transition: color 0.2s;
+    }
+    .input-wrapper .pwd-toggle:hover { color: #2563eb; }
+
+    .input-wrapper input.no-right-pad { padding-right: 16px; }
+
+    .row-check {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .row-check label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4b5563;
+      cursor: pointer;
+    }
+
+    .row-check input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: #2563eb;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .forgot-link {
+      font-size: 14px;
+      font-weight: 600;
+      color: #2563eb;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .forgot-link:hover { color: #1d4ed8; }
+
+    .btn-primary {
+      width: 100%;
+      height: 52px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+    .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #e5e7eb;
+    }
+    .divider span { font-size: 13px; font-weight: 500; color: #6b7280; }
+
+    .social-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .btn-social {
+      flex: 1;
+      height: 52px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #374151;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-social:hover { background: #f9fafb; border-color: #d1d5db; }
+
+    .switch-panel {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: #6b7280;
+    }
+
+    .switch-panel a {
+      color: #2563eb;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .switch-panel a:hover { text-decoration: underline; }
+
+    .footer-links {
+      margin-top: 32px;
+      font-size: 13px;
+      color: #6b7280;
+      text-align: center;
+      font-weight: 500;
+    }
+    .footer-links a { color: #2563eb; text-decoration: none; }
+    .footer-links a:hover { text-decoration: underline; }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .left-pane { padding: 40px; }
+      .hero-content h1 { font-size: 40px; }
+    }
+    
+    @media (max-width: 860px) {
+      .container { flex-direction: column; }
+      .left-pane { display: none; }
+      .right-pane { padding: 20px; }
+      .card { padding: 32px 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- LEFT PANE -->
+    <div class="left-pane">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg viewBox="0 0 24 24"><path d="M12 3L20 21H4L12 3Z" fill="currentColor" stroke="none"/></svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">AOS</span>
+          <span class="brand-sub">AI Operating System</span>
+        </div>
+      </div>
+
+      <div class="hero-content">
+        <h1>Your AI Workspace<br><span class="highlight">All in One Place</span></h1>
+        <p>Chat with AI, write code, generate content, manage projects and deploy — all from a single intelligent workspace.</p>
+
+        <div class="feature-list">
+          <div class="feature-item">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            </div>
+            <div class="feature-text">
+              <h4>AI Powered IDE</h4>
+              <p>Code faster with intelligent assistance</p>
+            </div>
+          </div>
+          
+          <div class="feature-item">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6 6 3-6 3-3 6-3-6-6-3 6-3z"></path></svg>
+            </div>
+            <div class="feature-text">
+              <h4>Generate Anything</h4>
+              <p>Images, documents, videos and more</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+            </div>
+            <div class="feature-text">
+              <h4>Deploy Instantly</h4>
+              <p>One-click deployment to the cloud</p>
+            </div>
+          </div>
+
+          <div class="feature-item">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            </div>
+            <div class="feature-text">
+              <h4>All in One</h4>
+              <p>Everything you need in a single platform</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANE -->
+    <div class="right-pane">
+      <div class="card">
+        
+        <!-- Sign In Panel -->
+        <div id="panel-signin" class="panel active">
+          <div class="panel-header">
+            <h2>Welcome back 👋</h2>
+            <p>Sign in to continue to AOS</p>
+          </div>
+
+          <div id="signin-error" class="error-msg"></div>
+
+          <!-- Email -->
+          <div class="field">
+            <label for="signin-email">Email address</label>
+            <div class="input-wrapper">
+              <span class="input-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>
+              </span>
+              <input type="email" id="signin-email" placeholder="Enter your email address" autocomplete="email" />
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="field">
+            <label for="signin-password">Password</label>
+            <div class="input-wrapper">
+              <span class="input-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <input type="password" id="signin-password" placeholder="Enter your password" autocomplete="current-password" />
+              <button class="pwd-toggle" id="signin-pwd-toggle" type="button" onclick="togglePwd('signin-password','signin-pwd-toggle')" aria-label="Toggle password visibility">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember / Forgot -->
+          <div class="row-check">
+            <label>
+              <input type="checkbox" id="remember-me" />
+              Remember me
+            </label>
+            <a href="#" class="forgot-link">Forgot password?</a>
+          </div>
+
+          <!-- Sign In Button -->
+          <button class="btn-primary" id="signin-btn" onclick="handleSignIn()">
+            Sign In
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          </button>
+
+          <!-- Divider -->
+          <div class="divider"><span>or continue with</span></div>
+
+          <!-- Social Buttons -->
+          <div class="social-row">
+            <button class="btn-social" onclick="handleGoogleSignIn()">
+              <svg width="20" height="20" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
+              Google
+            </button>
+            <button class="btn-social" onclick="handleGitHubSignIn()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#111827">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+              GitHub
+            </button>
+          </div>
+
+          <div class="switch-panel">
+            Don't have an account? <a onclick="showPanel('signup')">Sign up</a>
+          </div>
+        </div>
+
+        <!-- Sign Up Panel -->
+        <div id="panel-signup" class="panel">
+          <div class="panel-header">
+            <h2>Create account 🚀</h2>
+            <p>Join AOS and start building today</p>
+          </div>
+
+          <div id="signup-error" class="error-msg"></div>
+          <div id="signup-success" class="success-msg"></div>
+
+          <!-- Full Name -->
+          <div class="field">
+            <label for="signup-name">Full name</label>
+            <div class="input-wrapper">
+              <span class="input-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+              <input type="text" id="signup-name" placeholder="Enter your full name" autocomplete="name" class="no-right-pad" />
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="field">
+            <label for="signup-email">Email address</label>
+            <div class="input-wrapper">
+              <span class="input-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg>
+              </span>
+              <input type="email" id="signup-email" placeholder="Enter your email address" autocomplete="email" />
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="field">
+            <label for="signup-password">Password</label>
+            <div class="input-wrapper">
+              <span class="input-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <input type="password" id="signup-password" placeholder="At least 8 characters" autocomplete="new-password" />
+              <button class="pwd-toggle" id="signup-pwd-toggle" type="button" onclick="togglePwd('signup-password','signup-pwd-toggle')" aria-label="Toggle password visibility">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Create Account Button -->
+          <button class="btn-primary" id="signup-btn" onclick="handleSignUp()" style="margin-top: 8px;">
+            Create Account
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          </button>
+
+          <div class="switch-panel" style="margin-top: 24px;">
+            Already have an account? <a onclick="showPanel('signin')">Sign in</a>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="footer-links">
+        By continuing, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://gdqapoopqijohrtovjza.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcWFwb29wcWlqb2hydG92anphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MjcyNzAsImV4cCI6MjEwMDUwMzI3MH0.mQsxKSmGBC3EfGLbuG2c5zAAzJKKIkq8wzsKzoO8oyI';
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const REDIRECT_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? window.location.origin + '/mode-selection.html'
+      : 'https://aos-ai-operating-systems.web.app/mode-selection.html';
+
+    function validateEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+
+    function showPanel(name) {
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-' + name).classList.add('active');
+    }
+
+    function togglePwd(inputId, btnId) {
+      const inp = document.getElementById(inputId);
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+    }
+
+    function showErr(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg; el.style.display = 'block';
+    }
+    function hideErr(id) { document.getElementById(id).style.display = 'none'; }
+    function showSuccess(id, msg) {
+      const el = document.getElementById(id);
+      el.textContent = msg; el.style.display = 'block';
+    }
+
+    async function handleSignIn() {
+      hideErr('signin-error');
+      const email = document.getElementById('signin-email').value.trim();
+      const pass  = document.getElementById('signin-password').value;
+      const btn   = document.getElementById('signin-btn');
+      if (!validateEmail(email)) { showErr('signin-error', 'Please enter a valid email address.'); return; }
+      if (!pass) { showErr('signin-error', 'Please enter your password.'); return; }
+      
+      const originalText = btn.innerHTML;
+      btn.textContent = 'Signing in…'; btn.disabled = true;
+      try {
+        const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+        if (error) {
+          showErr('signin-error', error.message.includes('Invalid') ? 'Incorrect email or password.' : error.message);
+          btn.innerHTML = originalText; btn.disabled = false;
+          return;
+        }
+        window.location.href = 'mode-selection.html';
+      } catch(e) {
+        showErr('signin-error', 'Something went wrong. Please try again.');
+        btn.innerHTML = originalText; btn.disabled = false;
+      }
+    }
+
+    async function handleSignUp() {
+      hideErr('signup-error');
+      document.getElementById('signup-success').style.display = 'none';
+      const name  = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim();
+      const pass  = document.getElementById('signup-password').value;
+      const btn   = document.getElementById('signup-btn');
+      
+      if (!name)  { showErr('signup-error', 'Please enter your full name.'); return; }
+      if (!validateEmail(email)) { showErr('signup-error', 'Please enter a valid email address.'); return; }
+      if (pass.length < 8) { showErr('signup-error', 'Password must be at least 8 characters.'); return; }
+      
+      const originalText = btn.innerHTML;
+      btn.textContent = 'Creating account…'; btn.disabled = true;
+      try {
+        const { data, error } = await sb.auth.signUp({ email, password: pass, options: { data: { full_name: name } } });
+        if (error) {
+          showErr('signup-error', error.message.includes('already') ? 'This email is already registered.' : error.message);
+          btn.innerHTML = originalText; btn.disabled = false;
+          return;
+        }
+        if (data.session) { window.location.href = 'mode-selection.html'; return; }
+        showSuccess('signup-success', '✓ Account created! Please check your email to confirm your account.');
+        btn.innerHTML = originalText; btn.disabled = false;
+      } catch(e) {
+        showErr('signup-error', 'Something went wrong. Please try again.');
+        btn.innerHTML = originalText; btn.disabled = false;
+      }
+    }
+
+    async function handleGoogleSignIn() {
+      hideErr('signin-error');
+      const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: REDIRECT_URL } });
+      if (error) showErr('signin-error', 'Google sign-in failed: ' + error.message);
+    }
+
+    async function handleGitHubSignIn() {
+      hideErr('signin-error');
+      const { error } = await sb.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: REDIRECT_URL } });
+      if (error) showErr('signin-error', 'GitHub sign-in failed: ' + error.message);
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) { window.location.href = 'mode-selection.html'; return; }
+
+      sb.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' && session) window.location.href = 'mode-selection.html';
+      });
+
+      document.querySelectorAll('input').forEach(inp => {
+        inp.addEventListener('keydown', e => {
+          if (e.key !== 'Enter') return;
+          const panel = inp.closest('.panel');
+          if (panel?.id === 'panel-signin') handleSignIn();
+          else if (panel?.id === 'panel-signup') handleSignUp();
+        });
+      });
+    });
+  </script>
+</body>
+</html>

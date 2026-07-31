@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AOS – Deploy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Inter',sans-serif;background:#f7faff;color:#111827}
+body{display:flex;flex-direction:column;overflow:hidden;height:100vh}
+button{cursor:pointer;border:none;background:none;font-family:inherit}
+input,textarea,select{font-family:inherit}
+a{text-decoration:none;color:inherit}
+
+/* TOPBAR */
+#topbar{height:56px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;z-index:100}
+#topbar .logo{display:flex;align-items:center;gap:8px;cursor:pointer;text-decoration:none}
+#topbar .logo-box{width:32px;height:32px;background:#2563eb;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#topbar .logo-text{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:16px;color:#111827}
+.breadcrumb{font-size:14px;color:#9ca3af;display:flex;align-items:center;gap:6px}
+.breadcrumb a{color:#9ca3af;text-decoration:none}
+.breadcrumb a:hover{color:#2563eb}
+.breadcrumb span{color:#374151;font-weight:500}
+.back-btn-top{display:flex;align-items:center;gap:6px;padding:6px 12px;background:#f3f4f6;border-radius:8px;font-size:13px;font-weight:600;color:#374151;text-decoration:none;margin-left:8px;transition:background 0.2s}
+.back-btn-top:hover{background:#e5e7eb}
+#topbar .right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.ai-badge{background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+.icon-btn{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#6b7280}
+.icon-btn:hover{background:#f3f4f6}
+.avatar{width:32px;height:32px;border-radius:50%;background:#2563eb;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0;cursor:pointer}
+#topbar-name{font-size:14px;font-weight:500;color:#111827}
+
+/* USER DROPDOWN */
+#user-dropdown{position:fixed;top:56px;right:12px;width:200px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12);z-index:999;display:none;padding:6px 0}
+#user-dropdown.open{display:block}
+.dd-item{display:flex;align-items:center;gap:10px;padding:10px 16px;font-size:14px;color:#374151;cursor:pointer}
+.dd-item:hover{background:#f9fafb}
+.dd-item.danger{color:#ef4444}
+.dd-sep{height:1px;background:#f3f4f6;margin:4px 0}
+
+/* APP SHELL */
+#app-shell{display:flex;flex:1;overflow:hidden}
+
+/* SIDEBAR */
+#main-sidebar{width:200px;background:#fff;border-right:1px solid #e5e7eb;display:flex;flex-direction:column;flex-shrink:0;transition:width 0.2s;overflow:hidden}
+#main-sidebar.collapsed{width:64px;align-items:center}
+#main-sidebar.collapsed .nav-text{display:none}
+#main-sidebar.collapsed .nav-item{padding:10px;justify-content:center}
+#main-sidebar.collapsed .nav-item span:first-child{margin-right:0 !important}
+.sidebar-nav{flex:1;padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:14px;font-weight:500;color:#374151;cursor:pointer;white-space:nowrap;text-decoration:none}
+.nav-item:hover{background:#f3f4f6}
+.nav-item.active{background:#eff6ff;color:#2563eb}
+.nav-item svg{flex-shrink:0}
+
+/* MAIN AREA */
+#main-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* PAGE HEADER */
+#page-header{background:#fff;border-bottom:1px solid #e5e7eb;padding:18px 24px;flex-shrink:0}
+#page-header h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:700;color:#111827;margin-bottom:2px}
+#page-header p{font-size:13px;color:#6b7280}
+
+/* STEPS BAR */
+#steps-bar{background:#fff;border-bottom:1px solid #e5e7eb;padding:0 24px;display:flex;align-items:center;height:52px;flex-shrink:0;gap:0}
+.step-item{display:flex;align-items:center;gap:8px;padding:0 16px 0 0;position:relative}
+.step-circle{width:26px;height:26px;border-radius:50%;border:2px solid #d1d5db;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#9ca3af;background:#fff;flex-shrink:0;transition:all 0.3s}
+.step-circle.done{background:#2563eb;border-color:#2563eb;color:#fff}
+.step-circle.active{border-color:#2563eb;color:#2563eb}
+.step-label{font-size:13px;font-weight:500;color:#9ca3af;white-space:nowrap}
+.step-label.active{color:#2563eb;font-weight:600}
+.step-label.done{color:#374151}
+.step-line{width:40px;height:2px;background:#e5e7eb;margin:0 8px;flex-shrink:0;transition:background 0.3s}
+.step-line.done{background:#2563eb}
+
+/* PHASES AREA */
+#phases-area{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:20px;padding:20px 24px;background:#f7faff}
+
+/* PHASE CARD */
+.phase-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden}
+.phase-header{background:#f9fafb;border-bottom:1px solid #e5e7eb;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.phase-header-left{display:flex;align-items:center;gap:10px}
+.phase-step-badge{background:#eff6ff;color:#2563eb;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700}
+.phase-title{font-size:14px;font-weight:700;color:#111827}
+.phase-body{padding:20px}
+
+/* PHASE 1 – CONNECT GITHUB */
+.ph1-cols{display:flex;gap:24px}
+.ph1-left{width:320px;flex-shrink:0}
+.ph1-right{flex:1}
+.gh-connect-box{border:1.5px dashed #d1d5db;border-radius:12px;padding:20px;text-align:center;margin-bottom:14px}
+.gh-icon{width:44px;height:44px;border-radius:10px;background:#111827;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+.gh-connect-text{font-size:14px;font-weight:600;color:#111827;margin-bottom:6px}
+.gh-connect-sub{font-size:12px;color:#9ca3af;margin-bottom:14px}
+.btn-dark{background:#111827;color:#fff;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-dark:hover{background:#1f2937}
+.or-divider{display:flex;align-items:center;gap:10px;margin:12px 0;color:#9ca3af;font-size:12px}
+.or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:#e5e7eb}
+.btn-outline{border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;color:#374151;width:100%;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-outline:hover{background:#f9fafb;border-color:#d1d5db}
+#token-form{display:none;margin-top:12px;display:flex;flex-direction:column;gap:10px}
+#token-form.visible{display:flex}
+#token-form input{border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 12px;font-size:13px;outline:none;color:#111827;background:#f9fafb;width:100%}
+#token-form input:focus{border-color:#2563eb;background:#fff}
+.btn-primary-sm{background:#2563eb;color:#fff;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;width:100%}
+.btn-primary-sm:hover{background:#1d4ed8}
+.checklist{display:flex;flex-direction:column;gap:8px}
+.check-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#374151}
+.check-icon{width:20px;height:20px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.your-projects-title{font-size:13px;font-weight:700;color:#111827;margin:16px 0 8px}
+.proj-chip{background:#f3f4f6;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:500;color:#374151;display:inline-flex;align-items:center;gap:6px;margin:3px}
+
+/* PHASE 2 – DEPLOYMENT */
+.platform-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.platform-card{border:1.5px solid #e5e7eb;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;transition:border-color 0.2s,box-shadow 0.2s}
+.platform-card:hover{border-color:#2563eb;box-shadow:0 4px 12px rgba(37,99,235,0.1)}
+.plat-top{display:flex;align-items:center;justify-content:space-between}
+.plat-info{display:flex;align-items:center;gap:10px}
+.plat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+.plat-name{font-size:14px;font-weight:700;color:#111827}
+.plat-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px}
+.badge-free{background:#d1fae5;color:#065f46}
+.badge-pro{background:#ede9fe;color:#5b21b6}
+.badge-scale{background:#dbeafe;color:#1e40af}
+.plat-desc{font-size:12px;color:#6b7280;line-height:1.5}
+.plat-tier{font-size:11px;color:#9ca3af}
+.plat-deploy-btn{background:#111827;color:#fff;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;width:100%;display:flex;align-items:center;justify-content:center;gap:6px}
+.plat-deploy-btn:hover{background:#1f2937}
+
+/* PHASE 3 – MOBILE */
+.mobile-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.mobile-card{border:1.5px solid #e5e7eb;border-radius:12px;padding:20px}
+.mobile-card h3{font-size:15px;font-weight:700;color:#111827;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.mobile-card p{font-size:13px;color:#6b7280;margin-bottom:14px;line-height:1.5}
+.feature-list{list-style:none;display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.feature-list li{font-size:12px;color:#374151;display:flex;align-items:center;gap:6px}
+.feature-list li::before{content:'✓';color:#2563eb;font-weight:700}
+.btn-mobile{background:#2563eb;color:#fff;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;width:100%;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-mobile:hover{background:#1d4ed8}
+
+/* BOTTOM BAR */
+#bottom-bar{background:#fff;border-top:1px solid #e5e7eb;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.bottom-left{font-size:13px;color:#9ca3af}
+.bottom-right{display:flex;gap:10px}
+.btn-cancel{padding:9px 18px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-weight:600;color:#374151}
+.btn-cancel:hover{background:#f3f4f6}
+.btn-save{padding:9px 18px;background:#2563eb;color:#fff;border-radius:10px;font-size:14px;font-weight:600}
+.btn-save:hover{background:#1d4ed8}
+
+/* MODALS */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;padding:28px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:700;color:#111827;margin-bottom:20px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px}
+.form-group input,.form-group select{width:100%;border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-size:14px;outline:none;color:#111827;background:#f9fafb}
+.form-group input:focus,.form-group select:focus{border-color:#2563eb;background:#fff}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+
+/* TERMINAL */
+.terminal{background:#111827;border-radius:10px;padding:16px;font-family:'Courier New',monospace;font-size:13px;color:#d1d5db;min-height:160px;max-height:240px;overflow-y:auto;margin-top:14px;line-height:1.7}
+.terminal .t-line{display:block}
+.terminal .t-prompt{color:#34d399}
+.terminal .t-output{color:#d1d5db}
+.terminal .t-success{color:#6ee7b7}
+.terminal .t-error{color:#fca5a5}
+.terminal .t-cursor{display:inline-block;width:8px;height:14px;background:#d1d5db;animation:blink 1s infinite;vertical-align:middle;margin-left:2px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* TOAST */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:#111827;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;opacity:0;transition:all 0.3s;z-index:9999;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* CONNECTED STATE */
+.gh-connected{background:#d1fae5;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:#065f46;display:none}
+.gh-connected.visible{display:flex}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div id="topbar">
+  <a href="mode-selection.html" class="logo">
+    <div class="logo-box">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" fill="#fff"/><rect x="11" y="1" width="6" height="6" rx="1.5" fill="#fff"/><rect x="1" y="11" width="6" height="6" rx="1.5" fill="#fff"/><rect x="11" y="11" width="6" height="6" rx="1.5" fill="#fff"/></svg>
+    </div>
+    <span class="logo-text">AOS</span>
+  </a>
+  <button id="hamburger-btn" onclick="toggleSidebar()" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;color:#374151;margin-right:12px">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="breadcrumb">
+    <a href="mode-selection.html">Dashboard</a>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    <a href="deploy.html">Deploy</a>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    <span>New Deployment</span>
+  </div>
+  <div class="right">
+    <span class="ai-badge">AI Ready</span>
+    <button class="icon-btn" title="Notifications">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    </button>
+    <div class="avatar" id="topbar-avatar" onclick="toggleDropdown()">U</div>
+    <span id="topbar-name" style="font-size:14px;font-weight:500;color:#111827;margin-left:4px"></span>
+  </div>
+</div>
+
+<!-- USER DROPDOWN -->
+<div id="user-dropdown">
+  <div class="dd-item">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Profile
+  </div>
+  <div class="dd-item" onclick="window.location.href='mode-selection.html'">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </div>
+  <div class="dd-sep"></div>
+  <div class="dd-item danger" onclick="performLogout()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    Sign Out
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="app-shell">
+  <!-- SIDEBAR -->
+  <div id="main-sidebar">
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="mode-selection.html">
+        <span style="font-size:18px;margin-right:4px">🏠</span> <span class="nav-text">Dashboard</span>
+      </a>
+      <a class="nav-item" href="mode-selection.html">
+        <span style="font-size:18px;margin-right:4px">📁</span> <span class="nav-text">Projects</span>
+      </a>
+      <a class="nav-item" href="ide.html">
+        <span style="font-size:18px;margin-right:4px">💻</span> <span class="nav-text">Code Review</span>
+      </a>
+      <a class="nav-item active" href="deploy.html">
+        <span style="font-size:18px;margin-right:4px">🚀</span> <span class="nav-text">Deploy</span>
+      </a>
+      <a class="nav-item" href="mode-selection.html">
+        <span style="font-size:18px;margin-right:4px">⚙️</span> <span class="nav-text">Settings</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- MAIN AREA -->
+  <div id="main-area">
+    <!-- PAGE HEADER -->
+    <div id="page-header">
+      <h2>Deploy Your Project</h2>
+      <p>Connect your repository and deploy to any platform in minutes</p>
+    </div>
+
+    <!-- STEPS BAR -->
+    <div id="steps-bar">
+      <div class="step-item">
+        <div class="step-circle active" id="step-circle-1">1</div>
+        <span class="step-label active" id="step-label-1">Connect GitHub</span>
+      </div>
+      <div class="step-line" id="step-line-1"></div>
+      <div class="step-item">
+        <div class="step-circle" id="step-circle-2">2</div>
+        <span class="step-label" id="step-label-2">Deploy</span>
+      </div>
+      <div class="step-line" id="step-line-2"></div>
+      <div class="step-item">
+        <div class="step-circle" id="step-circle-3">3</div>
+        <span class="step-label" id="step-label-3">Convert (Mobile App)</span>
+      </div>
+    </div>
+
+    <!-- PHASES AREA -->
+    <div id="phases-area">
+
+      <!-- PHASE 1 -->
+      <div class="phase-card">
+        <div class="phase-header">
+          <div class="phase-header-left">
+            <span class="phase-step-badge">STEP 1</span>
+            <span class="phase-title">Connect GitHub</span>
+          </div>
+          <div class="gh-connected visible" id="gh-connected-badge" style="display:none">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Connected
+          </div>
+        </div>
+        <div class="phase-body">
+          <div class="ph1-cols">
+            <div class="ph1-left">
+              <div class="gh-connect-box" id="gh-connect-box">
+                <div class="gh-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                </div>
+                <div class="gh-connect-text">Connect with GitHub</div>
+                <div class="gh-connect-sub">Link your GitHub account to deploy repositories</div>
+                <button class="btn-dark" onclick="connectGitHub()">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                  Add GitHub Connection
+                </button>
+                <div class="or-divider">or</div>
+                <button class="btn-outline" onclick="toggleTokenForm()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  Use Repository URL + Token
+                </button>
+                <div id="token-form">
+                  <input type="url" id="repo-url" placeholder="https://github.com/user/repo">
+                  <input type="password" id="repo-token" placeholder="Personal access token">
+                  <button class="btn-primary-sm" onclick="pushWithToken()">Connect Repository</button>
+                </div>
+              </div>
+            </div>
+            <div class="ph1-right">
+              <div class="checklist">
+                <div class="check-item">
+                  <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#065f46" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                  <span>Automatic deployments on every git push</span>
+                </div>
+                <div class="check-item">
+                  <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#065f46" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                  <span>Preview deployments for pull requests</span>
+                </div>
+                <div class="check-item">
+                  <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#065f46" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                  <span>Branch-based environment management</span>
+                </div>
+                <div class="check-item">
+                  <div class="check-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#065f46" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+                  <span>Secure secrets and environment variables</span>
+                </div>
+              </div>
+              <div class="your-projects-title">Your Projects</div>
+              <div id="sidebar-proj-list">
+                <span style="font-size:12px;color:#9ca3af">No projects saved yet</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 2 -->
+      <div class="phase-card">
+        <div class="phase-header">
+          <div class="phase-header-left">
+            <span class="phase-step-badge">STEP 2</span>
+            <span class="phase-title">Deployment</span>
+          </div>
+        </div>
+        <div class="phase-body">
+          <div class="platform-grid">
+            <!-- Vercel -->
+            <div class="platform-card">
+              <div class="plat-top">
+                <div class="plat-info">
+                  <div class="plat-icon" style="background:#111827;color:#fff;font-size:13px;font-weight:800">▲</div>
+                  <span class="plat-name">Vercel</span>
+                </div>
+                <span class="plat-badge badge-free">Free</span>
+              </div>
+              <p class="plat-desc">Deploy frontend apps and serverless functions with zero config.</p>
+              <span class="plat-tier">Free · Pro $20/mo</span>
+              <button class="plat-deploy-btn" onclick="openDeployModal('Vercel')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+                Deploy to Vercel
+              </button>
+            </div>
+            <!-- Render -->
+            <div class="platform-card">
+              <div class="plat-top">
+                <div class="plat-info">
+                  <div class="plat-icon" style="background:#46e3b7;color:#fff">R</div>
+                  <span class="plat-name">Render</span>
+                </div>
+                <span class="plat-badge badge-free">Free</span>
+              </div>
+              <p class="plat-desc">Full-stack cloud with web services, databases and cron jobs.</p>
+              <span class="plat-tier">Free · Starter $7/mo</span>
+              <button class="plat-deploy-btn" onclick="openDeployModal('Render')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+                Deploy to Render
+              </button>
+            </div>
+            <!-- Firebase -->
+            <div class="platform-card">
+              <div class="plat-top">
+                <div class="plat-info">
+                  <div class="plat-icon" style="background:#ffca28;color:#111827">🔥</div>
+                  <span class="plat-name">Firebase</span>
+                </div>
+                <span class="plat-badge badge-free">Free</span>
+              </div>
+              <p class="plat-desc">Google's platform for web and mobile apps with hosting.</p>
+              <span class="plat-tier">Spark Free · Blaze Pay-as-go</span>
+              <button class="plat-deploy-btn" onclick="openDeployModal('Firebase')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+                Deploy to Firebase
+              </button>
+            </div>
+            <!-- Runway -->
+            <div class="platform-card">
+              <div class="plat-top">
+                <div class="plat-info">
+                  <div class="plat-icon" style="background:#6366f1;color:#fff">Rw</div>
+                  <span class="plat-name">Runway</span>
+                </div>
+                <span class="plat-badge badge-pro">Pro</span>
+              </div>
+              <p class="plat-desc">CI/CD automation for mobile and web application releases.</p>
+              <span class="plat-tier">Starter $49/mo</span>
+              <button class="plat-deploy-btn" onclick="openDeployModal('Runway')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+                Deploy to Runway
+              </button>
+            </div>
+            <!-- Cloudflare -->
+            <div class="platform-card">
+              <div class="plat-top">
+                <div class="plat-info">
+                  <div class="plat-icon" style="background:#f38020;color:#fff">CF</div>
+                  <span class="plat-name">Cloudflare</span>
+                </div>
+                <span class="plat-badge badge-scale">Scale</span>
+              </div>
+              <p class="plat-desc">Edge network with Pages, Workers and global CDN deployment.</p>
+              <span class="plat-tier">Free · Pro $20/mo</span>
+              <button class="plat-deploy-btn" onclick="openDeployModal('Cloudflare')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+                Deploy to Cloudflare
+              </button>
+            </div>
+            <!-- Netlify -->
+            <div class="platform-card">
+              <div class="plat-top">
+                <div class="plat-info">
+                  <div class="plat-icon" style="background:#00c7b7;color:#fff">N</div>
+                  <span class="plat-name">Netlify</span>
+                </div>
+                <span class="plat-badge badge-free">Free</span>
+              </div>
+              <p class="plat-desc">Jamstack platform with instant deploys and edge functions.</p>
+              <span class="plat-tier">Free · Pro $19/mo</span>
+              <button class="plat-deploy-btn" onclick="openDeployModal('Netlify')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+                Deploy to Netlify
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE 3 -->
+      <div class="phase-card">
+        <div class="phase-header">
+          <div class="phase-header-left">
+            <span class="phase-step-badge">STEP 3</span>
+            <span class="phase-title">Convert to Mobile App</span>
+          </div>
+        </div>
+        <div class="phase-body">
+          <div class="mobile-cols">
+            <div class="mobile-card">
+              <h3>
+                <span style="font-size:20px">📱</span>
+                Progressive Web App (PWA)
+              </h3>
+              <p>Convert your web app to an installable PWA that works offline and on any device.</p>
+              <ul class="feature-list">
+                <li>Offline support with service workers</li>
+                <li>Installable on home screen</li>
+                <li>Push notifications support</li>
+                <li>Works on iOS, Android and Desktop</li>
+              </ul>
+              <button class="btn-mobile" onclick="openPWAModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+                Generate PWA
+              </button>
+            </div>
+            <div class="mobile-card">
+              <h3>
+                <span style="font-size:20px">⚡</span>
+                Capacitor (Native App)
+              </h3>
+              <p>Wrap your web app in a native shell and publish to App Store and Google Play.</p>
+              <ul class="feature-list">
+                <li>Native iOS and Android builds</li>
+                <li>Access native device APIs</li>
+                <li>Publish to app stores</li>
+                <li>Native performance and feel</li>
+              </ul>
+              <button class="btn-mobile" onclick="openCapModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+                Generate Native App
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end phases-area -->
+
+    <!-- BOTTOM BAR -->
+    <div id="bottom-bar">
+      <span class="bottom-left">AOS Deploy Platform · All rights reserved</span>
+      <div class="bottom-right">
+        <button class="btn-cancel" onclick="window.location.href='mode-selection.html'">Back to Dashboard</button>
+        <button class="btn-save" onclick="showToast('Settings saved!')">Save Settings</button>
+      </div>
+    </div>
+  </div><!-- end main-area -->
+</div><!-- end app-shell -->
+
+<!-- DEPLOY MODAL -->
+<div class="modal-overlay" id="deploy-modal">
+  <div class="modal">
+    <h2 id="deploy-modal-title">Deploy to Platform</h2>
+    <div class="form-group">
+      <label>Project</label>
+      <select id="deploy-proj-select">
+        <option value="">Select a project...</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Branch</label>
+      <input type="text" id="deploy-branch" value="main" placeholder="main">
+    </div>
+    <div class="form-group">
+      <label>Build Command</label>
+      <input type="text" id="deploy-build" value="npm run build" placeholder="npm run build">
+    </div>
+    <div class="form-group">
+      <label>Output Directory</label>
+      <input type="text" id="deploy-output" value="dist" placeholder="dist">
+    </div>
+    <div class="terminal" id="deploy-terminal" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeDeployModal()">Cancel</button>
+      <button class="btn-primary-sm" style="width:auto;padding:10px 20px" onclick="runDeployment()">Deploy Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- PWA MODAL -->
+<div class="modal-overlay" id="pwa-modal">
+  <div class="modal">
+    <h2>Generate Progressive Web App</h2>
+    <div class="form-group">
+      <label>App Name</label>
+      <input type="text" id="pwa-name" placeholder="My Awesome App">
+    </div>
+    <div class="form-group">
+      <label>Short Name</label>
+      <input type="text" id="pwa-short" placeholder="MyApp">
+    </div>
+    <div class="form-group">
+      <label>Theme Color</label>
+      <input type="color" id="pwa-color" value="#2563eb" style="height:40px;padding:4px">
+    </div>
+    <div class="form-group">
+      <label>Display Mode</label>
+      <select id="pwa-display" style="border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-size:14px;outline:none;width:100%;background:#f9fafb">
+        <option value="standalone">Standalone</option>
+        <option value="fullscreen">Full Screen</option>
+        <option value="minimal-ui">Minimal UI</option>
+        <option value="browser">Browser</option>
+      </select>
+    </div>
+    <div class="terminal" id="pwa-terminal" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closePWAModal()">Cancel</button>
+      <button class="btn-primary-sm" style="width:auto;padding:10px 20px" onclick="generatePWA()">Generate PWA</button>
+    </div>
+  </div>
+</div>
+
+<!-- CAPACITOR MODAL -->
+<div class="modal-overlay" id="cap-modal">
+  <div class="modal">
+    <h2>Generate Native App with Capacitor</h2>
+    <div class="form-group">
+      <label>App Name</label>
+      <input type="text" id="cap-name" placeholder="My Native App">
+    </div>
+    <div class="form-group">
+      <label>App ID (Bundle ID)</label>
+      <input type="text" id="cap-id" placeholder="com.example.myapp">
+    </div>
+    <div class="form-group">
+      <label>Target Platforms</label>
+      <select id="cap-platforms" style="border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-size:14px;outline:none;width:100%;background:#f9fafb">
+        <option value="both">iOS + Android</option>
+        <option value="ios">iOS only</option>
+        <option value="android">Android only</option>
+      </select>
+    </div>
+    <div class="terminal" id="cap-terminal" style="display:none"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeCapModal()">Cancel</button>
+      <button class="btn-primary-sm" style="width:auto;padding:10px 20px" onclick="generateCapacitor()">Generate App</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://gdqapoopqijohrtovjza.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcWFwb29wcWlqb2hydG92anphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MjcyNzAsImV4cCI6MjEwMDUwMzI3MH0.mQsxKSmGBC3EfGLbuG2c5zAAzJKKIkq8wzsKzoO8oyI';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentPlatform = '';
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function initUser() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) { window.location.href = 'index.html'; return; }
+  const user = session.user;
+  const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User';
+  const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+  const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+
+  const avatarEl = document.getElementById('topbar-avatar');
+  if (avatarUrl) {
+    avatarEl.innerHTML = `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+    avatarEl.style.background = 'transparent';
+  } else {
+    avatarEl.textContent = initials;
+  }
+  document.getElementById('topbar-name').textContent = name;
+  loadProjects();
+}
+
+function toggleSidebar() {
+  document.getElementById('main-sidebar').classList.toggle('collapsed');
+}
+
+async function loadProjects() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+  const { data: projects, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+  if (error) { console.error('Error loading projects:', error); return; }
+  const listEl = document.getElementById('sidebar-proj-list');
+  const selectEl = document.getElementById('deploy-proj-select');
+  if (!projects || !projects.length) {
+    listEl.innerHTML = '<span style="font-size:12px;color:#9ca3af">No projects saved yet</span>';
+    selectEl.innerHTML = '<option value="">No projects — create one first</option>';
+    return;
+  }
+  listEl.innerHTML = projects.map(p => `<span class="proj-chip"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${esc(p.name)}</span>`).join('');
+  selectEl.innerHTML = '<option value="">Select a project...</option>' + projects.map((p,i) => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+}
+
+function connectGitHub() {
+  const box = document.getElementById('gh-connect-box');
+  box.innerHTML = '<div style="text-align:center;padding:12px"><div style="font-size:24px;margin-bottom:8px">⏳</div><p style="font-size:13px;color:#6b7280">Connecting to GitHub...</p></div>';
+  setTimeout(() => {
+    box.innerHTML = '<div style="background:#d1fae5;border-radius:10px;padding:16px;text-align:center"><div style="font-size:24px;margin-bottom:6px">✅</div><p style="font-size:14px;font-weight:700;color:#065f46;margin-bottom:4px">GitHub Connected!</p><p style="font-size:12px;color:#047857">Your repositories are now linked</p></div>';
+    document.getElementById('gh-connected-badge').style.display = 'flex';
+    advStep(2);
+    showToast('GitHub connected successfully!');
+  }, 1500);
+}
+
+function toggleTokenForm() {
+  const form = document.getElementById('token-form');
+  form.classList.toggle('visible');
+}
+
+function pushWithToken() {
+  const url = document.getElementById('repo-url').value.trim();
+  const token = document.getElementById('repo-token').value.trim();
+  if (!url || !token) { showToast('Please fill in both URL and token'); return; }
+  showToast('Repository connected via token!');
+  document.getElementById('gh-connected-badge').style.display = 'flex';
+  advStep(2);
+}
+
+function openDeployModal(platform) {
+  currentPlatform = platform;
+  document.getElementById('deploy-modal-title').textContent = 'Deploy to ' + platform;
+  document.getElementById('deploy-terminal').style.display = 'none';
+  document.getElementById('deploy-terminal').innerHTML = '';
+  document.getElementById('deploy-modal').classList.add('open');
+}
+
+function closeDeployModal() {
+  document.getElementById('deploy-modal').classList.remove('open');
+}
+
+function runDeployment() {
+  const terminal = document.getElementById('deploy-terminal');
+  terminal.style.display = 'block';
+  terminal.innerHTML = '';
+  const branch = document.getElementById('deploy-branch').value || 'main';
+  const build = document.getElementById('deploy-build').value || 'npm run build';
+  const output = document.getElementById('deploy-output').value || 'dist';
+  const lines = [
+    { text: `$ Initializing deployment to ${currentPlatform}...`, cls: 'prompt' },
+    { text: `  Cloning repository (branch: ${branch})`, cls: 'output' },
+    { text: `  Installing dependencies...`, cls: 'output' },
+    { text: `  Running: ${build}`, cls: 'output' },
+    { text: `  Build completed. Output: ${output}/`, cls: 'output' },
+    { text: `  Uploading assets to ${currentPlatform} CDN...`, cls: 'output' },
+    { text: `  Assigning domain and SSL certificate...`, cls: 'output' },
+    { text: `✓ Deployment successful! Your app is live.`, cls: 'success' },
+    { text: `  URL: https://your-app.${currentPlatform.toLowerCase()}.app`, cls: 'success' }
+  ];
+  let i = 0;
+  const addLine = () => {
+    if (i >= lines.length) {
+      advStep(3);
+      showToast(`Deployed to ${currentPlatform} successfully!`);
+      return;
+    }
+    const span = document.createElement('span');
+    span.className = `t-line t-${lines[i].cls}`;
+    span.textContent = lines[i].text;
+    terminal.appendChild(span);
+    terminal.scrollTop = terminal.scrollHeight;
+    i++;
+    setTimeout(addLine, 350);
+  };
+  addLine();
+}
+
+function openPWAModal() {
+  document.getElementById('pwa-terminal').style.display = 'none';
+  document.getElementById('pwa-terminal').innerHTML = '';
+  document.getElementById('pwa-modal').classList.add('open');
+}
+
+function closePWAModal() {
+  document.getElementById('pwa-modal').classList.remove('open');
+}
+
+function generatePWA() {
+  const name = document.getElementById('pwa-name').value.trim() || 'My App';
+  const terminal = document.getElementById('pwa-terminal');
+  terminal.style.display = 'block';
+  terminal.innerHTML = '';
+  const lines = [
+    { text: '$ Generating PWA manifest...', cls: 'prompt' },
+    { text: `  App Name: ${name}`, cls: 'output' },
+    { text: '  Creating service worker (sw.js)...', cls: 'output' },
+    { text: '  Generating app icons (192x192, 512x512)...', cls: 'output' },
+    { text: '  Writing manifest.json...', cls: 'output' },
+    { text: '  Configuring offline cache strategy...', cls: 'output' },
+    { text: `✓ PWA assets generated for "${name}"!`, cls: 'success' }
+  ];
+  let i = 0;
+  const addLine = () => {
+    if (i >= lines.length) { showToast('PWA generated!'); return; }
+    const span = document.createElement('span');
+    span.className = `t-line t-${lines[i].cls}`;
+    span.textContent = lines[i].text;
+    terminal.appendChild(span);
+    terminal.scrollTop = terminal.scrollHeight;
+    i++;
+    setTimeout(addLine, 300);
+  };
+  addLine();
+}
+
+function openCapModal() {
+  document.getElementById('cap-terminal').style.display = 'none';
+  document.getElementById('cap-terminal').innerHTML = '';
+  document.getElementById('cap-modal').classList.add('open');
+}
+
+function closeCapModal() {
+  document.getElementById('cap-modal').classList.remove('open');
+}
+
+function generateCapacitor() {
+  const name = document.getElementById('cap-name').value.trim() || 'My App';
+  const appId = document.getElementById('cap-id').value.trim() || 'com.example.app';
+  const platforms = document.getElementById('cap-platforms').value;
+  const terminal = document.getElementById('cap-terminal');
+  terminal.style.display = 'block';
+  terminal.innerHTML = '';
+  const lines = [
+    { text: '$ Initializing Capacitor project...', cls: 'prompt' },
+    { text: `  App: ${name} (${appId})`, cls: 'output' },
+    { text: '  Installing @capacitor/core...', cls: 'output' },
+    { text: '  Installing @capacitor/cli...', cls: 'output' },
+    ...(platforms !== 'android' ? [{ text: '  Adding iOS platform...', cls: 'output' }] : []),
+    ...(platforms !== 'ios' ? [{ text: '  Adding Android platform...', cls: 'output' }] : []),
+    { text: '  Syncing web assets...', cls: 'output' },
+    { text: '  Configuring native plugins...', cls: 'output' },
+    { text: `✓ Capacitor project ready! Open Xcode/Android Studio to build.`, cls: 'success' }
+  ];
+  let i = 0;
+  const addLine = () => {
+    if (i >= lines.length) { showToast('Capacitor project generated!'); return; }
+    const span = document.createElement('span');
+    span.className = `t-line t-${lines[i].cls}`;
+    span.textContent = lines[i].text;
+    terminal.appendChild(span);
+    terminal.scrollTop = terminal.scrollHeight;
+    i++;
+    setTimeout(addLine, 300);
+  };
+  addLine();
+}
+
+function advStep(n) {
+  for (let s = 1; s < n; s++) {
+    const circle = document.getElementById('step-circle-' + s);
+    const label = document.getElementById('step-label-' + s);
+    const line = document.getElementById('step-line-' + s);
+    if (circle) { circle.classList.remove('active'); circle.classList.add('done'); }
+    if (label) { label.classList.remove('active'); label.classList.add('done'); }
+    if (line) line.classList.add('done');
+  }
+  const activeCircle = document.getElementById('step-circle-' + n);
+  const activeLabel = document.getElementById('step-label-' + n);
+  if (activeCircle) activeCircle.classList.add('active');
+  if (activeLabel) activeLabel.classList.add('active');
+}
+
+function toggleDropdown() {
+  document.getElementById('user-dropdown').classList.toggle('open');
+}
+
+async function performLogout() {
+  await supabase.auth.signOut();
+  window.location.href = 'index.html';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('user-dropdown');
+  const av = document.getElementById('topbar-avatar');
+  if (dd.classList.contains('open') && !dd.contains(e.target) && !av.contains(e.target)) {
+    dd.classList.remove('open');
+  }
+});
+
+document.getElementById('deploy-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeDeployModal();
+});
+document.getElementById('pwa-modal').addEventListener('click', function(e) {
+  if (e.target === this) closePWAModal();
+});
+document.getElementById('cap-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeCapModal();
+});
+
+document.addEventListener('DOMContentLoaded', initUser);
+</script>
+</body>
+</html>
