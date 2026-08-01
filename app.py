@@ -3,6 +3,8 @@ from flask_cors import CORS
 import requests
 import traceback
 import os
+import base64
+from urllib.parse import quote
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -19,6 +21,13 @@ API_KEYS = {
     'openrouter': os.environ.get('OPENROUTER_API_KEY'),
     'mistral': os.environ.get('MISTRAL_API_KEY'),
     'cohere': os.environ.get('COHERE_API_KEY')
+}
+
+IMAGE_API_KEYS = {
+    'pollinations': os.environ.get('POLLINATIONS_API_KEY'),
+    'huggingface': os.environ.get('HF_TOKEN'),
+    'stability': os.environ.get('STABILITY_API_KEY'),
+    'fal': os.environ.get('FAL_KEY')
 }
 
 @app.route('/')
@@ -106,6 +115,72 @@ def chat():
     except Exception as e:
         traceback.print_exc()
         return jsonify({'error': 'An internal server error occurred.'}), 500
+
+@app.route('/api/generate/image', methods=['POST'])
+def generate_image():
+    """Generate an image through a server-side provider; provider keys never reach the browser."""
+    data = request.get_json(silent=True) or {}
+    prompt = (data.get('prompt') or '').strip()
+    provider = data.get('provider') or 'fal'
+    model = data.get('model') or ''
+    if not prompt:
+        return jsonify({'error': 'An image prompt is required.'}), 400
+    if provider not in IMAGE_API_KEYS:
+        return jsonify({'error': 'Unsupported image provider.'}), 400
+    if not IMAGE_API_KEYS[provider]:
+        return jsonify({'error': f'{provider.title()} is not configured on the server.'}), 503
+
+    try:
+        if provider == 'pollinations':
+            selected_model = model or 'flux'
+            response = requests.get(
+                f"https://gen.pollinations.ai/image/{quote(prompt, safe='')}?model={quote(selected_model)}",
+                headers={'Authorization': f"Bearer {IMAGE_API_KEYS['pollinations']}"}, timeout=90
+            )
+            response.raise_for_status()
+            content_type = response.headers.get('content-type', 'image/jpeg').split(';')[0]
+            encoded = base64.b64encode(response.content).decode('ascii')
+            return jsonify({'image_url': f'data:{content_type};base64,{encoded}', 'provider': 'pollinations', 'model': selected_model})
+
+        if provider == 'fal':
+            selected_model = model or 'fal-ai/flux/schnell'
+            response = requests.post(
+                f'https://fal.run/{selected_model}',
+                headers={'Authorization': f"Key {IMAGE_API_KEYS['fal']}", 'Content-Type': 'application/json'},
+                json={'prompt': prompt, 'num_images': 1, 'image_size': 'square_hd', 'enable_safety_checker': True},
+                timeout=90
+            )
+            response.raise_for_status()
+            image_url = (response.json().get('images') or [{}])[0].get('url')
+            if not image_url:
+                raise ValueError('fal did not return an image URL.')
+            return jsonify({'image_url': image_url, 'provider': 'fal', 'model': selected_model})
+
+        if provider == 'stability':
+            response = requests.post(
+                'https://api.stability.ai/v2beta/stable-image/generate/core',
+                headers={'authorization': f"Bearer {IMAGE_API_KEYS['stability']}", 'accept': 'image/*'},
+                files={'none': ''}, data={'prompt': prompt, 'output_format': 'webp'}, timeout=90
+            )
+            response.raise_for_status()
+            encoded = base64.b64encode(response.content).decode('ascii')
+            return jsonify({'image_url': f'data:image/webp;base64,{encoded}', 'provider': 'stability', 'model': 'stable-image-core'})
+
+        # Hugging Face's official client handles provider routing for text-to-image.
+        from huggingface_hub import InferenceClient
+        from io import BytesIO
+        client = InferenceClient(api_key=IMAGE_API_KEYS['huggingface'])
+        selected_model = model or 'black-forest-labs/FLUX.1-dev'
+        image = client.text_to_image(prompt=prompt, model=selected_model)
+        buffer = BytesIO()
+        image.save(buffer, format='PNG')
+        encoded = base64.b64encode(buffer.getvalue()).decode('ascii')
+        return jsonify({'image_url': f'data:image/png;base64,{encoded}', 'provider': 'huggingface', 'model': selected_model})
+    except requests.exceptions.RequestException as error:
+        detail = error.response.text[:300] if error.response is not None else str(error)
+        return jsonify({'error': f'Image provider request failed: {detail}'}), 502
+    except Exception as error:
+        return jsonify({'error': f'Image generation failed: {str(error)}'}), 502
 
 if __name__ == '__main__':
     app.run(port=5000, debug=os.getenv('FLASK_DEBUG') == '1')

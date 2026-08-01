@@ -197,6 +197,15 @@ a{text-decoration:none;color:inherit}
         </select>
       </div>
       <div class="form-group">
+        <label class="form-label">Image Model</label>
+        <select class="form-select" id="img-provider">
+          <option value="fal">fal · FLUX Schnell</option>
+          <option value="huggingface">Hugging Face · FLUX.1 Dev</option>
+          <option value="stability">Stability AI · Stable Image Core</option>
+          <option value="pollinations">Pollinations · FLUX</option>
+        </select>
+      </div>
+      <div class="form-group">
         <label class="form-label">Aspect Ratio</label>
         <select class="form-select" id="img-ratio">
           <option value="1:1">1:1 Square</option>
@@ -254,11 +263,11 @@ a{text-decoration:none;color:inherit}
       </button>
     </div>
     <div class="right-panel">
-      <h2>Preview</h2>
-      <div class="video-preview" id="vid-preview">
-        <div style="text-align:center">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:8px;opacity:0.4"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
-          <p>Video preview will appear here</p>
+      <h2>Gallery</h2>
+      <div id="vid-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px">
+        <div class="gallery-empty" id="vid-gallery-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:#9ca3af;text-align:center;flex:1">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.4"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <p>Your generated videos will appear here</p>
         </div>
       </div>
     </div>
@@ -291,9 +300,12 @@ a{text-decoration:none;color:inherit}
       </button>
     </div>
     <div class="right-panel">
-      <h2>Document Preview</h2>
-      <div class="doc-preview-area empty" id="doc-preview">
-        Document preview will appear here after generation...
+      <h2>Gallery</h2>
+      <div id="doc-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px">
+        <div class="gallery-empty" id="doc-gallery-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:#9ca3af;text-align:center;flex:1">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <p>Your generated documents will appear here</p>
+        </div>
       </div>
     </div>
   </div>
@@ -341,11 +353,11 @@ a{text-decoration:none;color:inherit}
       </button>
     </div>
     <div class="right-panel">
-      <h2>Slide Preview</h2>
-      <div class="slides-grid" id="slides-grid">
-        <div class="gallery-empty" style="grid-column:1/-1">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4;margin-bottom:8px"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-          <p style="font-size:13px;color:#9ca3af">Slides will appear here after generation</p>
+      <h2>Gallery</h2>
+      <div id="pres-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px">
+        <div class="gallery-empty" id="pres-gallery-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:#9ca3af;text-align:center;flex:1">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.4"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <p>Your generated presentations will appear here</p>
         </div>
       </div>
     </div>
@@ -442,16 +454,32 @@ function generateImage() {
 function generateVideo() {
   const prompt = document.getElementById('vid-prompt').value.trim();
   if (!prompt) { showToast('Please enter a prompt first'); return; }
+  const gallery = document.getElementById('vid-gallery');
   const btn = document.getElementById('vid-gen-btn');
   btn.disabled = true;
   btn.textContent = 'Generating...';
-  const preview = document.getElementById('vid-preview');
-  preview.innerHTML = '<div class="skeleton" style="width:100%;height:100%;border-radius:14px"></div>';
+  const emptyState = document.getElementById('vid-gallery-empty');
+  if (emptyState) emptyState.remove();
+  
+  const skelWrapper = document.createElement('div');
+  skelWrapper.className = 'skeleton';
+  skelWrapper.style.cssText = 'aspect-ratio:16/9;border-radius:12px;min-height:140px';
+  gallery.appendChild(skelWrapper);
+
   // API INTEGRATION POINT: Replace timeout with actual video generation API call
   setTimeout(() => {
+    skelWrapper.remove();
     const dur = document.getElementById('vid-duration').value;
     const res = document.getElementById('vid-res').value;
-    preview.innerHTML = `<div style="text-align:center;padding:20px"><div style="background:#1f2937;border-radius:10px;padding:20px;margin-bottom:12px"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div><p style="color:#9ca3af;font-size:13px">Video preview (${esc(dur)}s · ${esc(res)})</p><p style="color:#6b7280;font-size:12px;margin-top:4px">${esc(prompt.slice(0,60))}${prompt.length>60?'...':''}</p></div>`;
+    const colors = ['#1e3a8a', '#111827', '#1e40af', '#4f46e5', '#312e81'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    
+    const item = document.createElement('div');
+    item.className = 'gallery-img';
+    item.style.cssText = 'aspect-ratio:16/9; width:100%; height:auto; min-height:140px';
+    item.innerHTML = `<div style="background:${color};width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;padding:12px;text-align:center;position:relative"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg><span style="font-size:11px;color:#fff;font-weight:500;opacity:0.8">${esc(dur)}s · ${esc(res)}</span></div>`;
+    gallery.appendChild(item);
+    
     btn.disabled = false;
     btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate Video';
     showToast('Video generated!');
@@ -461,26 +489,29 @@ function generateVideo() {
 function generateDocument() {
   const prompt = document.getElementById('doc-prompt').value.trim();
   if (!prompt) { showToast('Please enter a prompt first'); return; }
+  const gallery = document.getElementById('doc-gallery');
   const btn = document.getElementById('doc-gen-btn');
   btn.disabled = true;
   btn.textContent = 'Generating...';
-  const preview = document.getElementById('doc-preview');
-  preview.classList.add('skeleton');
-  preview.classList.remove('empty');
-  preview.textContent = '';
+  const emptyState = document.getElementById('doc-gallery-empty');
+  if (emptyState) emptyState.remove();
+
+  const skelWrapper = document.createElement('div');
+  skelWrapper.className = 'skeleton';
+  skelWrapper.style.cssText = 'aspect-ratio:1;border-radius:12px;min-height:180px';
+  gallery.appendChild(skelWrapper);
+
   // API INTEGRATION POINT: Replace timeout with actual document generation API call
   setTimeout(() => {
-    preview.classList.remove('skeleton');
-    const docContent = [
-      `<strong style="font-size:18px;display:block;margin-bottom:16px">${esc(selectedDocType)} Document</strong>`,
-      `<p style="margin-bottom:12px;color:#6b7280;font-size:12px">Generated from prompt: "${esc(prompt.slice(0,80))}${prompt.length>80?'...':''}"</p>`,
-      '<hr style="border:none;border-top:1px solid #e5e7eb;margin-bottom:16px">',
-      '<p style="margin-bottom:10px">This is an AI-generated document based on your prompt. In a production environment, this would contain the actual content generated by your AI model.</p>',
-      '<p style="margin-bottom:10px">The document would include relevant sections, properly formatted text, and all the information requested in your prompt.</p>',
-      '<strong style="display:block;margin:14px 0 8px">Key Sections</strong>',
-      '<ul style="padding-left:18px;line-height:1.8"><li>Introduction and Overview</li><li>Main Content Section</li><li>Supporting Details</li><li>Conclusion and Next Steps</li></ul>'
-    ].join('');
-    preview.innerHTML = docContent;
+    skelWrapper.remove();
+    const colors = ['#eff6ff', '#fdf2f8', '#ecfdf5', '#fffbeb', '#f5f3ff'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    
+    const item = document.createElement('div');
+    item.className = 'gallery-img';
+    item.innerHTML = `<div style="background:${color};width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;padding:12px;text-align:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><span style="font-size:12px;color:#1f2937;font-weight:600">${esc(selectedDocType)}</span><span style="font-size:10px;color:#6b7280">AI Document</span></div>`;
+    gallery.appendChild(item);
+
     btn.disabled = false;
     btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate Document';
     showToast(`${selectedDocType} document generated!`);
@@ -490,26 +521,33 @@ function generateDocument() {
 function generatePresentation() {
   const prompt = document.getElementById('pres-prompt').value.trim();
   if (!prompt) { showToast('Please enter a prompt first'); return; }
+  const gallery = document.getElementById('pres-gallery');
   const btn = document.getElementById('pres-gen-btn');
   btn.disabled = true;
   btn.textContent = 'Generating...';
-  const count = parseInt(document.getElementById('pres-slides').value);
-  const theme = document.getElementById('pres-theme').value;
-  const grid = document.getElementById('slides-grid');
-  grid.innerHTML = Array.from({length:count},(_,i)=>`<div class="skeleton skeleton-img" style="aspect-ratio:16/9;border-radius:10px"></div>`).join('');
+  const emptyState = document.getElementById('pres-gallery-empty');
+  if (emptyState) emptyState.remove();
+
+  const skelWrapper = document.createElement('div');
+  skelWrapper.className = 'skeleton';
+  skelWrapper.style.cssText = 'aspect-ratio:16/9;border-radius:12px;min-height:140px';
+  gallery.appendChild(skelWrapper);
+
   // API INTEGRATION POINT: Replace timeout with actual presentation generation API call
   setTimeout(() => {
+    skelWrapper.remove();
+    const count = parseInt(document.getElementById('pres-slides').value);
+    const theme = document.getElementById('pres-theme').value;
     const bgColors = {modern:'#1e3a8a',minimal:'#f8fafc',bold:'#111827',corporate:'#1e40af',creative:'#4f46e5'};
     const bgColor = bgColors[theme] || '#1e3a8a';
     const textColor = theme === 'minimal' ? '#111827' : '#ffffff';
-    const slideTitles = ['Title Slide','Introduction','Key Points','Overview','Analysis','Details','Results','Summary','Conclusion','Thank You'];
-    grid.innerHTML = Array.from({length:count},(_,i)=>`
-      <div class="slide-card" style="background:${bgColor};border-color:${bgColor}60">
-        <div style="text-align:center;padding:8px">
-          <div style="font-size:10px;color:${textColor};opacity:0.6;margin-bottom:4px">Slide ${i+1}</div>
-          <div style="font-size:11px;color:${textColor};font-weight:600">${slideTitles[i]||'Slide '+(i+1)}</div>
-        </div>
-      </div>`).join('');
+    
+    const item = document.createElement('div');
+    item.className = 'gallery-img';
+    item.style.cssText = 'aspect-ratio:16/9; width:100%; height:auto; min-height:140px';
+    item.innerHTML = `<div style="background:${bgColor};width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;padding:12px;text-align:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="${textColor}" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><span style="font-size:11px;color:${textColor};font-weight:500;opacity:0.8">${count} Slides · ${esc(theme)}</span></div>`;
+    gallery.appendChild(item);
+
     btn.disabled = false;
     btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate Presentation';
     showToast(`${count}-slide presentation generated!`);
@@ -545,7 +583,7 @@ function showToast(msg) {
 document.addEventListener('click', function(e) {
   const dd = document.getElementById('user-dropdown');
   const av = document.getElementById('topbar-avatar');
-  if (dd.classList.contains('open') && !dd.contains(e.target) && !av.contains(e.target)) {
+  if (dd && av && dd.classList.contains('open') && !dd.contains(e.target) && !av.contains(e.target)) {
     dd.classList.remove('open');
   }
 });
@@ -562,5 +600,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
  </script>
 <script src="project-context.js"></script>
+<script src="generation-tabs.js?v=tabs-r1"></script>
+<script src="image-generation.js?v=images-r1"></script>
 </body>
 </html>
