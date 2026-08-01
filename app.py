@@ -121,7 +121,9 @@ def generate_image():
     """Generate an image through a server-side provider; provider keys never reach the browser."""
     data = request.get_json(silent=True) or {}
     prompt = (data.get('prompt') or '').strip()
-    provider = data.get('provider') or 'fal'
+    # Pollinations is the default hosted image provider. Its secret stays only
+    # on the server as POLLINATIONS_API_KEY.
+    provider = data.get('provider') or 'pollinations'
     model = data.get('model') or ''
     if not prompt:
         return jsonify({'error': 'An image prompt is required.'}), 400
