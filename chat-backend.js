@@ -2,8 +2,9 @@
 const SUPABASE_URL = 'https://gdqapoopqijohrtovjza.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcWFwb29wcWlqb2hydG92anphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MjcyNzAsImV4cCI6MjEwMDUwMzI3MH0.mQsxKSmGBC3EfGLbuG2c5zAAzJKKIkq8wzsKzoO8oyI';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-// Production hosting provides this URL from a small public config script.
-const AI_API_URL = window.AOS_AI_API_URL || null;
+// When AOS is deployed on Railway, Flask and the frontend share one domain.
+// A separate API URL can still be supplied for split Hosting/API deployments.
+const AI_API_URL = window.AOS_AI_API_URL || '/api/chat';
 
 let currentUser = null;
 let currentProject = null;
@@ -122,7 +123,6 @@ async function deleteChatSession(sessionId) {
 }
 
 async function requestAiReply(message) {
-  if (!AI_API_URL) throw new Error('AI API is not configured. Set window.AOS_AI_API_URL to your Railway API URL.');
   const model = document.getElementById('model-select').value;
   const response = await fetch(AI_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model, message }) });
   const body = await response.json().catch(() => ({}));

@@ -75,8 +75,8 @@ a{text-decoration:none;color:inherit}
 .feature-card .fc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
 .feature-card h3{font-size:14px;font-weight:700;color:#111827;margin-bottom:4px}
 .feature-card p{font-size:12px;color:#6b7280;line-height:1.5}
-.bottom-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.dash-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:20px}
+.bottom-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:stretch}
+.dash-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:20px;min-width:0}
 .dash-card h3{font-size:14px;font-weight:700;color:#111827;margin-bottom:14px}
 .empty-state{text-align:center;padding:24px 12px;color:#9ca3af;font-size:13px}
 .empty-state svg{margin:0 auto 8px;display:block;opacity:0.4}
@@ -86,6 +86,13 @@ a{text-decoration:none;color:inherit}
 .proj-item-tech{font-size:11px;color:#9ca3af}
 .proj-item-del{color:#ef4444;opacity:0.6}
 .proj-item-del:hover{opacity:1}
+.dashboard-list{display:grid;gap:10px}
+.dashboard-row{display:flex;align-items:center;gap:11px;width:100%;padding:11px;border:1px solid #edf1f7;border-radius:10px;background:#fafcff;text-align:left;cursor:pointer;box-sizing:border-box;transition:background .2s,border-color .2s}
+.dashboard-row:hover{background:#eff6ff;border-color:#bfdbfe}
+.dashboard-row-icon{display:grid;place-items:center;width:32px;height:32px;flex:none;border-radius:9px;background:#e0f2fe;color:#2563eb;font-size:15px}
+.dashboard-row-title{font-size:13px;font-weight:700;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dashboard-row-meta{margin-top:3px;font-size:11px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:800px){.bottom-grid{grid-template-columns:1fr}.feature-grid{grid-template-columns:repeat(2,1fr)}}
 
 /* PROJECTS VIEW */
 .view-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
@@ -328,17 +335,7 @@ a{text-decoration:none;color:inherit}
         </div>
         <div class="dash-card">
           <h3>Recent Activity</h3>
-          <div class="empty-state">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <p>No activity yet</p>
-          </div>
-        </div>
-        <div class="dash-card">
-          <h3>AI Usage</h3>
-          <div class="empty-state">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            <p>No usage data yet</p>
-          </div>
+          <div id="dash-activity"></div>
         </div>
       </div>
     </div>
@@ -1192,6 +1189,6 @@ document.getElementById('chat-start-modal').addEventListener('click', function(e
 });
 
  </script>
-<script src="project-dashboard.js?v=project-r3"></script>
+<script src="project-dashboard.js?v=project-r8"></script>
 </body>
 </html>

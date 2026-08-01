@@ -4,6 +4,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const aosSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let dashboardUser = null;
 let projects = [];
+let selectedTool = 'chat.html';
 
 const esc = (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const projectUrl = (id, page = 'chat.html') => `${page}?project_id=${encodeURIComponent(id)}`;
@@ -16,19 +17,35 @@ function toast(message) {
 }
 
 function renderDashboard() {
-  const dashboard = document.getElementById('view-dashboard');
   const recent = projects.slice(0, 3);
-  dashboard.innerHTML = `
-    <section style="max-width:980px;margin:48px auto;padding:0 24px">
-      <div style="text-align:center;margin-bottom:32px"><p style="color:#2563eb;font-weight:700;margin-bottom:8px">PROJECT WORKSPACE</p><h1 style="font-size:38px;color:#111827;margin:0">Choose a project to begin</h1><p style="color:#6b7280;margin-top:12px">Every chat, file, deployment and AI result stays inside its own secure project.</p></div>
-      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px">
-        <button onclick="openCreateProject()" style="text-align:left;padding:32px;border:1px solid #bfdbfe;border-radius:18px;background:#f0f9ff;cursor:pointer;transition:.2s"><div style="font-size:32px;color:#2563eb">+</div><h2 style="color:#111827;margin:16px 0 8px">Create New Project</h2><p style="margin:0;color:#4b5563;line-height:1.6">Create a dedicated workspace, then start its first AI conversation.</p></button>
-        <button onclick="showExistingProjects()" style="text-align:left;padding:32px;border:1px solid #e5e7eb;border-radius:18px;background:#fff;cursor:pointer;transition:.2s"><div style="font-size:30px">&#128193;</div><h2 style="color:#111827;margin:16px 0 8px">Open Existing Project</h2><p style="margin:0;color:#4b5563;line-height:1.6">Restore the chats and resources saved for one of your projects.</p></button>
-      </div>
-      <div style="margin-top:42px"><h2 style="font-size:18px;color:#111827">Recent projects</h2><div id="dashboard-recent" class="projects-grid"></div></div>
-    </section>`;
-  const container = document.getElementById('dashboard-recent');
-  container.innerHTML = recent.length ? recent.map(projectCard).join('') : '<div class="empty-state" style="grid-column:1/-1;padding:32px"><p>No projects yet. Create your first workspace above.</p></div>';
+  const container = document.getElementById('dash-projects');
+  if (container) {
+    container.innerHTML = recent.length ? `<div class="dashboard-list">${recent.map(dashboardProjectRow).join('')}</div>` : '<div class="empty-state"><p>No projects yet. Create one when you open a tool.</p></div>';
+  }
+  const activity = document.getElementById('dash-activity');
+  if (activity) activity.innerHTML = projects.length ? `<div class="dashboard-list">${recent.map(dashboardActivityRow).join('')}</div>` : '<div class="empty-state"><p>Your project activity will appear here.</p></div>';
+  attachToolPickers();
+}
+
+function dashboardProjectRow(project) {
+  return `<button class="dashboard-row" onclick="openProject('${project.id}')"><span class="dashboard-row-icon">&#128193;</span><span style="min-width:0;flex:1"><span class="dashboard-row-title" style="display:block">${esc(project.name)}</span><span class="dashboard-row-meta" style="display:block">${esc(project.description)}</span></span><span style="color:#93c5fd;font-size:18px">›</span></button>`;
+}
+
+function dashboardActivityRow(project) {
+  const date = new Date(project.last_opened_at || project.created_at);
+  const label = project.last_opened_at && project.last_opened_at !== project.created_at ? 'Opened project' : 'Created project';
+  return `<button class="dashboard-row" onclick="openProject('${project.id}')"><span class="dashboard-row-icon" style="background:#f0fdf4;color:#16a34a">&#10003;</span><span style="min-width:0;flex:1"><span class="dashboard-row-title" style="display:block">${label}: ${esc(project.name)}</span><span class="dashboard-row-meta" style="display:block">${esc(date.toLocaleString())}</span></span></button>`;
+}
+
+function attachToolPickers() {
+  const toolPages = { 'AI Chat': 'chat.html', 'Generation Studio': 'generation.html', 'Development Studio': 'ide.html', 'Publish & Deploy': 'deploy.html' };
+  document.querySelectorAll('#view-dashboard .feature-card, #view-developer .feature-card').forEach((card) => {
+    const title = card.querySelector('h3')?.textContent.trim();
+    const tool = toolPages[title];
+    if (!tool || card.dataset.projectPickerBound) return;
+    card.dataset.projectPickerBound = 'true';
+    card.addEventListener('click', (event) => { event.preventDefault(); openToolProjectPicker(tool); });
+  });
 }
 
 function projectCard(project) {
@@ -44,15 +61,37 @@ async function loadProjects() {
   renderDashboard();
 }
 
+function openToolProjectPicker(tool = 'chat.html') {
+  selectedTool = tool;
+  const modal = document.getElementById('create-modal');
+  modal.querySelector('.modal').innerHTML = `<div style="padding:4px"><h2 style="margin-bottom:8px">Select a Project</h2><p class="modal-subtitle" style="margin:0 0 22px">All ${tool === 'chat.html' ? 'chat history' : 'tool resources'} stay inside the selected project.</p><div style="display:grid;gap:12px"><button onclick="openCreateProject()" style="display:flex;align-items:center;gap:14px;width:100%;padding:18px;border:1px solid #2563eb;border-radius:12px;background:#2563eb;color:#fff;text-align:left;cursor:pointer"><span style="display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,.18);font-size:22px">+</span><span><strong style="display:block;font-size:15px">Create New Project</strong><small style="display:block;margin-top:3px;opacity:.82">Start a new dedicated workspace</small></span></button><button onclick="showExistingProjects()" style="display:flex;align-items:center;gap:14px;width:100%;padding:18px;border:1px solid #dbe3ef;border-radius:12px;background:#fff;color:#1f2937;text-align:left;cursor:pointer"><span style="display:grid;place-items:center;width:32px;height:32px;border-radius:9px;background:#eff6ff;color:#2563eb;font-size:17px">&#128193;</span><span><strong style="display:block;font-size:15px">Open Existing Project</strong><small style="display:block;margin-top:3px;color:#6b7280">Continue with a saved workspace</small></span></button></div><div style="display:flex;justify-content:flex-end;margin-top:22px;padding-top:16px;border-top:1px solid #eef2f7"><button class="btn-cancel" style="margin:0" onclick="closeCreateProject()">Cancel</button></div></div>`;
+  modal.classList.add('open');
+}
+
 function showExistingProjects() {
   const modal = document.getElementById('create-modal');
-  modal.querySelector('.modal').innerHTML = `<h2>Existing Projects</h2><p class="modal-subtitle">Only projects in your account are shown.</p><div class="ps-list">${projects.length ? projects.map((project) => `<button class="ps-item" style="width:100%;text-align:left;background:#fff" onclick="openProject('${project.id}')"><div class="ps-item-name">${esc(project.name)}</div><div class="ps-item-desc">${esc(project.description)}</div><small style="color:#9ca3af">Last opened ${esc(new Date(project.last_opened_at || project.created_at).toLocaleString())}</small></button>`).join('') : '<div style="padding:20px;text-align:center;color:#6b7280">No projects yet. Create one first.</div>'}</div><div class="modal-actions"><button class="btn-cancel" onclick="closeCreateProject()">Close</button><button class="btn-primary" onclick="openCreateProject()">Create Project</button></div>`;
+  modal.querySelector('.modal').innerHTML = `<h2>Existing Projects</h2><p class="modal-subtitle">Only projects in your account are shown.</p><div class="ps-list">${projects.length ? projects.map((project) => `<button class="ps-item" style="width:100%;text-align:left;background:#fff" onclick="openProject('${project.id}')"><div class="ps-item-name">${esc(project.name)}</div><div class="ps-item-desc">${esc(project.description)}</div><small style="color:#9ca3af">Last opened ${esc(new Date(project.last_opened_at || project.created_at).toLocaleString())}</small></button>`).join('') : '<div style="padding:20px;text-align:center;color:#6b7280">No projects yet. Create one first.</div>'}</div><div class="modal-actions"><button class="btn-cancel" onclick="openToolProjectPicker(selectedTool)">Back</button><button class="btn-primary" onclick="openCreateProject()">Create Project</button></div>`;
   modal.classList.add('open');
 }
 
 function openCreateProject() {
   const modal = document.getElementById('create-modal');
-  modal.querySelector('.modal').innerHTML = `<h2>Create New Project</h2><p class="modal-subtitle">A project is required before you can use any AOS tool.</p><div class="form-group"><label>Project Name <span style="color:#ef4444">*</span></label><input id="project-name" placeholder="e.g. Customer portal"></div><div class="form-group"><label>Project Description / Bio <span style="color:#ef4444">*</span></label><textarea id="project-description" placeholder="What are you building?"></textarea></div><div class="form-group"><label>Programming Language</label><input id="project-language" placeholder="e.g. TypeScript"></div><div class="form-group"><label>Framework</label><input id="project-framework" placeholder="e.g. React"></div><div class="modal-actions"><button class="btn-cancel" onclick="closeCreateProject()">Cancel</button><button class="btn-primary" onclick="createProject()">Create Project</button></div>`;
+  modal.querySelector('.modal').innerHTML = `
+    <div style="padding:4px">
+      <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:24px">
+        <div style="display:grid;place-items:center;width:44px;height:44px;flex:none;border-radius:13px;background:linear-gradient(135deg,#dbeafe,#e0f2fe);color:#2563eb"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 12v5M9.5 14.5h5"/></svg></div>
+        <div><h2 style="margin:1px 0 6px;color:#0f172a">Create New Project</h2><p style="margin:0;color:#64748b;font-size:14px;line-height:1.5">Set up a focused workspace for your chats, files, and AI tools.</p></div>
+      </div>
+      <div style="display:grid;gap:18px">
+        <label style="display:grid;gap:7px;font-size:13px;font-weight:700;color:#334155"><span>Project Name <b style="color:#ef4444">*</b></span><input id="project-name" placeholder="e.g. Customer Portal" style="box-sizing:border-box;width:100%;padding:13px 14px;border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc;color:#0f172a;font:400 14px inherit;outline:none"></label>
+        <label style="display:grid;gap:7px;font-size:13px;font-weight:700;color:#334155"><span>Project Description <b style="color:#ef4444">*</b></span><textarea id="project-description" placeholder="Describe what you want to build and its main goal..." style="box-sizing:border-box;width:100%;min-height:96px;resize:vertical;padding:13px 14px;border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc;color:#0f172a;font:400 14px inherit;outline:none"></textarea></label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <label style="display:grid;gap:7px;font-size:13px;font-weight:700;color:#334155"><span>Programming Language</span><input id="project-language" placeholder="e.g. TypeScript" style="box-sizing:border-box;width:100%;padding:13px 14px;border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc;color:#0f172a;font:400 14px inherit;outline:none"></label>
+          <label style="display:grid;gap:7px;font-size:13px;font-weight:700;color:#334155"><span>Framework</span><input id="project-framework" placeholder="e.g. React" style="box-sizing:border-box;width:100%;padding:13px 14px;border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc;color:#0f172a;font:400 14px inherit;outline:none"></label>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:26px;padding-top:18px;border-top:1px solid #e8eef6"><button class="btn-cancel" style="margin:0;padding:11px 19px" onclick="closeCreateProject()">Cancel</button><button style="display:inline-flex;align-items:center;gap:8px;padding:11px 19px;border:0;border-radius:10px;background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 6px 14px rgba(37,99,235,.2);color:#fff;font:700 14px inherit;cursor:pointer" onclick="createProject()"><span>+</span>Create Project</button></div>
+    </div>`;
   modal.classList.add('open');
 }
 
@@ -68,7 +107,7 @@ async function createProject() {
     if (error) throw error;
     const { error: chatError } = await aosSupabase.from('chat_sessions').insert({ project_id: data.id, title: 'New Chat' });
     if (chatError) throw chatError;
-    window.location.href = projectUrl(data.id);
+    window.location.href = projectUrl(data.id, selectedTool);
   } catch (error) {
     console.error(error);
     toast(`Could not create project: ${error.message}`);
@@ -79,7 +118,7 @@ async function openProject(projectId) {
   try {
     const { error } = await aosSupabase.from('projects').update({ last_opened_at: new Date().toISOString() }).eq('id', projectId);
     if (error) throw error;
-    window.location.href = projectUrl(projectId);
+    window.location.href = projectUrl(projectId, selectedTool);
   } catch (error) { toast(`Could not open project: ${error.message}`); }
 }
 
