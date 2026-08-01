@@ -456,7 +456,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg-base);color:var(--text-p
   <!-- User avatar — loaded from Supabase session -->
   <div style="position:relative;margin:4px 0 2px">
     <img id="act-avatar-img" class="act-avatar" src="" alt="" style="display:none" onclick="toggleUserMenu()"/>
-    <div id="act-avatar-placeholder" class="act-avatar-placeholder" onclick="toggleUserMenu()">?</div>
+    <div id="act-avatar-placeholder" class="act-avatar-placeholder" onclick="toggleUserMenu()" data-initial="true">?</div>
     <span class="act-badge" id="notif-badge" style="position:absolute;top:-2px;right:-2px;display:none;min-width:14px;height:14px;background:var(--accent);color:#fff;border-radius:7px;font-size:9px;font-weight:700;align-items:center;justify-content:center;padding:0 3px">1</span>
   </div>
 </div>
@@ -711,8 +711,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg-base);color:var(--text-p
 <!-- ── USER MENU ── -->
 <div class="user-menu" id="user-menu">
   <div class="user-menu-header">
-    <div class="user-menu-name" id="um-name">—</div>
-    <div class="user-menu-email" id="um-email">—</div>
+    <div class="user-menu-name" id="um-name" data-username="true">—</div>
+    <div class="user-menu-email" id="um-email" data-email="true">—</div>
   </div>
   <div class="dd-item" onclick="toast('Profile settings');closeUserMenu()">Profile</div>
   <div class="dd-sep"></div>
@@ -761,65 +761,77 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 
 let currentUser = null;
 
-async function initUser() {
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) { window.location.href = 'index.html'; return; }
-    currentUser = session.user;
-    const meta = currentUser.user_metadata || {};
-    const name  = meta.full_name || meta.display_name || currentUser.email || 'User';
-    const email = currentUser.email || '';
-    const avatar= meta.avatar_url || meta.picture || '';
-    // initials for placeholder
-    const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+const supabaseClient = sb;
 
-    // Activity bar avatar
-    const img = document.getElementById('act-avatar-img');
-    const ph  = document.getElementById('act-avatar-placeholder');
-    if (avatar) {
-      img.src = avatar;
-      img.style.display = 'block';
-      ph.style.display  = 'none';
-    } else {
-      ph.textContent = initials;
-      ph.style.display = 'flex';
-      img.style.display= 'none';
-    }
-    // User menu
-    document.getElementById('um-name').textContent  = name;
-    document.getElementById('um-email').textContent = email;
-    // Show notification badge
+function populateUserUI(user) {
+  const fullName = 
+    user.user_metadata?.full_name || 
+    user.user_metadata?.name ||
+    user.user_metadata?.display_name ||
+    (user.email ? user.email.split('@')[0] : '') ||
+    'User';
+  
+  const email = user.email || '';
+  const initial = fullName.charAt(0).toUpperCase();
+  
+  document.querySelectorAll('.user-name, .username, [data-username]')
+    .forEach(el => el.textContent = fullName);
+  
+  document.querySelectorAll('.user-email, .useremail, [data-email]')
+    .forEach(el => el.textContent = email);
+  
+  document.querySelectorAll('.user-avatar, .avatar-initial, [data-initial]')
+    .forEach(el => el.textContent = initial);
+  
+  const welcome = document.querySelector('.welcome-name, [data-welcome]');
+  if (welcome) welcome.textContent = 'Welcome, ' + fullName + '!';
+
+  currentUser = user;
+  try {
     const badge = document.getElementById('notif-badge');
     badge.style.display = 'flex';
-    // Status bar branch
     document.getElementById('status-branch').textContent = 'main';
-    // Copilot model line
     document.getElementById('copilot-model').textContent = 'Claude-3.7 · project context';
-    // Terminal prompt
     document.getElementById('term-prompt-label').textContent = '~ $ ';
   } catch(e) { console.error(e); }
 }
 
 async function doLogout() {
   closeUserMenu();
-  await sb.auth.signOut();
-  window.location.href = 'index.html';
+  try {
+    await sb.auth.signOut();
+  } catch (e) {
+    console.error('Logout error:', e);
+  } finally {
+    window.location.href = 'index.html';
+  }
 }
 
 /* ═══════════════════════════
    VIRTUAL FILE SYSTEM
 ═══════════════════════════ */
-// Store user-created files in memory (and localStorage for persistence)
+// Files are cached in memory for rendering, with Supabase as the only persistence layer.
 let vfs = {}; // { 'path': { content, lang } }
 let openTabs = []; // array of paths
 let activeFile = null;
-const STORAGE_KEY = 'aos_ide_vfs';
+const IDE_PROJECT_ID = new URLSearchParams(window.location.search).get('project_id');
 
-function vfsLoad() {
-  try { vfs = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { vfs = {}; }
+async function vfsLoad() {
+  if (!IDE_PROJECT_ID) { window.location.href = 'mode-selection.html'; return; }
+  const { data, error } = await sb.from('project_files').select('path, content, language').eq('project_id', IDE_PROJECT_ID).order('path');
+  if (error) { console.error('Could not load project files:', error); toast('Could not load project files'); return; }
+  vfs = Object.fromEntries((data || []).map((file) => [file.path, { content: file.content, lang: file.language || vfsGetLang(file.path) }]));
+  renderExplorer();
 }
-function vfsSave() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vfs)); } catch(e) {}
+async function vfsSave() {
+  if (!IDE_PROJECT_ID) return;
+  const files = Object.entries(vfs).map(([path, file]) => ({ project_id: IDE_PROJECT_ID, path, content: file.content || '', language: file.lang || vfsGetLang(path) }));
+  const { error: deleteError } = await sb.from('project_files').delete().eq('project_id', IDE_PROJECT_ID);
+  if (deleteError) { console.error('Could not save project files:', deleteError); return; }
+  if (files.length) {
+    const { error } = await sb.from('project_files').insert(files);
+    if (error) console.error('Could not save project files:', error);
+  }
 }
 
 function vfsGetLang(filename) {
@@ -1470,10 +1482,18 @@ function toast(msg) {
 ═══════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   vfsLoad();
-  initUser();
   renderExplorer();
-  // If there are saved files, keep welcome screen visible (no auto-open)
+  // Auth: use onAuthStateChange to handle OAuth hash tokens too
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (session) {
+      populateUserUI(session.user);
+      if (window.location.hash) history.replaceState(null, '', window.location.pathname);
+    } else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
+      if (!session) window.location.href = 'index.html';
+    }
+  });
 });
-</script>
+ </script>
+<script src="project-context.js"></script>
 </body>
 </html>

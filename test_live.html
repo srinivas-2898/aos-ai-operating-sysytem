@@ -923,7 +923,6 @@
         AI Ready
       </div>
       <div class="user-profile-group">
-        <span class="user-display-name" id="user-display-name">Loading...</span>
         <button class="logout-btn-header" id="avatar-btn" title="Click to Log Out">Log Out</button>
       </div>
     </div>
@@ -931,7 +930,7 @@
 
   <!-- VIEW 1: CHOOSE WORKSPACE (HOME) -->
   <div class="view-container active" id="view-choose">
-    <div class="top-badge" id="welcome-user-badge">Welcome back</div>
+
     <h1 class="title-h1">Choose Your Workspace</h1>
     <p class="lead-p">Select how you want to build with AOS.</p>
 
@@ -1249,44 +1248,49 @@
     // Log Out functionality
     const performLogout = async (e) => {
       if (e) e.preventDefault();
-      await supabaseClient.auth.signOut();
-      window.location.href = 'index.html';
+      try {
+        await supabaseClient.auth.signOut();
+      } catch (err) {
+        console.error('Logout error:', err);
+      } finally {
+        localStorage.clear();
+        window.location.href = 'index.html';
+      }
     };
 
     document.getElementById('avatar-btn').addEventListener('click', performLogout);
 
-    // Fetch user details on page load
-    document.addEventListener('DOMContentLoaded', async () => {
-      try {
-        const { data: { session }, error } = await supabaseClient.auth.getSession();
-        if (error || !session) {
-          window.location.href = 'index.html';
-          return;
-        }
+    function populateUserUI(user) {
+      const fullName = 
+        user.user_metadata?.full_name || 
+        user.user_metadata?.name ||
+        user.user_metadata?.display_name ||
+        user.email.split('@')[0];
+      
+      const email = user.email;
+      const initial = fullName.charAt(0).toUpperCase();
+      
+      // Select standard classes plus IDs used in test_live
+      document.querySelectorAll('.user-name, .username, [data-username], #user-display-name')
+        .forEach(el => el.textContent = fullName);
+      
+      document.querySelectorAll('.user-email, .useremail, [data-email]')
+        .forEach(el => el.textContent = email);
+      
+      document.querySelectorAll('.user-avatar, .avatar-initial, [data-initial]')
+        .forEach(el => el.textContent = initial);
+      
+      document.querySelectorAll('.welcome-name, [data-welcome], #welcome-user-badge, #chat-welcome-name')
+        .forEach(el => el.textContent = 'Welcome, ' + fullName + '!');
+    }
 
-        const user = session.user;
-        const fullName = user.user_metadata?.full_name || user.user_metadata?.display_name || user.email || 'User';
-
-        // Update name badge at the center
-        const nameBadge = document.getElementById('welcome-user-badge');
-        if (nameBadge) {
-          nameBadge.textContent = `Welcome, ${fullName}`;
-        }
-
-        // Update chat welcome name
-        const chatName = document.getElementById('chat-welcome-name');
-        if (chatName) {
-          chatName.textContent = `Welcome, ${fullName}`;
-        }
-
-        // Update name in header
-        const headerName = document.getElementById('user-display-name');
-        if (headerName) {
-          headerName.textContent = fullName;
-        }
-      } catch (err) {
-        console.error('Session retrieval error:', err);
-        window.location.href = 'index.html';
+    // Use onAuthStateChange to handle both existing sessions AND OAuth hash redirects
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        populateUserUI(session.user);
+        if (window.location.hash) history.replaceState(null, '', window.location.pathname);
+      } else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
+        if (!session) window.location.href = 'index.html';
       }
     });
 

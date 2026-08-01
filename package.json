@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "firebase": "^12.16.0",
+    "puppeteer": "^25.4.0",
     "run": "^1.5.0"
   }
 }

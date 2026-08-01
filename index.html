@@ -610,9 +610,7 @@
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcWFwb29wcWlqb2hydG92anphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MjcyNzAsImV4cCI6MjEwMDUwMzI3MH0.mQsxKSmGBC3EfGLbuG2c5zAAzJKKIkq8wzsKzoO8oyI';
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const REDIRECT_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? window.location.origin + '/mode-selection.html'
-      : 'https://aos-ai-operating-systems.web.app/mode-selection.html';
+    const REDIRECT_URL = window.location.origin + '/mode-selection.html';
 
     function validateEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
 

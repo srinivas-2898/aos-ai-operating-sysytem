@@ -203,8 +203,8 @@ a{text-decoration:none;color:inherit}
     <button class="icon-btn" title="Notifications">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
     </button>
-    <div class="avatar" id="topbar-avatar" onclick="toggleDropdown()">U</div>
-    <span id="topbar-name" style="font-size:14px;font-weight:500;color:#111827;margin-left:4px"></span>
+    <div class="avatar" id="topbar-avatar" onclick="toggleDropdown()" data-initial="true">U</div>
+    <span id="topbar-name" style="font-size:14px;font-weight:500;color:#111827;margin-left:4px" data-username="true"></span>
   </div>
 </div>
 
@@ -619,22 +619,31 @@ function esc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-async function initUser() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) { window.location.href = 'index.html'; return; }
-  const user = session.user;
-  const name = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User';
-  const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
-  const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture;
+const supabaseClient = supabase;
 
-  const avatarEl = document.getElementById('topbar-avatar');
-  if (avatarUrl) {
-    avatarEl.innerHTML = `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
-    avatarEl.style.background = 'transparent';
-  } else {
-    avatarEl.textContent = initials;
-  }
-  document.getElementById('topbar-name').textContent = name;
+function populateUserUI(user) {
+  const fullName = 
+    user.user_metadata?.full_name || 
+    user.user_metadata?.name ||
+    user.user_metadata?.display_name ||
+    (user.email ? user.email.split('@')[0] : '') ||
+    'User';
+  
+  const email = user.email || '';
+  const initial = fullName.charAt(0).toUpperCase();
+  
+  document.querySelectorAll('.user-name, .username, [data-username]')
+    .forEach(el => el.textContent = fullName);
+  
+  document.querySelectorAll('.user-email, .useremail, [data-email]')
+    .forEach(el => el.textContent = email);
+  
+  document.querySelectorAll('.user-avatar, .avatar-initial, [data-initial]')
+    .forEach(el => el.textContent = initial);
+  
+  const welcome = document.querySelector('.welcome-name, [data-welcome]');
+  if (welcome) welcome.textContent = 'Welcome, ' + fullName + '!';
+
   loadProjects();
 }
 
@@ -645,7 +654,9 @@ function toggleSidebar() {
 async function loadProjects() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return;
-  const { data: projects, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+  const projectId = new URLSearchParams(window.location.search).get('project_id');
+  if (!projectId) { window.location.href = 'mode-selection.html'; return; }
+  const { data: projects, error } = await supabase.from('projects').select('*').eq('id', projectId).single().then(({ data, error }) => ({ data: data ? [data] : [], error }));
   if (error) { console.error('Error loading projects:', error); return; }
   const listEl = document.getElementById('sidebar-proj-list');
   const selectEl = document.getElementById('deploy-proj-select');
@@ -831,8 +842,18 @@ function toggleDropdown() {
 }
 
 async function performLogout() {
-  await supabase.auth.signOut();
-  window.location.href = 'index.html';
+  try {
+    await supabase.auth.signOut();
+  } catch (e) {
+    console.error('Logout error:', e);
+  } finally {
+    try {
+      localStorage.clear();
+    } catch (e) {
+      console.error('LocalStorage clear failed:', e);
+    }
+    window.location.href = 'index.html';
+  }
 }
 
 function showToast(msg) {
@@ -860,7 +881,17 @@ document.getElementById('cap-modal').addEventListener('click', function(e) {
   if (e.target === this) closeCapModal();
 });
 
-document.addEventListener('DOMContentLoaded', initUser);
-</script>
+document.addEventListener('DOMContentLoaded', () => {
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (session) {
+      populateUserUI(session.user);
+      if (window.location.hash) history.replaceState(null, '', window.location.pathname);
+    } else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
+      if (!session) window.location.href = 'index.html';
+    }
+  });
+});
+ </script>
+<script src="project-context.js"></script>
 </body>
 </html>
