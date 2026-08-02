@@ -14,9 +14,14 @@
   window.AOS_PROJECT = project;
   await client.from('projects').update({ last_opened_at: new Date().toISOString() }).eq('id', project.id);
   document.querySelectorAll('[data-project-name]').forEach((element) => { element.textContent = project.name; });
-  const badge = document.createElement('a');
-  badge.href = `mode-selection.html?project_id=${encodeURIComponent(project.id)}`;
-  badge.textContent = `Project: ${project.name}`;
-  badge.style.cssText = 'position:fixed;top:12px;right:16px;z-index:9999;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:999px;padding:8px 12px;font:600 12px system-ui;box-shadow:0 4px 12px rgba(37,99,235,.12)';
-  document.body.appendChild(badge);
+  document.querySelectorAll('.right-panel h2').forEach((heading) => {
+    heading.innerHTML = '';
+    const label = document.createElement('span');
+    label.textContent = 'Project workspace';
+    label.style.cssText = 'display:block;margin-bottom:3px;font:600 11px Inter,system-ui;letter-spacing:.08em;text-transform:uppercase;color:#6b7b97';
+    const name = document.createElement('strong');
+    name.textContent = project.name;
+    name.style.cssText = 'display:block;font:700 20px "Plus Jakarta Sans",Inter,system-ui;color:#14213d;letter-spacing:-.3px';
+    heading.append(label, name);
+  });
 })();

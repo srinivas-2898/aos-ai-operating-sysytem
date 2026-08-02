@@ -23,12 +23,9 @@ API_KEYS = {
     'cohere': os.environ.get('COHERE_API_KEY')
 }
 
-IMAGE_API_KEYS = {
-    'pollinations': os.environ.get('POLLINATIONS_API_KEY'),
-    'huggingface': os.environ.get('HF_TOKEN'),
-    'stability': os.environ.get('STABILITY_API_KEY'),
-    'fal': os.environ.get('FAL_KEY')
-}
+# Image generation uses the existing server-side Gemini key. An optional
+# GEMINI_IMAGE_KEY can be supplied in Railway when separate billing is needed.
+GEMINI_IMAGE_KEY = os.environ.get('GEMINI_IMAGE_KEY') or os.environ.get('GEMINI_API_KEY')
 
 @app.route('/')
 def index():
@@ -118,71 +115,48 @@ def chat():
 
 @app.route('/api/generate/image', methods=['POST'])
 def generate_image():
-    """Generate an image through a server-side provider; provider keys never reach the browser."""
+    """Generate an image through Google Gemini API; API key never reaches the browser."""
     data = request.get_json(silent=True) or {}
     prompt = (data.get('prompt') or '').strip()
-    # Pollinations is the default hosted image provider. Its secret stays only
-    # on the server as POLLINATIONS_API_KEY.
-    provider = data.get('provider') or 'pollinations'
-    model = data.get('model') or ''
+    model = data.get('model') or 'gemini-3.1-flash-image'
     if not prompt:
         return jsonify({'error': 'An image prompt is required.'}), 400
-    if provider not in IMAGE_API_KEYS:
-        return jsonify({'error': 'Unsupported image provider.'}), 400
-    if not IMAGE_API_KEYS[provider]:
-        return jsonify({'error': f'{provider.title()} is not configured on the server.'}), 503
+    if not GEMINI_IMAGE_KEY:
+        return jsonify({'error': 'Gemini Image API key is not configured on the server.'}), 503
 
     try:
-        if provider == 'pollinations':
-            selected_model = model or 'flux'
-            response = requests.get(
-                f"https://gen.pollinations.ai/image/{quote(prompt, safe='')}?model={quote(selected_model)}",
-                headers={'Authorization': f"Bearer {IMAGE_API_KEYS['pollinations']}"}, timeout=90
-            )
-            response.raise_for_status()
-            content_type = response.headers.get('content-type', 'image/jpeg').split(';')[0]
-            encoded = base64.b64encode(response.content).decode('ascii')
-            return jsonify({'image_url': f'data:{content_type};base64,{encoded}', 'provider': 'pollinations', 'model': selected_model})
+        api_url = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_IMAGE_KEY}'
+        payload = {
+            'contents': [{'parts': [{'text': f'Generate an image based on this description: {prompt}'}]}],
+            'generationConfig': {'responseModalities': ['TEXT', 'IMAGE']}
+        }
+        response = requests.post(api_url, json=payload, timeout=120)
+        response.raise_for_status()
+        result = response.json()
 
-        if provider == 'fal':
-            selected_model = model or 'fal-ai/flux/schnell'
-            response = requests.post(
-                f'https://fal.run/{selected_model}',
-                headers={'Authorization': f"Key {IMAGE_API_KEYS['fal']}", 'Content-Type': 'application/json'},
-                json={'prompt': prompt, 'num_images': 1, 'image_size': 'square_hd', 'enable_safety_checker': True},
-                timeout=90
-            )
-            response.raise_for_status()
-            image_url = (response.json().get('images') or [{}])[0].get('url')
-            if not image_url:
-                raise ValueError('fal did not return an image URL.')
-            return jsonify({'image_url': image_url, 'provider': 'fal', 'model': selected_model})
+        candidates = result.get('candidates', [])
+        if not candidates:
+            return jsonify({'error': 'Gemini returned no candidates.'}), 502
 
-        if provider == 'stability':
-            response = requests.post(
-                'https://api.stability.ai/v2beta/stable-image/generate/core',
-                headers={'authorization': f"Bearer {IMAGE_API_KEYS['stability']}", 'accept': 'image/*'},
-                files={'none': ''}, data={'prompt': prompt, 'output_format': 'webp'}, timeout=90
-            )
-            response.raise_for_status()
-            encoded = base64.b64encode(response.content).decode('ascii')
-            return jsonify({'image_url': f'data:image/webp;base64,{encoded}', 'provider': 'stability', 'model': 'stable-image-core'})
+        parts = candidates[0].get('content', {}).get('parts', [])
+        for part in parts:
+            inline = part.get('inlineData') or part.get('inline_data')
+            if inline and inline.get('data'):
+                mime = inline.get('mimeType') or inline.get('mime_type') or 'image/png'
+                encoded = inline['data']
+                return jsonify({
+                    'image_url': f'data:{mime};base64,{encoded}',
+                    'provider': 'gemini',
+                    'model': model
+                })
 
-        # Hugging Face's official client handles provider routing for text-to-image.
-        from huggingface_hub import InferenceClient
-        from io import BytesIO
-        client = InferenceClient(api_key=IMAGE_API_KEYS['huggingface'])
-        selected_model = model or 'black-forest-labs/FLUX.1-dev'
-        image = client.text_to_image(prompt=prompt, model=selected_model)
-        buffer = BytesIO()
-        image.save(buffer, format='PNG')
-        encoded = base64.b64encode(buffer.getvalue()).decode('ascii')
-        return jsonify({'image_url': f'data:image/png;base64,{encoded}', 'provider': 'huggingface', 'model': selected_model})
+        return jsonify({'error': 'Gemini did not return an image for this prompt.'}), 502
     except requests.exceptions.RequestException as error:
         detail = error.response.text[:300] if error.response is not None else str(error)
-        return jsonify({'error': f'Image provider request failed: {detail}'}), 502
+        return jsonify({'error': f'Gemini API request failed: {detail}'}), 502
     except Exception as error:
         return jsonify({'error': f'Image generation failed: {str(error)}'}), 502
+
 
 if __name__ == '__main__':
     app.run(port=5000, debug=os.getenv('FLASK_DEBUG') == '1')

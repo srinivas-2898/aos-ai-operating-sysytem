@@ -103,6 +103,35 @@ a{text-decoration:none;color:inherit}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 .form-group{display:flex;flex-direction:column}
+
+/* Generation Studio refresh */
+body{background:radial-gradient(circle at 86% 0,#e0f2fe 0,transparent 28%),#f6f9ff}
+#tabs-bar{height:74px;padding:12px 24px;gap:12px;align-items:center;overflow-x:auto;background:rgba(255,255,255,.88)}
+.tab-btn{height:48px;min-width:148px;padding:0 16px;border:1px solid #e5eaf5;border-radius:14px;background:#fff;color:#516079;box-shadow:0 2px 7px rgba(15,23,42,.03);justify-content:flex-start;transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease}
+.tab-btn svg{width:18px;height:18px;padding:1px;color:#2563eb}
+.tab-btn:hover{transform:translateY(-3px);border-color:#93c5fd;background:#f0f7ff;color:#1749bd;box-shadow:0 10px 22px rgba(37,99,235,.13)}
+.tab-btn.active{color:#1643ad;border:1px solid #82b8ff;background:linear-gradient(135deg,#eff6ff,#e0f2fe);box-shadow:0 8px 20px rgba(37,99,235,.13)}
+#main-area{gap:22px;padding:22px 24px;overflow:auto}
+.left-panel,.right-panel{border:1px solid #e3eaf5;border-radius:20px;box-shadow:0 12px 30px rgba(15,23,42,.06);overflow-y:auto}
+.left-panel{width:390px;padding:26px;background:linear-gradient(160deg,#fff,#f8fbff);gap:19px}
+.right-panel{padding:28px;background:rgba(255,255,255,.72);min-height:540px}
+.left-panel h2{font-size:21px;letter-spacing:-.4px;margin:0;color:#13224a}
+.left-panel h2::before{content:'✦';display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;margin-right:9px;border-radius:9px;background:#e0f2fe;color:#2563eb;font-size:15px;vertical-align:2px}
+.form-group{gap:7px}
+.form-label{font-size:12px;letter-spacing:.02em;text-transform:uppercase;color:#60708b}
+.form-textarea,.form-select{border-color:#dce5f2;background:#fff;border-radius:12px}
+.form-textarea:focus,.form-select:focus{border-color:#60a5fa;box-shadow:0 0 0 4px rgba(59,130,246,.1)}
+.gen-btn{border-radius:13px;padding:14px;background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 10px 18px rgba(37,99,235,.24);transition:transform .2s,box-shadow .2s,filter .2s}
+.gen-btn:hover{transform:translateY(-2px);box-shadow:0 15px 25px rgba(37,99,235,.3);filter:saturate(1.1)}
+.right-panel h2{font-size:20px;color:#14213d;margin:0 0 20px}
+.right-panel h2::before{content:'▦';display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;margin-right:9px;border-radius:10px;background:#ede9fe;color:#6d28d9;font-size:16px;vertical-align:2px}
+#img-gallery,.slides-grid{gap:18px}.gallery-img{border-radius:16px;border-color:#e2e8f0;box-shadow:0 7px 17px rgba(15,23,42,.07);transition:transform .2s ease,box-shadow .2s ease}.gallery-img:hover{transform:translateY(-4px);box-shadow:0 16px 28px rgba(37,99,235,.16)}.gallery-img figcaption{padding:10px 12px;font-size:12px;color:#60708b;background:#fff}
+.gallery-empty{margin:auto;min-height:330px;border:1px dashed #bdd4f7;border-radius:18px;background:linear-gradient(145deg,#fbfdff,#eef7ff);color:#6b7b97}.gallery-empty svg{color:#3976d6;opacity:.65}
+#img-gallery .gallery-img:first-child{grid-column:span 2;aspect-ratio:16/10}
+#img-gallery .gallery-img:first-child img{min-height:300px}
+.doc-type-grid{gap:10px}.doc-type-btn{min-height:60px;border-radius:12px;background:#fff;box-shadow:0 2px 7px rgba(15,23,42,.03);transition:transform .18s,box-shadow .18s,border-color .18s}.doc-type-btn:hover{transform:translateY(-3px);box-shadow:0 9px 17px rgba(37,99,235,.12)}
+.doc-preview-area{border-radius:18px;border-color:#e2e8f0;box-shadow:0 5px 14px rgba(15,23,42,.04)}
+@media (max-width:860px){body{overflow:auto}#main-area{padding:14px;gap:14px}.tab-content.active{flex-direction:column}.left-panel{width:100%;min-height:auto}.right-panel{min-height:420px}#tabs-bar{padding:10px 14px}.tab-btn{min-width:130px}}
 </style>
 </head>
 <body>
@@ -199,10 +228,8 @@ a{text-decoration:none;color:inherit}
       <div class="form-group">
         <label class="form-label">Image Model</label>
         <select class="form-select" id="img-provider">
-          <option value="pollinations" selected>Pollinations AI · FLUX</option>
-          <option value="huggingface">Hugging Face · FLUX.1 Schnell</option>
-          <option value="stability">Stability AI · Stable Image Core</option>
-          <option value="fal">fal · FLUX Schnell</option>
+          <option value="gemini-3.1-flash-image" selected>Gemini 3.1 Flash Image</option>
+          <option value="gemini-2.5-flash-image">Gemini 2.5 Flash Image</option>
         </select>
       </div>
       <div class="form-group">
@@ -421,35 +448,7 @@ function selectDocType(btn, type) {
   selectedDocType = type;
 }
 
-function generateImage() {
-  const prompt = document.getElementById('img-prompt').value.trim();
-  if (!prompt) { showToast('Please enter a prompt first'); return; }
-  const gallery = document.getElementById('img-gallery');
-  const btn = document.getElementById('img-gen-btn');
-  btn.disabled = true;
-  btn.textContent = 'Generating...';
-  const emptyState = document.getElementById('img-gallery-empty');
-  if (emptyState) emptyState.remove();
-  const skelWrapper = document.createElement('div');
-  skelWrapper.className = 'skeleton skeleton-img';
-  skelWrapper.style.cssText = 'aspect-ratio:1;border-radius:12px;min-height:180px';
-  gallery.appendChild(skelWrapper);
-  // API INTEGRATION POINT: Replace timeout with actual image generation API call
-  setTimeout(() => {
-    skelWrapper.remove();
-    const style = document.getElementById('img-style').value;
-    const ratio = document.getElementById('img-ratio').value;
-    const colors = ['#dbeafe','#fce7f3','#d1fae5','#fef3c7','#ede9fe','#fee2e2'];
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    const item = document.createElement('div');
-    item.className = 'gallery-img';
-    item.innerHTML = `<div style="background:${color};width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;padding:12px;text-align:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span style="font-size:11px;color:#6b7280;font-weight:500">${esc(style)} · ${esc(ratio)}</span></div>`;
-    gallery.appendChild(item);
-    btn.disabled = false;
-    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate Image';
-    showToast('Image generated!');
-  }, 2000);
-}
+/* generateImage() is provided by image-generation.js — real server-side API call */
 
 function generateVideo() {
   const prompt = document.getElementById('vid-prompt').value.trim();
@@ -599,8 +598,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
  </script>
+<script src="public-config.js"></script>
 <script src="project-context.js"></script>
 <script src="generation-tabs.js?v=tabs-r1"></script>
-<script src="image-generation.js?v=images-r1"></script>
+<script src="image-generation.js?v=images-r5"></script>
 </body>
 </html>
