@@ -105,13 +105,20 @@
       // The newest result remains visible as the first preview card on the right.
       gallery.prepend(item);
       const projectId = new URLSearchParams(location.search).get('project_id');
-      if (projectId && result.image_url.startsWith('http')) {
+      if (projectId) {
         try {
-          await window.AOSGenerationStorage?.saveExternal({ title: rawPrompt.slice(0, 90) || 'Generated image', type: 'Image', prompt: rawPrompt, fileUrl: result.image_url, thumbnailUrl: result.image_url });
-          // Keep the older image table in sync where it exists, without letting it
-          // block the durable Generation Studio history record above.
-          const { error: legacyError } = await supabase.from('generated_images').insert({ project_id: projectId, prompt: rawPrompt, storage_path: result.image_url, metadata: { provider: result.provider, model: result.model, style } });
-          if (legacyError) console.warn('Legacy generated_images insert failed:', legacyError);
+          // Hugging Face returns a data URL. Persist the actual bytes in the
+          // private project bucket so the image survives logout and reload.
+          const imageBlob = await (await fetch(result.image_url)).blob();
+          const filename = `generated-image-${Date.now()}.png`;
+          if (!window.AOSGenerationStorage) throw new Error('Generation storage is not ready. Refresh and try again.');
+          await window.AOSGenerationStorage.saveBlob({
+            blob: imageBlob,
+            filename,
+            title: rawPrompt.slice(0, 90) || 'Generated image',
+            type: 'Image',
+            prompt: rawPrompt
+          });
         } catch (storageError) {
           console.error('Generation history storage failed:', storageError);
           showToast(`Image created, but its project history was not saved: ${storageError.message}`);
