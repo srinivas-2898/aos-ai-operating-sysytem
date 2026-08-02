@@ -38,13 +38,21 @@ function dashboardActivityRow(project) {
 }
 
 function attachToolPickers() {
-  const toolPages = { 'AI Chat': 'chat.html', 'Generation Studio': 'generation.html', 'Development Studio': 'ide.html', 'Publish & Deploy': 'deploy.html' };
+  const toolPages = {
+    'AI Chat': 'chat.html',
+    'Generation Studio': 'generation-projects.html',
+    'Development Studio': 'ide.html'
+  };
   document.querySelectorAll('#view-dashboard .feature-card, #view-developer .feature-card').forEach((card) => {
     const title = card.querySelector('h3')?.textContent.trim();
     const tool = toolPages[title];
     if (!tool || card.dataset.projectPickerBound) return;
     card.dataset.projectPickerBound = 'true';
-    card.addEventListener('click', (event) => { event.preventDefault(); openToolProjectPicker(tool); });
+    card.addEventListener('click', (event) => {
+      event.preventDefault();
+      if (tool === 'generation-projects.html') { window.location.href = tool; return; }
+      openToolProjectPicker(tool);
+    });
   });
 }
 
@@ -122,6 +130,43 @@ async function openProject(projectId) {
   } catch (error) { toast(`Could not open project: ${error.message}`); }
 }
 
+function professionalProjectCard(project) {
+  const opened = new Date(project.last_opened_at || project.created_at).toLocaleString();
+  const created = new Date(project.created_at).toLocaleDateString();
+  const stack = [project.programming_language, project.framework].filter(Boolean).join(' · ') || 'Project workspace';
+  const lang = (project.programming_language || '').toLowerCase();
+  const fw = (project.framework || '').toLowerCase();
+  
+  // Contextual icon + color based on tech stack
+  let iconSvg, logoBg, logoColor;
+  if (lang.includes('python')) {
+    iconSvg = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12l2 2 4-4"/></svg>';
+    logoBg = 'linear-gradient(135deg,#fef9c3,#fde68a)'; logoColor = '#b45309';
+  } else if (lang.includes('typescript') || lang.includes('javascript')) {
+    iconSvg = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>';
+    logoBg = 'linear-gradient(135deg,#fef3c7,#fde68a)'; logoColor = '#d97706';
+  } else if (lang.includes('java') || lang.includes('kotlin')) {
+    iconSvg = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>';
+    logoBg = 'linear-gradient(135deg,#fee2e2,#fecaca)'; logoColor = '#dc2626';
+  } else if (lang.includes('sql') || fw.includes('supabase') || fw.includes('postgres')) {
+    iconSvg = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>';
+    logoBg = 'linear-gradient(135deg,#e0f2fe,#bae6fd)'; logoColor = '#0284c7';
+  } else if (fw.includes('react') || fw.includes('next')) {
+    iconSvg = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg>';
+    logoBg = 'linear-gradient(135deg,#dbeafe,#bfdbfe)'; logoColor = '#2563eb';
+  } else if (fw.includes('vue') || fw.includes('angular') || fw.includes('svelte')) {
+    iconSvg = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg>';
+    logoBg = 'linear-gradient(135deg,#dcfce7,#bbf7d0)'; logoColor = '#16a34a';
+  } else {
+    // Default folder/workspace icon
+    iconSvg = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="9" y1="14" x2="15" y2="14"/></svg>';
+    logoBg = 'linear-gradient(135deg,#eff6ff,#e0e7ff)'; logoColor = '#3b82f6';
+  }
+
+  return `<button class="project-card project-card-pro" onclick="openProject('${project.id}')"><div class="project-card-top"><span class="project-card-logo" style="background:${logoBg};color:${logoColor}">${iconSvg}</span><span class="project-card-open">Open <b>›</b></span></div><h3>${esc(project.name)}</h3><p class="pc-desc">${esc(project.description)}</p><span class="pc-tech"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>${esc(stack)}</span><div class="project-card-footer"><span>Last opened</span><strong>${esc(opened)}</strong><span class="project-created">Created ${esc(created)}</span></div></button>`;
+}
+
+
 function switchView(name) {
   if (name === 'dashboard') {
     document.querySelectorAll('.view').forEach((view) => view.classList.remove('active'));
@@ -131,7 +176,7 @@ function switchView(name) {
   if (name === 'projects') {
     document.querySelectorAll('.view').forEach((view) => view.classList.remove('active'));
     document.getElementById('view-projects').classList.add('active');
-    document.getElementById('projects-grid').innerHTML = projects.length ? projects.map(projectCard).join('') : '<div class="empty-state" style="grid-column:1/-1;padding:40px"><p>No projects yet.</p></div>';
+    document.getElementById('projects-grid').innerHTML = projects.length ? projects.map(professionalProjectCard).join('') : '<div class="empty-state" style="grid-column:1/-1;padding:40px"><p>No projects yet.</p></div>';
   }
 }
 

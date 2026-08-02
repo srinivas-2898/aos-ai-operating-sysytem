@@ -63,7 +63,14 @@
         throw new Error(error.error || error.detail || 'File generation failed.');
       }
       const blob = await response.blob();
-      const fileCard = createFileCard(gallery, blob, fileNameFrom(response, fallbackName), label, icon);
+      const filename = fileNameFrom(response, fallbackName);
+      const fileCard = createFileCard(gallery, blob, filename, label, icon);
+      try {
+        await window.AOSGenerationStorage?.saveBlob({ blob, filename, title: filename, type: label, prompt: payload.prompt || '' });
+      } catch (storageError) {
+        console.error('Generation storage failed:', storageError);
+        showToast(`File created, but could not save its history: ${storageError.message}`);
+      }
       if (blob.type === 'application/pdf') fileCard.click();
       showToast(`${label} is ready. Click the card to download it.`);
     } catch (error) {
@@ -101,4 +108,21 @@
       template: document.getElementById('pres-template').value
     }, 'pres-gallery', 'pres-gallery-empty', button, 'Presentation', 'generated-presentation.pptx', '📊');
   };
+
+  document.addEventListener('aos-generation-history', (event) => {
+    event.detail.filter((file) => file.generation_type !== 'image' && file.resolved_url).forEach((file) => {
+      const presentation = file.generation_type === 'powerpoint';
+      const gallery = document.getElementById(presentation ? 'pres-gallery' : 'doc-gallery');
+      document.getElementById(presentation ? 'pres-gallery-empty' : 'doc-gallery-empty')?.remove();
+      const card = document.createElement('a');
+      card.className = 'file-output-card';
+      card.href = file.resolved_url;
+      card.target = '_blank';
+      card.rel = 'noopener';
+      card.innerHTML = `<span class="file-output-icon">${presentation ? 'PPT' : 'PDF'}</span><span class="file-output-text"><strong></strong><small></small></span><span class="file-download-button">Open file</span>`;
+      card.querySelector('strong').textContent = file.title;
+      card.querySelector('small').textContent = `${file.generation_type.toUpperCase()} · ${new Date(file.created_at).toLocaleString()}`;
+      gallery.appendChild(card);
+    });
+  });
 })();

@@ -10,6 +10,55 @@
     return chatUrl.replace(/\/api\/chat(?:\?.*)?$/, '/api/generate/image');
   };
 
+  const closeViewer = () => document.getElementById('image-viewer')?.classList.remove('open');
+
+  const openViewer = (source, caption) => {
+    let viewer = document.getElementById('image-viewer');
+    if (!viewer) {
+      viewer = document.createElement('div');
+      viewer.id = 'image-viewer';
+      viewer.setAttribute('role', 'dialog');
+      viewer.setAttribute('aria-modal', 'true');
+      const close = document.createElement('button');
+      close.className = 'viewer-close';
+      close.type = 'button';
+      close.setAttribute('aria-label', 'Close full screen preview');
+      close.textContent = '×';
+      close.addEventListener('click', closeViewer);
+      const image = document.createElement('img');
+      image.id = 'image-viewer-preview';
+      const label = document.createElement('p');
+      label.className = 'viewer-caption';
+      label.id = 'image-viewer-caption';
+      viewer.append(close, image, label);
+      viewer.addEventListener('click', (event) => { if (event.target === viewer) closeViewer(); });
+      document.body.appendChild(viewer);
+    }
+    viewer.querySelector('#image-viewer-preview').src = source;
+    viewer.querySelector('#image-viewer-preview').alt = caption;
+    viewer.querySelector('#image-viewer-caption').textContent = caption;
+    viewer.classList.add('open');
+  };
+
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeViewer(); });
+
+  document.addEventListener('aos-generation-history', (event) => {
+    const gallery = document.getElementById('img-gallery');
+    event.detail.filter((file) => file.generation_type === 'image' && file.resolved_url).forEach((file) => {
+      document.getElementById('img-gallery-empty')?.remove();
+      const item = document.createElement('figure');
+      item.className = 'gallery-img';
+      const image = document.createElement('img');
+      image.src = file.resolved_url;
+      image.alt = file.title;
+      const caption = document.createElement('figcaption');
+      caption.textContent = `Saved image · ${new Date(file.created_at).toLocaleDateString()}`;
+      item.append(image, caption);
+      item.addEventListener('click', () => openViewer(file.resolved_url, file.title));
+      gallery.appendChild(item);
+    });
+  });
+
   window.generateImage = async () => {
     const promptField = document.getElementById('img-prompt');
     const rawPrompt = promptField.value.trim();
@@ -40,12 +89,29 @@
 
       const item = document.createElement('figure');
       item.className = 'gallery-img';
-      item.innerHTML = `<img src="${result.image_url}" alt="${esc(rawPrompt)}"><figcaption>${esc(result.provider || 'AI')} · ${esc(result.model || 'image')}</figcaption>`;
+      const preview = document.createElement('img');
+      preview.src = result.image_url;
+      preview.alt = rawPrompt;
+      preview.loading = 'eager';
+      preview.addEventListener('error', () => {
+        item.remove();
+        showToast('The generated image could not be displayed. Please try again.');
+      }, { once: true });
+      const caption = document.createElement('figcaption');
+      caption.textContent = `${result.provider || 'AI'} · ${result.model || 'image'}`;
+      item.append(preview, caption);
+      item.addEventListener('click', () => openViewer(result.image_url, rawPrompt));
+      item.setAttribute('title', 'Click to view full screen');
       // The newest result remains visible as the first preview card on the right.
       gallery.prepend(item);
       const projectId = new URLSearchParams(location.search).get('project_id');
       if (projectId && result.image_url.startsWith('http')) {
         await supabase.from('generated_images').insert({ project_id: projectId, prompt: rawPrompt, storage_path: result.image_url, metadata: { provider: result.provider, model: result.model, style } });
+        try {
+          await window.AOSGenerationStorage?.saveExternal({ title: rawPrompt.slice(0, 90) || 'Generated image', type: 'Image', prompt: rawPrompt, fileUrl: result.image_url, thumbnailUrl: result.image_url });
+        } catch (storageError) {
+          console.error('Generation history storage failed:', storageError);
+        }
       }
       showToast('Image generated successfully.');
     } catch (error) {
