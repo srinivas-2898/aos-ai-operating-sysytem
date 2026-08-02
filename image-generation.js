@@ -106,11 +106,15 @@
       gallery.prepend(item);
       const projectId = new URLSearchParams(location.search).get('project_id');
       if (projectId && result.image_url.startsWith('http')) {
-        await supabase.from('generated_images').insert({ project_id: projectId, prompt: rawPrompt, storage_path: result.image_url, metadata: { provider: result.provider, model: result.model, style } });
         try {
           await window.AOSGenerationStorage?.saveExternal({ title: rawPrompt.slice(0, 90) || 'Generated image', type: 'Image', prompt: rawPrompt, fileUrl: result.image_url, thumbnailUrl: result.image_url });
+          // Keep the older image table in sync where it exists, without letting it
+          // block the durable Generation Studio history record above.
+          const { error: legacyError } = await supabase.from('generated_images').insert({ project_id: projectId, prompt: rawPrompt, storage_path: result.image_url, metadata: { provider: result.provider, model: result.model, style } });
+          if (legacyError) console.warn('Legacy generated_images insert failed:', legacyError);
         } catch (storageError) {
           console.error('Generation history storage failed:', storageError);
+          showToast(`Image created, but its project history was not saved: ${storageError.message}`);
         }
       }
       showToast('Image generated successfully.');

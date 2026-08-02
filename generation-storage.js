@@ -35,6 +35,7 @@
       document.dispatchEvent(new CustomEvent('aos-generation-history', { detail: files }));
     } catch (error) {
       console.error('Could not load generation history:', error);
+      window.showToast?.(`Could not load saved files: ${error.message}`);
     }
   }
   window.AOSGenerationStorage = { saveBlob, saveExternal, loadHistory };

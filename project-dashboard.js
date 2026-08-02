@@ -40,7 +40,7 @@ function dashboardActivityRow(project) {
 function attachToolPickers() {
   const toolPages = {
     'AI Chat': 'chat.html',
-    'Generation Studio': 'generation-projects.html',
+    'Generation Studio': 'generation.html',
     'Development Studio': 'ide.html'
   };
   document.querySelectorAll('#view-dashboard .feature-card, #view-developer .feature-card').forEach((card) => {
@@ -48,11 +48,7 @@ function attachToolPickers() {
     const tool = toolPages[title];
     if (!tool || card.dataset.projectPickerBound) return;
     card.dataset.projectPickerBound = 'true';
-    card.addEventListener('click', (event) => {
-      event.preventDefault();
-      if (tool === 'generation-projects.html') { window.location.href = tool; return; }
-      openToolProjectPicker(tool);
-    });
+    card.addEventListener('click', (event) => { event.preventDefault(); openToolProjectPicker(tool); });
   });
 }
 

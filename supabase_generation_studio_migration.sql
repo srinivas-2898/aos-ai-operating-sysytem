@@ -61,6 +61,21 @@ DROP TRIGGER IF EXISTS generation_files_activity ON public.generation_files;
 CREATE TRIGGER generation_files_activity AFTER INSERT ON public.generation_files
 FOR EACH ROW EXECUTE FUNCTION public.aos_log_generation_file();
 
+-- Bring existing AOS image records into the unified Generation Studio history.
+-- This is safe to run again: an equivalent image URL in the same project is not duplicated.
+INSERT INTO public.generation_files (project_id, user_id, title, generation_type, prompt, file_url, status, created_at, updated_at)
+SELECT gi.project_id, p.user_id, COALESCE(NULLIF(left(gi.prompt, 90), ''), 'Generated image'), 'image', gi.prompt,
+       gi.storage_path, 'ready', gi.created_at, gi.created_at
+FROM public.generated_images gi
+JOIN public.projects p ON p.id = gi.project_id
+WHERE gi.storage_path IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM public.generation_files gf
+    WHERE gf.project_id = gi.project_id
+      AND gf.generation_type = 'image'
+      AND gf.file_url = gi.storage_path
+  );
+
 ALTER TABLE public.generation_files ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.project_activity ENABLE ROW LEVEL SECURITY;
 
