@@ -22,7 +22,13 @@ app.add_middleware(
 )
 
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/auto")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 os.makedirs("output", exist_ok=True)
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "backend"))
@@ -53,31 +59,73 @@ class ExcelRequest(BaseModel):
 
 
 def call_deepseek(system_prompt: str, user_prompt: str) -> str:
-    """Send a document-generation prompt to DeepSeek from the server only."""
-    if not DEEPSEEK_API_KEY:
-        raise HTTPException(status_code=503, detail="DEEPSEEK_API_KEY is not configured on the server.")
+    """Generate document content using configured providers without exposing keys."""
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+    failures = []
 
-    headers = {
-        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": "deepseek-chat",
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
-        "max_tokens": 4000,
-        "temperature": 0.7
-    }
-
-    try:
-        response = requests.post(DEEPSEEK_URL, headers=headers, json=payload, timeout=60)
+    def openai_compatible(url: str, api_key: str, model: str, provider: str) -> str:
+        response = requests.post(
+            url,
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={"model": model, "messages": messages, "max_tokens": 4000, "temperature": 0.7},
+            timeout=90,
+        )
         response.raise_for_status()
-        result = response.json()
-        return result["choices"][0]["message"]["content"]
-    except (requests.RequestException, KeyError, IndexError, ValueError) as error:
-        raise HTTPException(status_code=502, detail=f"DeepSeek request failed: {str(error)}") from error
+        return response.json()["choices"][0]["message"]["content"]
+
+    # Gemini is preferred for document generation when it is configured.
+    if GEMINI_API_KEY:
+        try:
+            response = requests.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent",
+                params={"key": GEMINI_API_KEY},
+                json={
+                    "system_instruction": {"parts": [{"text": system_prompt}]},
+                    "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
+                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 4000},
+                },
+                timeout=90,
+            )
+            response.raise_for_status()
+            return response.json()["candidates"][0]["content"]["parts"][0]["text"]
+        except (requests.RequestException, KeyError, IndexError, ValueError) as error:
+            failures.append(f"Gemini: {type(error).__name__}")
+
+    if OPENROUTER_API_KEY:
+        try:
+            return openai_compatible(
+                "https://openrouter.ai/api/v1/chat/completions",
+                OPENROUTER_API_KEY,
+                OPENROUTER_MODEL,
+                "OpenRouter",
+            )
+        except (requests.RequestException, KeyError, IndexError, ValueError) as error:
+            failures.append(f"OpenRouter: {type(error).__name__}")
+
+    if GROQ_API_KEY:
+        try:
+            return openai_compatible(
+                "https://api.groq.com/openai/v1/chat/completions",
+                GROQ_API_KEY,
+                GROQ_MODEL,
+                "Groq",
+            )
+        except (requests.RequestException, KeyError, IndexError, ValueError) as error:
+            failures.append(f"Groq: {type(error).__name__}")
+
+    if DEEPSEEK_API_KEY:
+        try:
+            return openai_compatible(DEEPSEEK_URL, DEEPSEEK_API_KEY, "deepseek-chat", "DeepSeek")
+        except (requests.RequestException, KeyError, IndexError, ValueError) as error:
+            failures.append(f"DeepSeek: {type(error).__name__}")
+
+    configured = "GEMINI_API_KEY, OPENROUTER_API_KEY, GROQ_API_KEY, or DEEPSEEK_API_KEY"
+    if not failures:
+        raise HTTPException(status_code=503, detail=f"No AI provider is configured. Add {configured} in Railway Variables.")
+    raise HTTPException(status_code=502, detail=f"All configured AI providers failed ({'; '.join(failures)}). Check Railway Variables and provider credits.")
 
 
 @app.get("/api/health")
