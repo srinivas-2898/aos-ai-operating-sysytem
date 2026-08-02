@@ -13,6 +13,13 @@
 
   const createFileCard = (gallery, blob, filename, label, icon) => {
     const url = URL.createObjectURL(blob);
+    if (blob.type === 'application/pdf') {
+      const preview = document.createElement('iframe');
+      preview.className = 'document-pdf-preview';
+      preview.src = url;
+      preview.title = `${label} preview`;
+      gallery.prepend(preview);
+    }
     const card = document.createElement('section');
     card.className = 'file-output-card';
     const symbol = document.createElement('span');
