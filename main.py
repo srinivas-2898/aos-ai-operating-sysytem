@@ -22,7 +22,9 @@ app.add_middleware(
 )
 
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# GEMINI_API_KEY_2 is supported for projects that already use GEMINI_API_KEY
+# for a different AOS feature. The dedicated key is preferred for generators.
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY_2") or os.getenv("GEMINI_API_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
