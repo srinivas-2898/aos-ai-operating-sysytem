@@ -5,3 +5,7 @@ python-dotenv
 gunicorn
 huggingface_hub
 pillow
+python-docx
+openpyxl
+reportlab
+python-pptx
