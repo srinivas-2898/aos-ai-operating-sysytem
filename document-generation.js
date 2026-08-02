@@ -92,7 +92,7 @@
     const isPpt = documentType === 'PPT' || documentType === 'PowerPoint';
     await downloadGeneratedFile(
       isPdf ? '/api/generate-pdf' : isPpt ? '/api/generate-ppt' : '/api/generate/document',
-      isPdf ? { prompt, document_type: documentType, theme: 'professional' } : isPpt ? { prompt, num_slides: 8, theme: 'professional', template: 'business' } : { prompt, document_type: documentType },
+      isPdf ? { prompt, document_type: documentType } : isPpt ? { prompt, num_slides: 8, theme: 'professional', template: 'business' } : { prompt, document_type: documentType },
       'doc-gallery', 'doc-gallery-empty', button, documentType, 'generated-document', '📄'
     );
   };

@@ -39,7 +39,6 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "backen
 class PDFRequest(BaseModel):
     prompt: str
     document_type: str
-    theme: str = "professional"
 
 
 class PPTRequest(BaseModel):
