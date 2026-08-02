@@ -1,6 +1,8 @@
-from flask import Flask, request, jsonify, send_from_directory, send_file, abort
-from flask_cors import CORS
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse, Response
 import requests
+import httpx
 import traceback
 import os
 import base64
@@ -11,7 +13,6 @@ from urllib.parse import quote
 from pathlib import Path
 from dotenv import load_dotenv
 from io import BytesIO
-from huggingface_hub import InferenceClient
 from docx import Document
 from docx.shared import Inches, Pt
 from openpyxl import Workbook
@@ -29,8 +30,20 @@ from pptx.dml.color import RGBColor
 
 load_dotenv()
 
-app = Flask(__name__)
-CORS(app)  # Configure a restricted origin here before production deployment.
+app = FastAPI(title='AOS API')
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=False,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
+
+
+@app.exception_handler(HTTPException)
+async def aos_http_exception_handler(request: Request, exception: HTTPException):
+    """Retain the error response shape used by the existing browser scripts."""
+    return JSONResponse(status_code=exception.status_code, content={'error': exception.detail})
 APP_ROOT = Path(__file__).resolve().parent
 PUBLIC_FILE_EXTENSIONS = {'.html', '.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.ico'}
 
@@ -47,29 +60,20 @@ API_KEYS = {
 HF_TOKEN = os.environ.get('HF_TOKEN')
 HF_IMAGE_MODELS = {'black-forest-labs/FLUX.1-schnell'}
 
-@app.route('/')
+@app.get('/')
 def index():
-    return send_from_directory(APP_ROOT, 'index.html')
+    return FileResponse(APP_ROOT / 'index.html')
 
-@app.route('/<path:filename>')
-def frontend_file(filename):
-    """Serve only public frontend assets; environment files are never exposed."""
-    path = (APP_ROOT / filename).resolve()
-    if APP_ROOT not in path.parents or path.suffix.lower() not in PUBLIC_FILE_EXTENSIONS:
-        abort(404)
-    return send_from_directory(APP_ROOT, filename)
-
-@app.route('/api/chat', methods=['POST'])
-def chat():
-    data = request.get_json(silent=True)
+@app.post('/api/chat')
+def chat(data: dict):
     if not data:
-        return jsonify({'error': 'Invalid JSON data provided.'}), 400
+        raise HTTPException(status_code=400, detail='Invalid JSON data provided.')
 
     model = data.get('model')
     message = data.get('message')
 
     if not model or not message:
-        return jsonify({'error': 'Model and message are required.'}), 400
+        raise HTTPException(status_code=400, detail='Model and message are required.')
 
     try:
         if model == 'gemini':
@@ -79,7 +83,7 @@ def chat():
             response.raise_for_status()
             data = response.json()
             reply = data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', 'No response from Gemini')
-            return jsonify({'reply': reply})
+            return {'reply': reply}
 
         elif model == 'groq':
             url = 'https://api.groq.com/openai/v1/chat/completions'
@@ -89,7 +93,7 @@ def chat():
             response.raise_for_status()
             data = response.json()
             reply = data.get('choices', [{}])[0].get('message', {}).get('content', 'No response from Groq')
-            return jsonify({'reply': reply})
+            return {'reply': reply}
 
         elif model == 'openrouter':
             url = 'https://openrouter.ai/api/v1/chat/completions'
@@ -99,7 +103,7 @@ def chat():
             response.raise_for_status()
             data = response.json()
             reply = data.get('choices', [{}])[0].get('message', {}).get('content', 'No response from Open Router')
-            return jsonify({'reply': reply})
+            return {'reply': reply}
 
         elif model == 'mistral':
             url = 'https://api.mistral.ai/v1/chat/completions'
@@ -109,7 +113,7 @@ def chat():
             response.raise_for_status()
             data = response.json()
             reply = data.get('choices', [{}])[0].get('message', {}).get('content', 'No response from Mistral')
-            return jsonify({'reply': reply})
+            return {'reply': reply}
 
         elif model == 'cohere':
             url = 'https://api.cohere.com/v1/chat'
@@ -119,49 +123,55 @@ def chat():
             response.raise_for_status()
             data = response.json()
             reply = data.get('text', 'No response from Cohere')
-            return jsonify({'reply': reply})
+            return {'reply': reply}
 
         else:
-            return jsonify({'error': 'Unsupported model'}), 400
+            raise HTTPException(status_code=400, detail='Unsupported model')
 
     except requests.exceptions.RequestException as e:
         print("Request failed:", e)
         if hasattr(e, 'response') and e.response is not None:
             print("Response content:", e.response.content)
-        return jsonify({'error': 'Failed to communicate with LLM provider API.'}), 502
+        raise HTTPException(status_code=502, detail='Failed to communicate with LLM provider API.')
     except Exception as e:
         traceback.print_exc()
-        return jsonify({'error': 'An internal server error occurred.'}), 500
+        raise HTTPException(status_code=500, detail='An internal server error occurred.')
 
-@app.route('/api/generate/image', methods=['POST'])
-def generate_image():
+@app.post('/api/generate/image')
+def generate_image(data: dict):
     """Generate an image through Hugging Face; the token never reaches the browser."""
-    data = request.get_json(silent=True) or {}
     prompt = (data.get('prompt') or '').strip()
     model = data.get('model') or 'black-forest-labs/FLUX.1-schnell'
     if not prompt:
-        return jsonify({'error': 'An image prompt is required.'}), 400
+        raise HTTPException(status_code=400, detail='An image prompt is required.')
     if model not in HF_IMAGE_MODELS:
-        return jsonify({'error': 'Unsupported Hugging Face image model.'}), 400
+        raise HTTPException(status_code=400, detail='Unsupported Hugging Face image model.')
     if not HF_TOKEN:
-        return jsonify({'error': 'Hugging Face image API is not configured on the server.'}), 503
+        raise HTTPException(status_code=503, detail='Hugging Face image API is not configured on the server.')
 
     try:
-        client = InferenceClient(api_key=HF_TOKEN, timeout=120)
-        image = client.text_to_image(prompt=prompt, model=model)
-        buffer = BytesIO()
-        image.save(buffer, format='PNG')
-        encoded = base64.b64encode(buffer.getvalue()).decode('ascii')
-        return jsonify({
+        response = httpx.post(
+            'https://router.huggingface.co/nscale/v1/images/generations',
+            headers={'Authorization': f'Bearer {HF_TOKEN}'},
+            json={'model': model, 'prompt': prompt, 'response_format': 'b64_json'},
+            timeout=120,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        result = (payload.get('data') or [{}])[0]
+        encoded = result.get('b64_json')
+        if not encoded:
+            raise ValueError('Hugging Face returned no image data.')
+        return {
             'image_url': f'data:image/png;base64,{encoded}',
             'provider': 'huggingface',
             'model': model
-        })
-    except requests.exceptions.RequestException as error:
+        }
+    except httpx.HTTPError as error:
         detail = error.response.text[:300] if error.response is not None else str(error)
-        return jsonify({'error': f'Hugging Face API request failed: {detail}'}), 502
+        raise HTTPException(status_code=502, detail=f'Hugging Face API request failed: {detail}')
     except Exception as error:
-        return jsonify({'error': f'Image generation failed: {str(error)}'}), 502
+        raise HTTPException(status_code=502, detail=f'Image generation failed: {str(error)}')
 
 
 DOCUMENT_TYPES = {'PDF', 'Word', 'Excel', 'PowerPoint', 'Resume', 'Invoice', 'Business Plan', 'Research'}
@@ -423,15 +433,14 @@ def create_pptx(plan, slide_count, theme):
     return buffer.getvalue(), 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'pptx'
 
 
-@app.route('/api/generate/document', methods=['POST'])
-def generate_document():
-    data = request.get_json(silent=True) or {}
+@app.post('/api/generate/document')
+def generate_document(data: dict):
     prompt = (data.get('prompt') or '').strip()
     document_type = data.get('document_type') or 'PDF'
     if not prompt:
-        return jsonify({'error': 'A document prompt is required.'}), 400
+        raise HTTPException(status_code=400, detail='A document prompt is required.')
     if document_type not in DOCUMENT_TYPES:
-        return jsonify({'error': 'Unsupported document type.'}), 400
+        raise HTTPException(status_code=400, detail='Unsupported document type.')
     plan = document_plan(prompt, document_type)
     try:
         if document_type == 'Excel':
@@ -443,32 +452,32 @@ def generate_document():
         else:
             content, mimetype, extension = create_docx(plan, document_type)
         filename = f'{safe_filename(plan["title"], "document")}.{extension}'
-        return send_file(BytesIO(content), mimetype=mimetype, as_attachment=True, download_name=filename)
+        return Response(content=content, media_type=mimetype, headers={'Content-Disposition': f'attachment; filename="{filename}"'})
     except Exception as error:
-        return jsonify({'error': f'Document generation failed: {str(error)}'}), 500
+        raise HTTPException(status_code=500, detail=f'Document generation failed: {str(error)}')
 
 
-@app.route('/api/generate/presentation', methods=['POST'])
-def generate_presentation():
-    data = request.get_json(silent=True) or {}
+@app.post('/api/generate/presentation')
+def generate_presentation(data: dict):
     prompt = (data.get('prompt') or '').strip()
     theme = data.get('theme') or 'modern'
     try:
         slide_count = int(data.get('slides') or 8)
     except (TypeError, ValueError):
-        return jsonify({'error': 'Slides must be a number.'}), 400
+        raise HTTPException(status_code=400, detail='Slides must be a number.')
     if not prompt:
-        return jsonify({'error': 'A presentation prompt is required.'}), 400
+        raise HTTPException(status_code=400, detail='A presentation prompt is required.')
     if slide_count < 1 or slide_count > 20:
-        return jsonify({'error': 'Choose between 1 and 20 slides.'}), 400
+        raise HTTPException(status_code=400, detail='Choose between 1 and 20 slides.')
     plan = document_plan(prompt, 'Presentation')
     try:
         content, mimetype, extension = create_pptx(plan, slide_count, theme)
         filename = f'{safe_filename(plan["title"], "presentation")}.{extension}'
-        return send_file(BytesIO(content), mimetype=mimetype, as_attachment=True, download_name=filename)
+        return Response(content=content, media_type=mimetype, headers={'Content-Disposition': f'attachment; filename="{filename}"'})
     except Exception as error:
-        return jsonify({'error': f'Presentation generation failed: {str(error)}'}), 500
+        raise HTTPException(status_code=500, detail=f'Presentation generation failed: {str(error)}')
 
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=os.getenv('FLASK_DEBUG') == '1')
+    import uvicorn
+    uvicorn.run(app, host='0.0.0.0', port=int(os.getenv('PORT', '8080')))
