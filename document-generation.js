@@ -50,7 +50,7 @@
       });
       if (!response.ok) {
         const error = await response.json().catch(() => ({}));
-        throw new Error(error.error || 'File generation failed.');
+        throw new Error(error.error || error.detail || 'File generation failed.');
       }
       const blob = await response.blob();
       const fileCard = createFileCard(gallery, blob, fileNameFrom(response, fallbackName), label, icon);
@@ -70,7 +70,14 @@
     const button = document.getElementById('doc-gen-btn');
     button.dataset.idleLabel ||= 'Generate Document';
     setBusy(button, true);
-    await downloadGeneratedFile('/api/generate/document', { prompt, document_type: window.selectedDocType || 'PDF' }, 'doc-gallery', 'doc-gallery-empty', button, window.selectedDocType || 'Document', 'generated-document', '📄');
+    const documentType = window.selectedDocType || 'PDF';
+    const isPdf = documentType === 'PDF';
+    const isPpt = documentType === 'PPT' || documentType === 'PowerPoint';
+    await downloadGeneratedFile(
+      isPdf ? '/api/generate-pdf' : isPpt ? '/api/generate-ppt' : '/api/generate/document',
+      isPdf ? { prompt, document_type: documentType, theme: 'professional' } : isPpt ? { prompt, num_slides: 8, theme: 'professional', template: 'business' } : { prompt, document_type: documentType },
+      'doc-gallery', 'doc-gallery-empty', button, documentType, 'generated-document', '📄'
+    );
   };
 
   window.generatePresentation = async () => {
@@ -79,8 +86,8 @@
     const button = document.getElementById('pres-gen-btn');
     button.dataset.idleLabel ||= 'Generate Presentation';
     setBusy(button, true);
-    await downloadGeneratedFile('/api/generate/presentation', {
-      prompt, slides: Number(document.getElementById('pres-slides').value), theme: document.getElementById('pres-theme').value,
+    await downloadGeneratedFile('/api/generate-ppt', {
+      prompt, num_slides: Number(document.getElementById('pres-slides').value), theme: document.getElementById('pres-theme').value,
       template: document.getElementById('pres-template').value
     }, 'pres-gallery', 'pres-gallery-empty', button, 'Presentation', 'generated-presentation.pptx', '📊');
   };
