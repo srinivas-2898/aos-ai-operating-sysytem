@@ -4,6 +4,9 @@ import requests
 import traceback
 import os
 import base64
+import html
+import re
+from datetime import date
 from urllib.parse import quote
 from pathlib import Path
 from dotenv import load_dotenv
@@ -15,9 +18,11 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import BaseDocTemplate, Flowable, Frame, Image, KeepTogether, ListFlowable, ListItem, PageBreak, PageTemplate, Paragraph, Spacer, Table, TableStyle, XPreformatted
+from reportlab.platypus.tableofcontents import TableOfContents
 from pptx import Presentation
 from pptx.util import Inches as PptInches, Pt as PptPt
 from pptx.dml.color import RGBColor
@@ -219,18 +224,174 @@ def create_xlsx(plan):
     return buffer.getvalue(), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'xlsx'
 
 
-def create_pdf(plan, document_type):
+class AOSReportTemplate(BaseDocTemplate):
+    """Platypus document template with a working table of contents."""
+    def afterFlowable(self, flowable):
+        if isinstance(flowable, Paragraph) and getattr(flowable, '_toc_level', None) is not None:
+            key = f'chapter-{self.seq.nextf("chapter")}'
+            self.canv.bookmarkPage(key)
+            self.notify('TOCEntry', (flowable._toc_level, flowable.getPlainText(), self.page, key))
+
+
+class RoundedNote(Flowable):
+    def __init__(self, text, width):
+        super().__init__()
+        self.width = width
+        self.paragraph = Paragraph(html.escape(text), ParagraphStyle('NoteBody', fontName='Helvetica', fontSize=10.5, leading=15, textColor=colors.HexColor('#1F2937')))
+        self.height = 0
+
+    def wrap(self, available_width, available_height):
+        self.width = min(self.width, available_width)
+        _, paragraph_height = self.paragraph.wrap(self.width - 28, available_height)
+        self.height = paragraph_height + 26
+        return self.width, self.height
+
+    def draw(self):
+        self.canv.setFillColor(colors.HexColor('#EFF6FF'))
+        self.canv.setStrokeColor(colors.HexColor('#BFDBFE'))
+        self.canv.roundRect(0, 0, self.width, self.height, 8, fill=1, stroke=1)
+        self.paragraph.drawOn(self.canv, 14, 13)
+
+
+def escape_text(value):
+    return html.escape(str(value)).replace('\n', '<br/>')
+
+
+def report_styles():
+    base = getSampleStyleSheet()
+    return {
+        'cover_title': ParagraphStyle('CoverTitle', parent=base['Title'], fontName='Helvetica-Bold', fontSize=32, leading=39, alignment=TA_CENTER, textColor=colors.HexColor('#1F2937'), spaceAfter=16),
+        'cover_subtitle': ParagraphStyle('CoverSubtitle', parent=base['Normal'], fontName='Helvetica', fontSize=13, leading=19, alignment=TA_CENTER, textColor=colors.HexColor('#64748B')),
+        'heading1': ParagraphStyle('Heading1AOS', parent=base['Heading1'], fontName='Helvetica-Bold', fontSize=20, leading=26, textColor=colors.HexColor('#2563EB'), spaceBefore=0, spaceAfter=14, keepWithNext=True),
+        'heading2': ParagraphStyle('Heading2AOS', parent=base['Heading2'], fontName='Helvetica-Bold', fontSize=16, leading=21, textColor=colors.HexColor('#1F2937'), spaceBefore=10, spaceAfter=8, keepWithNext=True),
+        'heading3': ParagraphStyle('Heading3AOS', parent=base['Heading3'], fontName='Helvetica-Bold', fontSize=14, leading=18, textColor=colors.HexColor('#1F2937'), spaceBefore=8, spaceAfter=6, keepWithNext=True),
+        'body': ParagraphStyle('BodyAOS', parent=base['BodyText'], fontName='Helvetica', fontSize=11.2, leading=17, textColor=colors.HexColor('#374151'), spaceAfter=11),
+        'toc': ParagraphStyle('TOCAOS', parent=base['Normal'], fontName='Helvetica', fontSize=11, leading=16, textColor=colors.HexColor('#374151')),
+        'code': ParagraphStyle('CodeAOS', fontName='Courier', fontSize=8.8, leading=12.5, textColor=colors.HexColor('#E5E7EB'), backColor=colors.HexColor('#111827'), borderPadding=11, borderRadius=6),
+    }
+
+
+def on_cover_page(canvas, document):
+    canvas.saveState()
+    canvas.setFillColor(colors.HexColor('#2563EB'))
+    canvas.rect(0, A4[1] - 82, A4[0], 82, fill=1, stroke=0)
+    canvas.setFillColor(colors.white)
+    canvas.setFont('Helvetica-Bold', 12)
+    canvas.drawString(48, A4[1] - 49, 'AOS  /  GENERATED DOCUMENT')
+    canvas.setStrokeColor(colors.HexColor('#93C5FD'))
+    canvas.setLineWidth(2)
+    canvas.line(48, 48, A4[0] - 48, 48)
+    canvas.setFillColor(colors.HexColor('#64748B'))
+    canvas.setFont('Helvetica', 9)
+    canvas.drawCentredString(A4[0] / 2, 31, f'Page {document.page}')
+    canvas.restoreState()
+
+
+def on_body_page(canvas, document):
+    canvas.saveState()
+    canvas.setStrokeColor(colors.HexColor('#2563EB'))
+    canvas.setLineWidth(1.6)
+    canvas.line(48, A4[1] - 44, A4[0] - 48, A4[1] - 44)
+    canvas.setFillColor(colors.HexColor('#2563EB'))
+    canvas.setFont('Helvetica-Bold', 9)
+    canvas.drawString(48, A4[1] - 33, 'AOS DOCUMENT STUDIO')
+    canvas.setFillColor(colors.HexColor('#64748B'))
+    canvas.setFont('Helvetica', 8.5)
+    canvas.drawRightString(A4[0] - 48, A4[1] - 33, date.today().strftime('%d %B %Y'))
+    canvas.setStrokeColor(colors.HexColor('#CBD5E1'))
+    canvas.setLineWidth(.7)
+    canvas.line(48, 40, A4[0] - 48, 40)
+    canvas.setFillColor(colors.HexColor('#64748B'))
+    canvas.setFont('Helvetica', 8.5)
+    canvas.drawString(48, 26, 'Prepared with AOS')
+    canvas.drawRightString(A4[0] - 48, 26, f'Page {document.page}')
+    canvas.restoreState()
+
+
+def optional_images(image_payloads, max_width):
+    flowables = []
+    for data_url in image_payloads or []:
+        if not isinstance(data_url, str) or not data_url.startswith('data:image/') or ',' not in data_url:
+            continue
+        try:
+            image_bytes = base64.b64decode(data_url.split(',', 1)[1])
+            image = Image(BytesIO(image_bytes))
+            image._restrictSize(max_width, 4.6 * inch)
+            flowables += [Spacer(1, 6), image, Spacer(1, 10)]
+        except Exception:
+            continue
+    return flowables
+
+
+def highlighted_code(code, style):
+    highlighted_lines = []
+    for line in code.splitlines():
+        code_part, marker, comment = line.partition('#')
+        escaped = html.escape(code_part)
+        for keyword in ('def', 'class', 'return', 'import', 'from', 'if', 'else', 'for', 'while', 'True', 'False', 'None'):
+            escaped = re.sub(rf'\b{keyword}\b', f'<font color="#60A5FA">{keyword}</font>', escaped)
+        if marker:
+            escaped += f'<font color="#94A3B8">#{html.escape(comment)}</font>'
+        highlighted_lines.append(escaped)
+    return XPreformatted('\n'.join(highlighted_lines), style)
+
+
+def create_pdf(plan, document_type, options=None):
+    options = options or {}
     buffer = BytesIO()
-    styles = getSampleStyleSheet()
-    story = [Paragraph(plan['title'], styles['Title']), Spacer(1, 0.16 * inch), Paragraph(document_type, styles['Heading2']), Spacer(1, 0.12 * inch), Paragraph(plan['summary'], styles['BodyText']), Spacer(1, 0.2 * inch)]
-    if document_type == 'Invoice':
-        rows = [['Item', 'Description', 'Status'], ['Requested work', plan['title'], 'To be confirmed']]
-        table = Table(rows, colWidths=[1.2 * inch, 4.2 * inch, 1.2 * inch])
-        table.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2563EB')), ('TEXTCOLOR', (0, 0), (-1, 0), colors.white), ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')), ('VALIGN', (0, 0), (-1, -1), 'TOP'), ('PADDING', (0, 0), (-1, -1), 8)]))
-        story += [table, Spacer(1, 0.22 * inch)]
-    for heading, body in plan['sections']:
-        story += [Paragraph(heading, styles['Heading2']), Paragraph(body, styles['BodyText']), Spacer(1, 0.12 * inch)]
-    SimpleDocTemplate(buffer, pagesize=A4, rightMargin=52, leftMargin=52, topMargin=48, bottomMargin=48).build(story)
+    page_width, page_height = A4
+    margin = 52
+    cover_frame = Frame(margin, 62, page_width - (margin * 2), page_height - 160, id='cover')
+    body_frame = Frame(margin, 58, page_width - (margin * 2), page_height - 118, id='body')
+    document = AOSReportTemplate(buffer, pagesize=A4, leftMargin=margin, rightMargin=margin, topMargin=58, bottomMargin=58)
+    document.addPageTemplates([PageTemplate(id='Cover', frames=[cover_frame], onPage=on_cover_page), PageTemplate(id='Body', frames=[body_frame], onPage=on_body_page)])
+    styles = report_styles()
+    story = [Spacer(1, 2.1 * inch), Paragraph(escape_text(plan['title']), styles['cover_title']), Paragraph(f'{escape_text(document_type)}  •  Generated {date.today().strftime("%d %B %Y")}', styles['cover_subtitle']), Spacer(1, .45 * inch), RoundedNote('This professionally formatted document was generated from your request. Review and add verified project-specific details before formal submission.', page_width - (margin * 2)), PageBreak()]
+
+    toc = TableOfContents()
+    toc.levelStyles = [styles['toc'], ParagraphStyle('TOC2', parent=styles['toc'], leftIndent=18)]
+    story += [Paragraph('Table of Contents', styles['heading1']), Spacer(1, 6), toc, PageBreak()]
+
+    def chapter(title, body, level=0):
+        heading = Paragraph(escape_text(title), styles['heading1'] if level == 0 else styles['heading2'])
+        heading._toc_level = level
+        return [heading, Paragraph(escape_text(body), styles['body'])]
+
+    story += chapter('Executive Summary', plan['summary'])
+    story += [RoundedNote('Important note: this document is a structured draft. Validate facts, dates, financial figures, and references before sharing externally.', page_width - (margin * 2)), Spacer(1, 14)]
+    summary_table = Table([['Document type', document_type], ['Prepared', date.today().strftime('%d %B %Y')], ['Subject', plan['title']]], colWidths=[1.5 * inch, 4.6 * inch])
+    summary_table.setStyle(TableStyle([('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#EFF6FF')), ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#1D4ED8')), ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'), ('FONTNAME', (1, 0), (1, -1), 'Helvetica'), ('GRID', (0, 0), (-1, -1), .5, colors.HexColor('#CBD5E1')), ('VALIGN', (0, 0), (-1, -1), 'TOP'), ('TOPPADDING', (0, 0), (-1, -1), 8), ('BOTTOMPADDING', (0, 0), (-1, -1), 8), ('LEFTPADDING', (0, 0), (-1, -1), 9)]))
+    story += [summary_table, PageBreak()]
+
+    for index, (heading, body) in enumerate(plan['sections'], start=1):
+        story += chapter(f'{index}. {heading}', body)
+        if heading == 'Key requirements':
+            bullets = ['Define measurable outcomes and acceptance criteria.', 'Assign an owner and due date to each deliverable.', 'Review risks, dependencies, and approval steps.']
+            story += [ListFlowable([ListItem(Paragraph(item, styles['body'])) for item in bullets], bulletType='bullet', leftIndent=20), Spacer(1, 8)]
+        if heading == 'Next steps':
+            steps = ['Review the draft with stakeholders.', 'Confirm final requirements and supporting evidence.', 'Publish the approved version and record ownership.']
+            story += [ListFlowable([ListItem(Paragraph(item, styles['body'])) for item in steps], bulletType='1', leftIndent=22), Spacer(1, 8)]
+        if index < len(plan['sections']):
+            story.append(PageBreak())
+
+    supplied_images = optional_images(options.get('images'), page_width - (margin * 2))
+    if supplied_images:
+        story += [PageBreak()] + chapter('Supporting Images', 'Images supplied with the request are included below.') + supplied_images
+
+    code_examples = options.get('code_examples') or []
+    if code_examples:
+        story += [PageBreak()] + chapter('Code Examples', 'The following code examples were supplied with the request.')
+        for code in code_examples[:4]:
+            if isinstance(code, str) and code.strip():
+                story += [highlighted_code(code[:5000], styles['code']), Spacer(1, 12)]
+
+    references = [item for item in (options.get('references') or []) if isinstance(item, str) and item.strip()]
+    story += [PageBreak()] + chapter('References', 'The following references were supplied with this request.' if references else 'No external references were supplied with this request.')
+    if references:
+        story.append(ListFlowable([ListItem(Paragraph(escape_text(reference), styles['body'])) for reference in references], bulletType='bullet', leftIndent=20))
+    story += [PageBreak()] + chapter('Conclusion', f'This {document_type.lower()} provides a structured foundation for “{plan["title"]}”. Complete a final review before submission to ensure it meets the required academic, company, or project standards.')
+
+    document.multiBuild(story)
     return buffer.getvalue(), 'application/pdf', 'pdf'
 
 
@@ -276,7 +437,7 @@ def generate_document():
         if document_type == 'Excel':
             content, mimetype, extension = create_xlsx(plan)
         elif document_type in {'PDF', 'Invoice'}:
-            content, mimetype, extension = create_pdf(plan, document_type)
+            content, mimetype, extension = create_pdf(plan, document_type, data)
         elif document_type == 'PowerPoint':
             content, mimetype, extension = create_pptx(plan, 6, 'modern')
         else:

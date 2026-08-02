@@ -30,6 +30,7 @@
     text.append(name, detail);
     card.append(symbol, text);
     gallery.prepend(card);
+    return card;
   };
 
   const setBusy = (button, busy, label) => {
@@ -52,7 +53,8 @@
         throw new Error(error.error || 'File generation failed.');
       }
       const blob = await response.blob();
-      createFileCard(gallery, blob, fileNameFrom(response, fallbackName), label, icon);
+      const fileCard = createFileCard(gallery, blob, fileNameFrom(response, fallbackName), label, icon);
+      if (blob.type === 'application/pdf') fileCard.click();
       showToast(`${label} is ready. Click the card to download it.`);
     } catch (error) {
       showToast(error.message || 'File generation failed.');
