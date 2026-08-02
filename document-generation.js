@@ -13,11 +13,8 @@
 
   const createFileCard = (gallery, blob, filename, label, icon) => {
     const url = URL.createObjectURL(blob);
-    const card = document.createElement('a');
+    const card = document.createElement('section');
     card.className = 'file-output-card';
-    card.href = url;
-    card.download = filename;
-    card.title = `Download ${filename}`;
     const symbol = document.createElement('span');
     symbol.className = 'file-output-icon';
     symbol.textContent = icon;
@@ -26,11 +23,17 @@
     const name = document.createElement('strong');
     name.textContent = label;
     const detail = document.createElement('small');
+    const download = document.createElement('a');
+    download.className = 'file-download-button';
+    download.href = url;
+    download.download = filename;
+    download.textContent = 'Download file';
+    download.title = `Download ${filename}`;
     detail.textContent = `${filename} · Click to download`;
     text.append(name, detail);
-    card.append(symbol, text);
+    card.append(symbol, text, download);
     gallery.prepend(card);
-    return card;
+    return download;
   };
 
   const setBusy = (button, busy, label) => {

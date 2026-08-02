@@ -158,6 +158,7 @@ body{background:radial-gradient(circle at 86% 0,#e0f2fe 0,transparent 28%),#f6f9
 #image-viewer img{display:block;max-width:min(92vw,1400px);max-height:82vh;object-fit:contain;border-radius:10px;box-shadow:0 25px 70px rgba(0,0,0,.45)}
 #image-viewer .viewer-close{position:absolute;top:22px;right:24px;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.35);color:#fff;font-size:26px;line-height:1}.viewer-caption{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);max-width:80vw;color:#fff;font-size:13px;text-align:center;opacity:.85}
 .file-output-card{display:flex;align-items:center;gap:13px;min-height:92px;padding:16px;border:1px solid #dbe6f4;border-radius:12px;background:#fff;box-shadow:0 8px 18px rgba(15,23,42,.07);transition:transform .18s,box-shadow .18s}.file-output-card:hover{transform:translateY(-3px);box-shadow:0 15px 26px rgba(37,99,235,.15)}.file-output-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:10px;background:#eff6ff;font-size:21px}.file-output-text{display:flex;min-width:0;flex-direction:column;gap:4px}.file-output-text strong{color:#1e293b;font-size:14px}.file-output-text small{overflow:hidden;color:#64748b;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+.file-output-card{grid-column:1/-1;min-height:126px;padding:22px;gap:16px;background:linear-gradient(135deg,#ffffff,#f4f9ff);border-color:#bfdbfe}.file-output-icon{width:52px;height:52px;font-size:26px}.file-output-text{flex:1;gap:6px}.file-output-text strong{font-size:16px}.file-output-text small{font-size:12px;white-space:normal}.file-download-button{display:inline-flex;align-items:center;justify-content:center;min-width:126px;padding:11px 14px;border-radius:9px;background:#2563eb;color:#fff;font-size:13px;font-weight:700;box-shadow:0 6px 12px rgba(37,99,235,.2)}.file-download-button:hover{background:#1d4ed8}@media (max-width:620px){.file-output-card{align-items:flex-start;flex-wrap:wrap}.file-download-button{width:100%}}
 </style>
 </head>
 <body>
@@ -627,6 +628,6 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="project-context.js"></script>
 <script src="generation-tabs.js?v=tabs-r1"></script>
 <script src="image-generation.js?v=images-r7"></script>
-<script src="document-generation.js?v=documents-r5"></script>
+<script src="document-generation.js?v=documents-r6"></script>
 </body>
 </html>
