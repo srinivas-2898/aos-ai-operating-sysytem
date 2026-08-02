@@ -23,9 +23,9 @@ API_KEYS = {
     'cohere': os.environ.get('COHERE_API_KEY')
 }
 
-# Image generation uses the existing server-side Gemini key. An optional
-# GEMINI_IMAGE_KEY can be supplied in Railway when separate billing is needed.
-GEMINI_IMAGE_KEY = os.environ.get('GEMINI_IMAGE_KEY') or os.environ.get('GEMINI_API_KEY')
+# Keep image generation isolated from chat: configure this separately in
+# Railway Variables. It must never be exposed in frontend code.
+GEMINI_IMAGE_KEY = os.environ.get('GEMINI_IMAGE_KEY')
 
 @app.route('/')
 def index():
