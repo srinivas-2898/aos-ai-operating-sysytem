@@ -7,6 +7,8 @@ import base64
 from urllib.parse import quote
 from pathlib import Path
 from dotenv import load_dotenv
+from io import BytesIO
+from huggingface_hub import InferenceClient
 
 load_dotenv()
 
@@ -25,7 +27,8 @@ API_KEYS = {
 
 # Keep image generation isolated from chat: configure this separately in
 # Railway Variables. It must never be exposed in frontend code.
-GEMINI_IMAGE_KEY = os.environ.get('GEMINI_IMAGE_KEY')
+HF_TOKEN = os.environ.get('HF_TOKEN')
+HF_IMAGE_MODELS = {'black-forest-labs/FLUX.1-schnell'}
 
 @app.route('/')
 def index():
@@ -115,45 +118,31 @@ def chat():
 
 @app.route('/api/generate/image', methods=['POST'])
 def generate_image():
-    """Generate an image through Google Gemini API; API key never reaches the browser."""
+    """Generate an image through Hugging Face; the token never reaches the browser."""
     data = request.get_json(silent=True) or {}
     prompt = (data.get('prompt') or '').strip()
-    model = data.get('model') or 'gemini-3.1-flash-image'
+    model = data.get('model') or 'black-forest-labs/FLUX.1-schnell'
     if not prompt:
         return jsonify({'error': 'An image prompt is required.'}), 400
-    if not GEMINI_IMAGE_KEY:
-        return jsonify({'error': 'Gemini Image API key is not configured on the server.'}), 503
+    if model not in HF_IMAGE_MODELS:
+        return jsonify({'error': 'Unsupported Hugging Face image model.'}), 400
+    if not HF_TOKEN:
+        return jsonify({'error': 'Hugging Face image API is not configured on the server.'}), 503
 
     try:
-        api_url = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_IMAGE_KEY}'
-        payload = {
-            'contents': [{'parts': [{'text': f'Generate an image based on this description: {prompt}'}]}],
-            'generationConfig': {'responseModalities': ['TEXT', 'IMAGE']}
-        }
-        response = requests.post(api_url, json=payload, timeout=120)
-        response.raise_for_status()
-        result = response.json()
-
-        candidates = result.get('candidates', [])
-        if not candidates:
-            return jsonify({'error': 'Gemini returned no candidates.'}), 502
-
-        parts = candidates[0].get('content', {}).get('parts', [])
-        for part in parts:
-            inline = part.get('inlineData') or part.get('inline_data')
-            if inline and inline.get('data'):
-                mime = inline.get('mimeType') or inline.get('mime_type') or 'image/png'
-                encoded = inline['data']
-                return jsonify({
-                    'image_url': f'data:{mime};base64,{encoded}',
-                    'provider': 'gemini',
-                    'model': model
-                })
-
-        return jsonify({'error': 'Gemini did not return an image for this prompt.'}), 502
+        client = InferenceClient(api_key=HF_TOKEN, timeout=120)
+        image = client.text_to_image(prompt=prompt, model=model)
+        buffer = BytesIO()
+        image.save(buffer, format='PNG')
+        encoded = base64.b64encode(buffer.getvalue()).decode('ascii')
+        return jsonify({
+            'image_url': f'data:image/png;base64,{encoded}',
+            'provider': 'huggingface',
+            'model': model
+        })
     except requests.exceptions.RequestException as error:
         detail = error.response.text[:300] if error.response is not None else str(error)
-        return jsonify({'error': f'Gemini API request failed: {detail}'}), 502
+        return jsonify({'error': f'Hugging Face API request failed: {detail}'}), 502
     except Exception as error:
         return jsonify({'error': f'Image generation failed: {str(error)}'}), 502
 
