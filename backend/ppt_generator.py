@@ -47,7 +47,7 @@ def generate_ppt_content(prompt: str, num_slides: int, theme: str, template: str
     system_prompt = f"""You are an expert presentation designer. Generate professional slide content.
 Return ONLY valid JSON with this exact structure:
 {{"title":"Presentation main title","subtitle":"Presentation subtitle","author":"AOS AI Operating System","slides":[{{"slide_number":1,"type":"title","title":"Slide title","subtitle":"Slide subtitle","content":"Main content text","bullet_points":["Point 1","Point 2","Point 3","Point 4"],"speaker_notes":"Notes for this slide"}}]}}
-Generate exactly {num_slides} slides. Make each slide focused with a maximum of 4-5 bullet points. Keep every bullet concise and impactful (maximum 10 words)."""
+Generate exactly {num_slides} slides. Make each slide focused with a maximum of 4-5 bullet points. Keep every bullet concise and impactful (maximum 10 words). Give every slide a distinct purpose and provide useful speaker notes. Do not use filler slides, fake statistics, or placeholder text. Make the deck clear, persuasive, and ready for a college, company, or hackathon presentation."""
     response = call_deepseek(system_prompt, f"Create a {template} presentation about: {prompt}")
     clean_response = response.strip()
     if clean_response.startswith("```"):
