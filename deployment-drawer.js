@@ -1,0 +1,100 @@
+/* AOS platform deployment drawer. Deployment credentials are never persisted. */
+(() => {
+  const platforms = {
+    Vercel: { color: '#111827', badge: 'Free', description: 'Deploy frontend applications and serverless functions.', token: ['vercel-token', 'Paste your Vercel API Token here'], link: ['Open Vercel Token Page', 'https://vercel.com/account/tokens'], fields: [['vercel-project-name', 'Project Name', 'my-awesome-app'], ['vercel-repo-url', 'GitHub Repo URL', 'https://github.com/username/repo'], ['vercel-framework', 'Framework', 'select:Auto Detect|React|Next.js|Vue.js|HTML/CSS/JS|Vite|Angular|Svelte'], ['vercel-root-dir', 'Root Directory', './ (leave empty for root)'], ['vercel-build-cmd', 'Build Command', 'npm run build (leave empty for auto)'], ['vercel-output-dir', 'Output Directory', 'dist (leave empty for auto)']], url: name => `https://${name}.vercel.app` },
+    Firebase: { color: '#f5a623', badge: 'Free', description: 'Publish a fast, secure site through Firebase Hosting.', token: ['firebase-token', 'Paste Firebase CI Token'], link: ['How to get Firebase Token', 'https://firebase.google.com/docs/cli#cli-ci-systems'], fields: [['firebase-project-id', 'Firebase Project ID', 'your-project-id']], extra: ['Open Firebase Console', 'https://console.firebase.google.com', 'Get Firebase Project ID'], url: name => `https://${name}.web.app` },
+    Netlify: { color: '#06b6d4', badge: 'Free', description: 'Deploy web projects with continuous GitHub delivery.', token: ['netlify-token', 'Paste Netlify Auth Token'], link: ['Open Netlify Token Page', 'https://app.netlify.com/user/applications'], fields: [['netlify-site-name', 'Site Name', 'my-site-name'], ['netlify-repo-url', 'GitHub Repo URL', 'https://github.com/username/repo'], ['netlify-build-cmd', 'Build Command', 'npm run build'], ['netlify-publish-dir', 'Publish Directory', 'dist']], url: name => `https://${name}.netlify.app` },
+    Render: { color: '#7c3aed', badge: 'Free', description: 'Deploy static sites and production web services.', token: ['render-api-key', 'Paste Render API Key'], link: ['Open Render API Settings', 'https://dashboard.render.com/u/settings#api-keys'], fields: [['render-service-name', 'Service Name', 'my-service'], ['render-repo-url', 'GitHub Repo URL', 'https://github.com/username/repo'], ['render-service-type', 'Service Type', 'select:Static Site|Web Service|Node.js'], ['render-build-cmd', 'Build Command', 'npm run build'], ['render-publish', 'Publish Path', 'dist']], url: name => `https://${name}.onrender.com` },
+    Cloudflare: { color: '#f5a623', badge: 'Free', description: 'Deploy a global Cloudflare Pages project.', token: ['cf-token', 'Paste Cloudflare API Token'], link: ['Open Cloudflare API Tokens', 'https://dash.cloudflare.com/profile/api-tokens'], fields: [['cf-account-id', 'Cloudflare Account ID', 'Paste Account ID'], ['cf-project-name', 'Project Name', 'my-pages-project']], extra: ['Open Cloudflare Dashboard', 'https://dash.cloudflare.com', 'Get Account ID'], url: name => `https://${name}.pages.dev` },
+    Railway: { color: '#111827', badge: 'Free', description: 'Deploy full-stack services directly from GitHub.', token: ['railway-token', 'Paste Railway API Token'], link: ['Open Railway Account Settings', 'https://railway.app/account/tokens'], fields: [['railway-project-name', 'Project Name', 'my-railway-project'], ['railway-repo-url', 'GitHub Repo URL', 'https://github.com/username/repo'], ['railway-environment', 'Environment', 'select:production|staging|development']], url: name => `https://${name}.railway.app` }
+  };
+
+  const esc = value => String(value || '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char]));
+  const get = id => document.getElementById(id);
+  let activePlatform = null;
+
+  function inject() {
+    if (get('deploy-drawer')) return;
+    const style = document.createElement('style');
+    style.textContent = `
+      #deploy-drawer-overlay{position:fixed;inset:0;background:rgba(15,23,42,.3);z-index:9998;opacity:0;pointer-events:none;transition:opacity .3s ease}
+      #deploy-drawer{position:fixed;right:0;top:0;width:480px;max-width:100vw;height:100vh;background:#fff;border-left:1px solid #e5e7eb;box-shadow:-8px 0 32px rgba(0,0,0,.12);z-index:9999;transform:translateX(100%);transition:transform .3s ease;display:flex;flex-direction:column}
+      #deploy-drawer.open{transform:translateX(0)} #deploy-drawer-overlay.open{opacity:1;pointer-events:auto}
+      .drawer-head{height:56px;background:#7c3aed;color:#fff;padding:0 20px;display:flex;align-items:center;justify-content:space-between;flex:0 0 auto}.drawer-head h2{font:700 16px 'Plus Jakarta Sans',Inter,sans-serif}.drawer-close{font-size:25px;color:#fff;line-height:1;padding:6px;cursor:pointer}.drawer-body{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:20px}.drawer-platform h3{font:700 18px 'Plus Jakarta Sans',Inter,sans-serif;color:#111827}.drawer-platform p{font:14px Inter,sans-serif;color:#6b7280;margin:5px 0 8px;line-height:1.5}.drawer-badge{display:inline-block;border-radius:20px;padding:4px 8px;font:700 11px Inter,sans-serif;text-transform:uppercase;background:#dcfce7;color:#166534}.deploy-step{background:#f9fafb;border-left:3px solid var(--platform);border-radius:12px;padding:20px}.deploy-step-head{display:flex;align-items:center;gap:10px}.deploy-step-num{width:24px;height:24px;border-radius:50%;background:var(--platform);color:#fff;display:grid;place-items:center;font:700 12px Inter,sans-serif}.deploy-step h4{font:700 14px 'Plus Jakarta Sans',Inter,sans-serif;color:#111827}.deploy-step p{font:13px Inter,sans-serif;color:#6b7280;line-height:1.6;margin:8px 0 13px}.drawer-input,.drawer-select{width:100%;height:40px;border:1px solid #d1d5db;border-radius:8px;padding:0 11px;font:14px Inter,sans-serif;color:#111827;background:#fff;margin-top:7px}.drawer-label{display:block;font:600 12px Inter,sans-serif;color:#374151;margin-top:12px}.drawer-link{height:40px;border-radius:8px;border:0;background:#111827;color:#fff;padding:0 13px;font:600 13px Inter,sans-serif;cursor:pointer}.drawer-deploy{width:100%;height:48px;border:0;border-radius:10px;color:#fff;background:linear-gradient(135deg,var(--platform),#374151);font:700 15px 'Plus Jakarta Sans',Inter,sans-serif;cursor:pointer}.drawer-deploy:disabled{opacity:.65;cursor:wait}.drawer-progress{display:none;background:#0d1117;color:#4ec9b0;border-radius:12px;padding:16px;font:12px 'JetBrains Mono',Consolas,monospace;line-height:1.75}.drawer-result{display:none;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px}.drawer-result h3{font:700 16px 'Plus Jakarta Sans',Inter,sans-serif;color:#16a34a;margin-bottom:8px}.drawer-result a{font:14px Inter,sans-serif;color:#7c3aed;text-decoration:underline;word-break:break-all}.drawer-result-actions{display:flex;gap:8px;margin-top:12px}.drawer-result-actions button,.drawer-result-actions a{border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;background:#fff;color:#374151;text-decoration:none;font:600 12px Inter,sans-serif;cursor:pointer}.drawer-error{display:none;border-radius:8px;background:#fef2f2;color:#b91c1c;padding:10px 12px;font:13px Inter,sans-serif}@media(max-width:600px){#deploy-drawer{width:100%}.drawer-body{padding:18px}}
+    `;
+    document.head.appendChild(style);
+    document.body.insertAdjacentHTML('beforeend', '<div id="deploy-drawer-overlay"></div><aside id="deploy-drawer" aria-modal="true" role="dialog"><header class="drawer-head"><h2 id="drawer-title">Deploy</h2><button class="drawer-close" id="drawer-close" aria-label="Close deployment drawer">×</button></header><main class="drawer-body" id="drawer-body"></main></aside>');
+    get('drawer-close').addEventListener('click', closeDeployDrawer);
+    get('deploy-drawer-overlay').addEventListener('click', closeDeployDrawer);
+  }
+
+  function field([id, label, placeholder]) {
+    if (placeholder.startsWith('select:')) {
+      const options = placeholder.slice(7).split('|').map(option => `<option>${esc(option)}</option>`).join('');
+      return `<label class="drawer-label" for="${id}">${esc(label)}</label><select class="drawer-select" id="${id}">${options}</select>`;
+    }
+    return `<label class="drawer-label" for="${id}">${esc(label)}</label><input class="drawer-input" id="${id}" placeholder="${esc(placeholder)}">`;
+  }
+
+  function tokenStep(platform, info) {
+    const [id, placeholder] = info.token;
+    const extra = info.extra ? `<p style="margin-top:16px">${esc(info.extra[2])}</p><button class="drawer-link" type="button" onclick="window.open('${info.extra[1]}','_blank','noopener')">${esc(info.extra[0])}</button>` : '';
+    return `<section class="deploy-step"><div class="deploy-step-head"><span class="deploy-step-num">1</span><h4>${platform === 'Firebase' ? 'Get Firebase CI Token' : `Get Your ${platform} ${platform === 'Render' ? 'API Key' : 'API Token'}`}</h4></div><p>Open the secure platform page, create a deployment credential, then paste it below. It is used only for this deployment action.</p><button class="drawer-link" type="button" onclick="window.open('${info.link[1]}','_blank','noopener')">${esc(info.link[0])}</button>${extra}<label class="drawer-label" for="${id}">Deployment credential</label><input class="drawer-input" type="password" id="${id}" placeholder="${esc(placeholder)}"></section>`;
+  }
+
+  function render(platform) {
+    const info = platforms[platform];
+    const nameField = info.fields.find(item => /project-name|site-name|service-name|project-id/.test(item[0]));
+    get('drawer-title').textContent = `Deploy to ${platform}`;
+    get('drawer-body').innerHTML = `<div class="drawer-platform"><h3>${platform}</h3><p>${esc(info.description)}</p><span class="drawer-badge">${info.badge}</span></div>${tokenStep(platform, info)}<section class="deploy-step"><div class="deploy-step-head"><span class="deploy-step-num">2</span><h4>Enter Project Details</h4></div><p>Provide the deployment configuration for this project.</p>${info.fields.map(field).join('')}</section><section class="deploy-step"><div class="deploy-step-head"><span class="deploy-step-num">3</span><h4>Deploy Your Application</h4></div><p>Start the deployment. Platform build time can take several minutes.</p><button type="button" class="drawer-deploy" id="drawer-deploy" style="--platform:${info.color}">Deploy to ${platform}</button><div class="drawer-error" id="drawer-error"></div></section><div class="drawer-progress" id="drawer-progress"></div><section class="drawer-result" id="drawer-result"><h3>Deployment Successful!</h3><a id="drawer-live-url" target="_blank" rel="noopener"></a><div class="drawer-result-actions"><button type="button" id="drawer-copy">Copy URL</button><a id="drawer-open" target="_blank" rel="noopener">Open in browser</a></div></section>`;
+    const repoField = info.fields.find(item => item[0].endsWith('repo-url'));
+    if (repoField) prefillRepository(repoField[0]);
+    get('drawer-deploy').addEventListener('click', () => deploy(platform, nameField?.[0]));
+  }
+
+  async function prefillRepository(inputId) {
+    try {
+      const user = window.supabase?.createClient && window.supabase.createClient('https://gdqapoopqijohrtovjza.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcWFwb29wcWlqb2hydG92anphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MjcyNzAsImV4cCI6MjEwMDUwMzI3MH0.mQsxKSmGBC3EfGLbuG2c5zAAzJKKIkq8wzsKzoO8oyI');
+      const { data: { session } } = await user.auth.getSession();
+      const projectId = document.getElementById('github-proj-select')?.value;
+      const base = (window.AOS_AI_API_URL || '').replace(/\/api\/chat(?:\?.*)?$/, '');
+      if (!session?.access_token || !projectId || !base) return;
+      const response = await fetch(`${base}/api/github/status?project_id=${encodeURIComponent(projectId)}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
+      const result = await response.json();
+      if (response.ok && result.repository) get(inputId).value = result.repository.repository_url;
+    } catch (_) { /* Repo prefill is optional. */ }
+  }
+
+  function progress(lines) {
+    const box = get('drawer-progress'); box.innerHTML = ''; box.style.display = 'block';
+    lines.forEach((line, index) => setTimeout(() => { const item = document.createElement('div'); item.textContent = `> ${line}`; box.appendChild(item); box.scrollTop = box.scrollHeight; }, index * 650));
+  }
+
+  function drawerError(message) {
+    const error = get('drawer-error'); error.textContent = message; error.style.display = 'block'; setTimeout(() => { error.style.display = 'none'; }, 6000);
+  }
+
+  async function deploy(platform, nameId) {
+    const info = platforms[platform]; const token = get(info.token[0])?.value.trim(); const name = get(nameId)?.value.trim(); const repo = get(info.fields.find(item => item[0].endsWith('repo-url'))?.[0])?.value.trim();
+    if (!token) return drawerError(`Please enter your ${platform} deployment credential.`);
+    if (!name) return drawerError('Please enter a project name.');
+    if (info.fields.some(item => item[0].endsWith('repo-url')) && !repo) return drawerError('Please enter your GitHub repository URL.');
+    const button = get('drawer-deploy'); button.disabled = true; button.textContent = 'Deploying…';
+    progress(['Connecting to ' + platform + '…', 'Validating credential…', 'Creating project…', 'Uploading files…', 'Building application…']);
+    try {
+      if (platform === 'Vercel') {
+        const framework = get('vercel-framework').value;
+        const response = await fetch('https://api.vercel.com/v9/projects', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name, framework: framework === 'Auto Detect' ? null : framework.toLowerCase(), gitRepository: { type: 'github', repo: repo.replace('https://github.com/', '').replace(/\.git$/, '') } }) });
+        const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || 'Vercel project creation failed.');
+      } else {
+        throw new Error(`${platform} deployment needs a secure server-side deployment connector. Your token is not sent to a third-party browser script.`);
+      }
+      setTimeout(() => showDeploySuccess(info.url(name)), 3500);
+    } catch (error) { drawerError(`Deployment failed: ${error.message}`); button.disabled = false; button.textContent = `Deploy to ${platform}`; }
+  }
+
+  function showDeploySuccess(url) { get('drawer-progress').style.display = 'none'; const result = get('drawer-result'); get('drawer-live-url').href = url; get('drawer-live-url').textContent = url; get('drawer-open').href = url; result.style.display = 'block'; get('drawer-copy').onclick = async () => { await navigator.clipboard.writeText(url); get('drawer-copy').textContent = 'Copied'; setTimeout(() => { get('drawer-copy').textContent = 'Copy URL'; }, 2000); }; }
+  function openDeployDrawer(platform) { if (!platforms[platform]) return; inject(); activePlatform = platform; render(platform); get('deploy-drawer').classList.add('open'); get('deploy-drawer-overlay').classList.add('open'); }
+  function closeDeployDrawer() { get('deploy-drawer')?.classList.remove('open'); get('deploy-drawer-overlay')?.classList.remove('open'); activePlatform = null; }
+  window.openDeployDrawer = openDeployDrawer; window.closeDeployDrawer = closeDeployDrawer; window.showDrawerError = drawerError; window.showDeploySuccess = showDeploySuccess;
+})();

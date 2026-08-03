@@ -368,7 +368,7 @@ a{text-decoration:none;color:inherit}
             </div>
             <p class="plat-desc">Deploy frontend apps and serverless functions with zero config.</p>
             <span class="plat-tier">Free · Pro $20/mo</span>
-            <button class="plat-deploy-btn" onclick="openDeployModal('Vercel')">
+            <button type="button" class="plat-deploy-btn" onclick="openDeployDrawer('Vercel')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
               Deploy to Vercel
             </button>
@@ -384,7 +384,7 @@ a{text-decoration:none;color:inherit}
             </div>
             <p class="plat-desc">Full-stack cloud with web services, databases and cron jobs.</p>
             <span class="plat-tier">Free · Starter $7/mo</span>
-            <button class="plat-deploy-btn" onclick="openDeployModal('Render')">
+            <button type="button" class="plat-deploy-btn" onclick="openDeployDrawer('Render')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
               Deploy to Render
             </button>
@@ -400,7 +400,7 @@ a{text-decoration:none;color:inherit}
             </div>
             <p class="plat-desc">Google's platform for web and mobile apps with hosting.</p>
             <span class="plat-tier">Spark Free · Blaze Pay-as-go</span>
-            <button class="plat-deploy-btn" onclick="openDeployModal('Firebase')">
+            <button type="button" class="plat-deploy-btn" onclick="openDeployDrawer('Firebase')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
               Deploy to Firebase
             </button>
@@ -416,7 +416,7 @@ a{text-decoration:none;color:inherit}
             </div>
             <p class="plat-desc">CI/CD automation for mobile and web application releases.</p>
             <span class="plat-tier">Starter $49/mo</span>
-            <button class="plat-deploy-btn" onclick="openDeployModal('Runway')">
+            <button type="button" class="plat-deploy-btn" onclick="openDeployDrawer('Railway')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
               Deploy to Runway
             </button>
@@ -432,7 +432,7 @@ a{text-decoration:none;color:inherit}
             </div>
             <p class="plat-desc">Edge network with Pages, Workers and global CDN deployment.</p>
             <span class="plat-tier">Free · Pro $20/mo</span>
-            <button class="plat-deploy-btn" onclick="openDeployModal('Cloudflare')">
+            <button type="button" class="plat-deploy-btn" onclick="openDeployDrawer('Cloudflare')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
               Deploy to Cloudflare
             </button>
@@ -448,7 +448,7 @@ a{text-decoration:none;color:inherit}
             </div>
             <p class="plat-desc">Jamstack platform with instant deploys and edge functions.</p>
             <span class="plat-tier">Free · Pro $19/mo</span>
-            <button class="plat-deploy-btn" onclick="openDeployModal('Netlify')">
+            <button type="button" class="plat-deploy-btn" onclick="openDeployDrawer('Netlify')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
               Deploy to Netlify
             </button>
@@ -967,5 +967,6 @@ document.addEventListener('DOMContentLoaded', () => {
  </script>
 <script src="public-config.js?v=github-oauth-1"></script>
 <script src="github-connect.js?v=3"></script>
+<script src="deployment-drawer.js?v=1"></script>
 </body>
 </html>
