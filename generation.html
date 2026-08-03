@@ -334,14 +334,14 @@ body{background:radial-gradient(circle at 86% 0,#e0f2fe 0,transparent 28%),#f6f9
       <div class="form-group">
         <label class="form-label">Document Type</label>
         <div class="doc-type-grid">
-          <button class="doc-type-btn selected" data-type="PDF" id="doctype-pdf">PDF</button>
-          <button class="doc-type-btn" data-type="Word" id="doctype-word">Word</button>
-          <button class="doc-type-btn" data-type="Excel" id="doctype-excel">Excel</button>
-          <button class="doc-type-btn" data-type="PowerPoint" id="doctype-ppt">PPT</button>
-          <button class="doc-type-btn" data-type="Resume" id="doctype-resume">Resume</button>
-          <button class="doc-type-btn" data-type="Invoice" id="doctype-invoice">Invoice</button>
-          <button class="doc-type-btn" data-type="Business Plan" id="doctype-biz">Biz Plan</button>
-          <button class="doc-type-btn" data-type="Research Paper" id="doctype-research">Research</button>
+          <button type="button" class="doc-type-btn selected" data-type="PDF" id="doctype-pdf" onclick="selectDocType(this, 'PDF')">PDF</button>
+          <button type="button" class="doc-type-btn" data-type="Word" id="doctype-word" onclick="selectDocType(this, 'Word')">Word</button>
+          <button type="button" class="doc-type-btn" data-type="Excel" id="doctype-excel" onclick="selectDocType(this, 'Excel')">Excel</button>
+          <button type="button" class="doc-type-btn" data-type="PowerPoint" id="doctype-ppt" onclick="selectDocType(this, 'PowerPoint')">PPT</button>
+          <button type="button" class="doc-type-btn" data-type="Resume" id="doctype-resume" onclick="selectDocType(this, 'Resume')">Resume</button>
+          <button type="button" class="doc-type-btn" data-type="Invoice" id="doctype-invoice" onclick="selectDocType(this, 'Invoice')">Invoice</button>
+          <button type="button" class="doc-type-btn" data-type="Business Plan" id="doctype-biz" onclick="selectDocType(this, 'Business Plan')">Biz Plan</button>
+          <button type="button" class="doc-type-btn" data-type="Research Paper" id="doctype-research" onclick="selectDocType(this, 'Research Paper')">Research</button>
         </div>
       </div>
       <div class="form-group">
