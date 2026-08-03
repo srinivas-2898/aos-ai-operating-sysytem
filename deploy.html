@@ -661,6 +661,12 @@ async function loadProjects() {
   listEl.innerHTML = projects.map(p => `<span class="proj-chip"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${esc(p.name)}</span>`).join('');
   selectEl.innerHTML = '<option value="">Select a project...</option>' + projects.map((p,i) => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
   githubSelect.innerHTML = '<option value="">Select a project...</option>' + projects.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  const callbackProjectId = new URLSearchParams(window.location.search).get('project_id');
+  if (callbackProjectId && projects.some(project => project.id === callbackProjectId)) {
+    githubSelect.value = callbackProjectId;
+    selectEl.value = callbackProjectId;
+    if (new URLSearchParams(window.location.search).get('github') === 'connected') loadGitHubProject(callbackProjectId);
+  }
 }
 
 async function connectGitHub() {
@@ -691,6 +697,59 @@ async function connectGitHub() {
   } catch (error) {
     setStatus(error.message || 'GitHub connection could not start.', '#b91c1c');
     showToast(error.message || 'GitHub connection could not start.');
+  }
+}
+
+async function loadGitHubProject(projectId) {
+  const status = document.getElementById('github-connect-status');
+  const box = document.getElementById('gh-connect-box');
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return;
+    const base = (window.AOS_AI_API_URL || '/api/chat').replace(/\/api\/chat(?:\?.*)?$/, '');
+    const response = await fetch(`${base}/api/github/status?project_id=${encodeURIComponent(projectId)}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` }
+    });
+    if (!response.ok) throw new Error((await response.json()).detail || 'Could not load GitHub connection.');
+    const result = await response.json();
+    document.getElementById('gh-connected-badge').style.display = 'flex';
+    const projectName = document.getElementById('github-proj-select').selectedOptions[0]?.textContent || 'this project';
+    if (result.repository) {
+      box.innerHTML = `<div class="gh-connect-text">${esc(result.username)} is connected</div><div class="gh-connect-sub">${esc(projectName)} is linked to GitHub.</div><a class="btn-dark" target="_blank" rel="noopener" href="${result.repository.repository_url}">Open repository</a>`;
+      return;
+    }
+    box.innerHTML = `<div class="gh-connect-text">GitHub connected</div><div class="gh-connect-sub">Create a repository for ${esc(projectName)} and push its saved project files.</div><button class="btn-dark" onclick="createGitHubRepository('${projectId}')">Create repository and push files</button>`;
+    status.textContent = `Connected as ${result.username}.`;
+    status.style.cssText = 'display:block;margin:0 0 10px;font-size:12px;line-height:1.45;color:#047857';
+  } catch (error) {
+    status.textContent = error.message || 'Could not load GitHub connection.';
+    status.style.cssText = 'display:block;margin:0 0 10px;font-size:12px;line-height:1.45;color:#b91c1c';
+  }
+}
+
+async function createGitHubRepository(projectId) {
+  const box = document.getElementById('gh-connect-box');
+  box.innerHTML = '<div class="gh-connect-text">Creating repository…</div><div class="gh-connect-sub">Saving your repository and pushing project files.</div>';
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) throw new Error('Your AOS session has expired. Please sign in again.');
+    const base = (window.AOS_AI_API_URL || '/api/chat').replace(/\/api\/chat(?:\?.*)?$/, '');
+    const repoResponse = await fetch(base + '/api/github/repositories', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ project_id: projectId, private: true, auto_init: true })
+    });
+    const repository = await repoResponse.json();
+    if (!repoResponse.ok) throw new Error(repository.detail || 'Repository could not be created.');
+    const pushResponse = await fetch(base + '/api/github/push', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ project_id: projectId, message: 'Initial AOS project upload' })
+    });
+    const pushed = await pushResponse.json();
+    if (!pushResponse.ok) throw new Error(pushed.detail || 'Repository was created, but files could not be pushed.');
+    box.innerHTML = `<div class="gh-connect-text">Repository ready</div><div class="gh-connect-sub">${pushed.files_pushed || 0} saved project file(s) pushed successfully.</div><a class="btn-dark" target="_blank" rel="noopener" href="${repository.repository_url}">Open repository</a>`;
+    advStep(2);
+  } catch (error) {
+    box.innerHTML = `<div style="padding:12px;color:#b91c1c;font-size:13px">${esc(error.message || 'GitHub repository setup failed.')}</div>`;
   }
 }
 
