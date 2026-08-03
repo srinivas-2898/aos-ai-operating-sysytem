@@ -135,7 +135,13 @@
     } catch (error) { drawerError(`Deployment failed: ${error.message}`); button.disabled = false; button.textContent = `Deploy to ${platform}`; }
   }
 
-  function showDeploySuccess(url) { get('drawer-progress').style.display = 'none'; const result = get('drawer-result'); get('drawer-live-url').href = url; get('drawer-live-url').textContent = url; get('drawer-open').href = url; result.style.display = 'block'; get('drawer-copy').onclick = async () => { await navigator.clipboard.writeText(url); get('drawer-copy').textContent = 'Copied'; setTimeout(() => { get('drawer-copy').textContent = 'Copy URL'; }, 2000); }; }
+  async function saveDeploymentRecord(url) {
+    const projectId = document.getElementById('github-proj-select')?.value || document.getElementById('deploy-proj-select')?.value;
+    if (!projectId || !activePlatform || !window.supabase?.createClient) return;
+    const client = window.supabase.createClient('https://gdqapoopqijohrtovjza.supabase.co', 'eyJhbGciOiJIUzI1NiIsInJlZiI6ImFub24iLCJpYXQiOjE3ODQ5MjcyNzAsImV4cCI6MjEwMDUwMzI3MH0.mQsxKSmGBC3EfGLbuG2c5zAAzJKKIkq8wzsKzoO8oyI');
+    await client.from('deployments').insert({ project_id: projectId, provider: activePlatform, status: 'success', deployment_url: url, metadata: { source: 'aos-deploy-drawer' } });
+  }
+  function showDeploySuccess(url) { get('drawer-progress').style.display = 'none'; const result = get('drawer-result'); get('drawer-live-url').href = url; get('drawer-live-url').textContent = url; get('drawer-open').href = url; result.style.display = 'block'; saveDeploymentRecord(url).catch(() => {}); get('drawer-copy').onclick = async () => { await navigator.clipboard.writeText(url); get('drawer-copy').textContent = 'Copied'; setTimeout(() => { get('drawer-copy').textContent = 'Copy URL'; }, 2000); }; }
   function openDeployDrawer(platform) { if (!platforms[platform]) return; inject(); activePlatform = platform; render(platform); get('deploy-drawer').classList.add('open'); get('deploy-drawer-overlay').classList.add('open'); }
   function closeDeployDrawer() { get('deploy-drawer')?.classList.remove('open'); get('deploy-drawer-overlay')?.classList.remove('open'); activePlatform = null; }
   async function deployApplication() {
@@ -150,4 +156,8 @@
   window.deployApplication = deployApplication;
   window.showDrawerError = drawerError;
   window.showDeploySuccess = showDeploySuccess;
+  const requestedPlatform = new URLSearchParams(window.location.search).get('platform');
+  if (requestedPlatform && platforms[requestedPlatform]) {
+    setTimeout(() => openDeployDrawer(requestedPlatform), 0);
+  }
 })();

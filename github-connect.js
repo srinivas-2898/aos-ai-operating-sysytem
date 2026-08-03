@@ -27,6 +27,8 @@
     }
     if (select) select.innerHTML = '<option value="">Choose a project after connecting</option>' + projects.map(project => `<option value="${project.id}">${project.name.replace(/[<>&"]/g, '')}</option>`).join('');
     if (list) list.innerHTML = projects.map(project => `<span class="proj-chip">${project.name.replace(/[<>&"]/g, '')}</span>`).join('');
+    const requestedProject = new URLSearchParams(window.location.search).get('project_id');
+    if (requestedProject && projects.some(project => project.id === requestedProject) && select) select.value = requestedProject;
   }
 
   async function startConnection(client) {

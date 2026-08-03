@@ -288,7 +288,7 @@ a{text-decoration:none;color:inherit}
       <div class="phase-section">
         <div class="phase-section-header">
           <span class="phase-step-badge">STEP 1</span>
-          <span class="phase-title">Connect GitHub</span>
+          <button type="button" class="phase-title" style="background:none;border:0;cursor:pointer" onclick="window.location.href='github-deploy.html'">Connect GitHub <span style="font-size:12px;color:#7c3aed">↗</span></button>
           <div class="gh-connected visible" id="gh-connected-badge" style="display:none;margin-left:auto">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
             Connected
@@ -368,7 +368,7 @@ a{text-decoration:none;color:inherit}
             </div>
             <p class="plat-desc">Deploy frontend apps and serverless functions with zero config.</p>
             <span class="plat-tier">Free · Pro $20/mo</span>
-            <button type="button" class="plat-deploy-btn" onclick="openDeployDrawer('Vercel')">
+            <button type="button" class="plat-deploy-btn" onclick="window.location.href='platform-deploy.html?platform=Vercel'">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
               Deploy to Vercel
             </button>
@@ -384,7 +384,7 @@ a{text-decoration:none;color:inherit}
             </div>
             <p class="plat-desc">Full-stack cloud with web services, databases and cron jobs.</p>
             <span class="plat-tier">Free · Starter $7/mo</span>
-            <button type="button" class="plat-deploy-btn" onclick="openDeployDrawer('Render')">
+            <button type="button" class="plat-deploy-btn" onclick="window.location.href='platform-deploy.html?platform=Render'">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
               Deploy to Render
             </button>
@@ -400,7 +400,7 @@ a{text-decoration:none;color:inherit}
             </div>
             <p class="plat-desc">Google's platform for web and mobile apps with hosting.</p>
             <span class="plat-tier">Spark Free · Blaze Pay-as-go</span>
-            <button type="button" class="plat-deploy-btn" onclick="openDeployDrawer('Firebase')">
+            <button type="button" class="plat-deploy-btn" onclick="window.location.href='platform-deploy.html?platform=Firebase'">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
               Deploy to Firebase
             </button>
@@ -416,7 +416,7 @@ a{text-decoration:none;color:inherit}
             </div>
             <p class="plat-desc">CI/CD automation for mobile and web application releases.</p>
             <span class="plat-tier">Starter $49/mo</span>
-            <button type="button" class="plat-deploy-btn" onclick="openDeployDrawer('Railway')">
+            <button type="button" class="plat-deploy-btn" onclick="window.location.href='platform-deploy.html?platform=Railway'">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
               Deploy to Runway
             </button>
@@ -432,7 +432,7 @@ a{text-decoration:none;color:inherit}
             </div>
             <p class="plat-desc">Edge network with Pages, Workers and global CDN deployment.</p>
             <span class="plat-tier">Free · Pro $20/mo</span>
-            <button type="button" class="plat-deploy-btn" onclick="openDeployDrawer('Cloudflare')">
+            <button type="button" class="plat-deploy-btn" onclick="window.location.href='platform-deploy.html?platform=Cloudflare'">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
               Deploy to Cloudflare
             </button>
@@ -448,7 +448,7 @@ a{text-decoration:none;color:inherit}
             </div>
             <p class="plat-desc">Jamstack platform with instant deploys and edge functions.</p>
             <span class="plat-tier">Free · Pro $19/mo</span>
-            <button type="button" class="plat-deploy-btn" onclick="openDeployDrawer('Netlify')">
+            <button type="button" class="plat-deploy-btn" onclick="window.location.href='platform-deploy.html?platform=Netlify'">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
               Deploy to Netlify
             </button>
@@ -966,7 +966,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
  </script>
 <script src="public-config.js?v=github-oauth-1"></script>
-<script src="github-connect.js?v=3"></script>
-<script src="deployment-drawer.js?v=2"></script>
+<script src="github-connect.js?v=4"></script>
+<script src="deployment-drawer.js?v=4"></script>
 </body>
 </html>
