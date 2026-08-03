@@ -569,9 +569,17 @@ def deploy_netlify(data: dict):
                         summary = latest.get('error_message') or latest.get('summary') or 'Netlify build failed.'
                         raise HTTPException(status_code=502, detail=f'Netlify build failed: {summary}')
             time.sleep(3)
+        if not latest:
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    'Netlify created the site but did not start a build. Connect GitHub in '
+                    'Netlify (User settings → Applications → GitHub), then deploy again.'
+                )
+            )
         # Netlify can need more than a minute for a first Git-based build.
         # Return its real pending state rather than a false "successful" result.
-        return latest or {'state': 'building'}
+        return latest
 
     try:
         if project_id:
