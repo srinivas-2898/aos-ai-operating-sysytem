@@ -107,82 +107,28 @@
           throw new Error('Please select an AOS project to deploy, or enter a GitHub Repository URL.');
         }
 
-        let siteUrl = '';
+        const base = (window.AOS_AI_API_URL || '').replace(/\/api\/chat(?:\?.*)?$/, '');
+        const response = await fetch(`${base}/api/deploy/netlify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            token,
+            name,
+            project_id: projectId || null,
+            repo: repo || null,
+            cmd: buildCmd || null,
+            dir: publishDir || null
+          })
+        });
 
-        if (projectId) {
-          // ZIP deployment of local AOS project files
-          const { data: files, error: dbError } = await window.supabase.from('project_files').select('path, content').eq('project_id', projectId);
-          if (dbError) throw new Error(`Failed to load project files: ${dbError.message}`);
-          if (!files || files.length === 0) throw new Error('No files found in the project to deploy.');
-          const JSZip = await loadJSZip();
-          const zip = new JSZip();
-          files.forEach(file => {
-            const path = file.path.replace(/^\//, '');
-            zip.file(path, file.content || '');
-          });
-          const zipBlob = await zip.generateAsync({ type: 'blob' });
-          const createResponse = await fetch('https://api.netlify.com/api/v1/sites', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ name })
-          });
-          let siteData = await createResponse.json();
-          if (!createResponse.ok) {
-            throw new Error(siteData.error || siteData.message || 'Netlify site creation failed.');
-          }
-          const siteId = siteData.id;
-          const deployResponse = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/deploys`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/zip'
-            },
-            body: zipBlob
-          });
-          let deployData = await deployResponse.json();
-          if (!deployResponse.ok) {
-            throw new Error(deployData.error || deployData.message || 'Netlify zip deployment failed.');
-          }
-          siteUrl = siteData.ssl_url || siteData.url || deployData.ssl_url || deployData.url;
-        } else {
-          // GitHub Repository Deployment
-          const repoPath = repo
-            .replace('https://github.com/', '')
-            .replace('http://github.com/', '')
-            .replace(/\.git$/, '')
-            .replace(/\/$/, '')
-            .trim();
-
-          const createBody = {
-            name: name,
-            repo: {
-              provider: "github",
-              repo: repoPath,
-              private: false,
-              branch: "main"
-            }
-          };
-          if (buildCmd) createBody.repo.cmd = buildCmd;
-          if (publishDir) createBody.repo.dir = publishDir;
-
-          const createResponse = await fetch('https://api.netlify.com/api/v1/sites', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(createBody)
-          });
-          let siteData = await createResponse.json();
-          if (!createResponse.ok) {
-            throw new Error(siteData.error || siteData.message || 'Netlify site creation failed.');
-          }
-          siteUrl = siteData.ssl_url || siteData.url;
+        const deployData = await response.json();
+        if (!response.ok) {
+          throw new Error(deployData.detail || deployData.error || deployData.message || 'Netlify deployment failed.');
         }
-        setTimeout(() => showDeploySuccess(siteUrl), 3500);
+
+        setTimeout(() => showDeploySuccess(deployData.ssl_url), 3500);
       } else {
         throw new Error(`${platform} deployment needs a secure server-side deployment connector. Your token is not sent to a third-party browser script.`);
       }

@@ -482,6 +482,112 @@ def generate_presentation(data: dict):
         raise HTTPException(status_code=500, detail=f'Presentation generation failed: {str(error)}')
 
 
+@app.post('/api/deploy/netlify')
+def deploy_netlify(data: dict):
+    import zipfile
+    from backend.github_oauth import rest
+    
+    token = (data.get('token') or '').strip()
+    name = (data.get('name') or '').strip()
+    project_id = data.get('project_id')
+    repo = data.get('repo')
+    cmd = data.get('cmd')
+    pub_dir = data.get('dir')
+
+    if not token:
+        raise HTTPException(status_code=400, detail='Netlify deployment credential is required.')
+    if not name:
+        raise HTTPException(status_code=400, detail='Project/Site name is required.')
+
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json'
+    }
+
+    try:
+        if project_id:
+            files = rest("project_files", params={"project_id": f"eq.{project_id}", "select": "path,content"})
+            if not files:
+                raise HTTPException(status_code=404, detail='No project files found to deploy.')
+
+            zip_buffer = BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
+                for file in files:
+                    path = file.get('path', '').lstrip('/')
+                    content = file.get('content', '')
+                    if path:
+                        zip_file.writestr(path, content)
+            
+            zip_data = zip_buffer.getvalue()
+
+            create_response = requests.post(
+                'https://api.netlify.com/api/v1/sites',
+                headers=headers,
+                json={'name': name},
+                timeout=30
+            )
+            if not create_response.ok:
+                raise HTTPException(status_code=create_response.status_code, detail=f"Netlify site creation failed: {create_response.text}")
+            
+            site_data = create_response.json()
+            site_id = site_data.get('id')
+
+            deploy_headers = {
+                'Authorization': f'Bearer {token}',
+                'Content-Type': 'application/zip'
+            }
+            deploy_response = requests.post(
+                f'https://api.netlify.com/api/v1/sites/{siteId}/deploys',
+                headers=deploy_headers,
+                data=zip_data,
+                timeout=45
+            )
+            if not deploy_response.ok:
+                raise HTTPException(status_code=deploy_response.status_code, detail=f"Netlify zip deployment failed: {deploy_response.text}")
+            
+            deploy_data = deploy_response.json()
+            site_url = site_data.get('ssl_url') or site_data.get('url') or deploy_data.get('ssl_url') or deploy_data.get('url')
+            return {'ssl_url': site_url}
+        else:
+            repo_path = (repo or '') \
+                .replace('https://github.com/', '') \
+                .replace('http://github.com/', '') \
+                .replace('.git', '') \
+                .strip('/')
+            
+            create_body = {
+                'name': name,
+                'repo': {
+                    'provider': 'github',
+                    'repo': repo_path,
+                    'private': False,
+                    'branch': 'main'
+                }
+            }
+            if cmd:
+                create_body['repo']['cmd'] = cmd
+            if pub_dir:
+                create_body['repo']['dir'] = pub_dir
+
+            create_response = requests.post(
+                'https://api.netlify.com/api/v1/sites',
+                headers=headers,
+                json=create_body,
+                timeout=30
+            )
+            if not create_response.ok:
+                raise HTTPException(status_code=create_response.status_code, detail=f"Netlify site creation failed: {create_response.text}")
+            
+            site_data = create_response.json()
+            site_url = site_data.get('ssl_url') or site_data.get('url')
+            return {'ssl_url': site_url}
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == '__main__':
     import uvicorn
     uvicorn.run(app, host='0.0.0.0', port=int(os.getenv('PORT', '8080')))
