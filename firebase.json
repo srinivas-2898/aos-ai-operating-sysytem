@@ -4,11 +4,32 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      ".git/**",
+      "**/.git/**",
+      "**/node_modules/**",
+      "**/__pycache__/**",
+      "**/*.pyc",
+      "backend/**",
+      "output/**",
+      "*.py",
+      "*.sql",
+      ".env",
+      ".env.*",
+      "firebase-debug.log",
+      "Microsoft/**",
+      "test*",
+      "temp*",
+      "ai.code-workspace"
     ],
     "headers": [
       {
         "source": "/generation.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/deploy.html",
         "headers": [
           { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
         ]
