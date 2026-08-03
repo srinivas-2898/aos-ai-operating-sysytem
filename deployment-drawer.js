@@ -13,6 +13,17 @@
   const get = id => document.getElementById(id);
   let activePlatform = null;
 
+  async function loadJSZip() {
+    if (window.JSZip) return window.JSZip;
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      script.onload = () => resolve(window.JSZip);
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
   function inject() {
     if (get('deploy-drawer')) return;
     const style = document.createElement('style');
@@ -86,10 +97,50 @@
         const framework = get('vercel-framework').value;
         const response = await fetch('https://api.vercel.com/v9/projects', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name, framework: framework === 'Auto Detect' ? null : framework.toLowerCase(), gitRepository: { type: 'github', repo: repo.replace('https://github.com/', '').replace(/\.git$/, '') } }) });
         const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || 'Vercel project creation failed.');
+        setTimeout(() => showDeploySuccess(info.url(name)), 3500);
+      } else if (platform === 'Netlify') {
+        const projectId = document.getElementById('github-proj-select')?.value || document.getElementById('deploy-proj-select')?.value;
+        if (!projectId) throw new Error('Please select an AOS project to deploy.');
+        const { data: files, error: dbError } = await window.supabase.from('project_files').select('path, content').eq('project_id', projectId);
+        if (dbError) throw new Error(`Failed to load project files: ${dbError.message}`);
+        if (!files || files.length === 0) throw new Error('No files found in the project to deploy.');
+        const JSZip = await loadJSZip();
+        const zip = new JSZip();
+        files.forEach(file => {
+          const path = file.path.replace(/^\//, '');
+          zip.file(path, file.content || '');
+        });
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const createResponse = await fetch('https://api.netlify.com/api/v1/sites', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name })
+        });
+        let siteData = await createResponse.json();
+        if (!createResponse.ok) {
+          throw new Error(siteData.error || siteData.message || 'Netlify site creation failed.');
+        }
+        const siteId = siteData.id;
+        const deployResponse = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/deploys`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/zip'
+          },
+          body: zipBlob
+        });
+        let deployData = await deployResponse.json();
+        if (!deployResponse.ok) {
+          throw new Error(deployData.error || deployData.message || 'Netlify zip deployment failed.');
+        }
+        const siteUrl = siteData.ssl_url || siteData.url || deployData.ssl_url || deployData.url;
+        setTimeout(() => showDeploySuccess(siteUrl), 3500);
       } else {
         throw new Error(`${platform} deployment needs a secure server-side deployment connector. Your token is not sent to a third-party browser script.`);
       }
-      setTimeout(() => showDeploySuccess(info.url(name)), 3500);
     } catch (error) { drawerError(`Deployment failed: ${error.message}`); button.disabled = false; button.textContent = `Deploy to ${platform}`; }
   }
 
