@@ -682,6 +682,7 @@ def deploy_netlify(data: dict):
             deploy_archive = BytesIO()
             selected_directory = (pub_dir or '').strip().strip('/')
             included_files = 0
+            has_index_html = False
             with zipfile.ZipFile(source_archive) as source_zip, zipfile.ZipFile(deploy_archive, 'w', zipfile.ZIP_DEFLATED) as deploy_zip:
                 for entry in source_zip.infolist():
                     if entry.is_dir():
@@ -699,8 +700,20 @@ def deploy_netlify(data: dict):
                         continue
                     deploy_zip.writestr(relative_path, source_zip.read(entry))
                     included_files += 1
+                    if relative_path.lower() == 'index.html':
+                        has_index_html = True
             if not included_files:
                 raise HTTPException(status_code=400, detail='No files were found in the selected Netlify publish directory.')
+            if not has_index_html:
+                location = selected_directory or 'the repository root'
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        f'No index.html was found in {location}. Direct Netlify deployment requires publish-ready '
+                        'files. Build this project first and publish its dist folder, or add its complete package.json '
+                        'and connect the repository through Netlify GitHub for a build deployment.'
+                    )
+                )
 
             create_response = create_site_with_fallback({'name': name}, repo)
             site_data = create_response.json()
