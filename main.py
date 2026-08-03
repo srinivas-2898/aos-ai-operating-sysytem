@@ -141,8 +141,12 @@ def health():
 
 from pdf_generator import router as pdf_router, call_deepseek as pdf_deepseek
 from ppt_generator import router as ppt_router
+from word_generator import router as word_router
+from excel_generator import router as excel_router
 app.include_router(pdf_router)
 app.include_router(ppt_router)
+app.include_router(word_router)
+app.include_router(excel_router)
 
 # Preserve the existing AOS chat, image, document, and presentation API routes.
 from app import app as aos_api

@@ -87,13 +87,16 @@
     const button = document.getElementById('doc-gen-btn');
     button.dataset.idleLabel ||= 'Generate Document';
     setBusy(button, true);
-    const documentType = window.selectedDocType || 'PDF';
-    const isPdf = documentType === 'PDF';
-    const isPpt = documentType === 'PPT' || documentType === 'PowerPoint';
+    const documentType = document.querySelector('.doc-type-btn.selected')?.dataset.type || 'PDF';
+    const isPdf = ['PDF', 'Resume', 'Invoice', 'Business Plan', 'Research Paper'].includes(documentType);
+    const isWord = documentType === 'Word';
+    const isExcel = documentType === 'Excel';
+    const isPpt = documentType === 'PowerPoint';
+    const endpoint = isPdf ? '/api/generate-pdf' : isWord ? '/api/generate-word' : isExcel ? '/api/generate-excel' : isPpt ? '/api/generate-ppt' : '/api/generate-pdf';
+    const body = isPdf ? { prompt, document_type: documentType } : isWord ? { prompt, document_type: 'general' } : isExcel ? { prompt, sheet_type: 'report' } : { prompt, num_slides: 8, theme: 'professional', template: 'business' };
+    const filename = isPdf ? 'generated-document.pdf' : isWord ? 'generated-document.docx' : isExcel ? 'generated-spreadsheet.xlsx' : 'generated-presentation.pptx';
     await downloadGeneratedFile(
-      isPdf ? '/api/generate-pdf' : isPpt ? '/api/generate-ppt' : '/api/generate/document',
-      isPdf ? { prompt, document_type: documentType } : isPpt ? { prompt, num_slides: 8, theme: 'professional', template: 'business' } : { prompt, document_type: documentType },
-      'doc-gallery', 'doc-gallery-empty', button, documentType, 'generated-document', '📄'
+      endpoint, body, 'doc-gallery', 'doc-gallery-empty', button, documentType, filename, '📄'
     );
   };
 

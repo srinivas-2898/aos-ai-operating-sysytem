@@ -2,7 +2,7 @@
 (() => {
   const projectId = new URLSearchParams(location.search).get('project_id');
   const client = window.supabase.createClient('https://gdqapoopqijohrtovjza.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcWFwb29wcWlqb2hydG92anphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MjcyNzAsImV4cCI6MjEwMDUwMzI3MH0.mQsxKSmGBC3EfGLbuG2c5zAAzJKKIkq8wzsKzoO8oyI');
-  const typeFor = (label) => ({ PDF: 'pdf', Word: 'word', Excel: 'excel', PowerPoint: 'powerpoint', Presentation: 'powerpoint', Image: 'image' })[label] || 'other';
+  const typeFor = (label) => ({ PDF: 'pdf', Resume: 'pdf', Invoice: 'pdf', 'Business Plan': 'pdf', 'Research Paper': 'pdf', Word: 'word', Excel: 'excel', PowerPoint: 'powerpoint', Presentation: 'powerpoint', Image: 'image' })[label] || 'other';
   async function activeSession() {
     const { data: { session } } = await client.auth.getSession();
     if (!session || !projectId) throw new Error('Open a project before generating files.');

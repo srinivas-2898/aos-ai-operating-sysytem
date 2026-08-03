@@ -334,14 +334,14 @@ body{background:radial-gradient(circle at 86% 0,#e0f2fe 0,transparent 28%),#f6f9
       <div class="form-group">
         <label class="form-label">Document Type</label>
         <div class="doc-type-grid">
-          <button class="doc-type-btn selected" id="doctype-pdf" onclick="selectDocType(this,'PDF')">PDF</button>
-          <button class="doc-type-btn" id="doctype-word" onclick="selectDocType(this,'Word')">Word</button>
-          <button class="doc-type-btn" id="doctype-excel" onclick="selectDocType(this,'Excel')">Excel</button>
-          <button class="doc-type-btn" id="doctype-ppt" onclick="selectDocType(this,'PowerPoint')">PPT</button>
-          <button class="doc-type-btn" id="doctype-resume" onclick="selectDocType(this,'Resume')">Resume</button>
-          <button class="doc-type-btn" id="doctype-invoice" onclick="selectDocType(this,'Invoice')">Invoice</button>
-          <button class="doc-type-btn" id="doctype-biz" onclick="selectDocType(this,'Business Plan')">Biz Plan</button>
-          <button class="doc-type-btn" id="doctype-research" onclick="selectDocType(this,'Research')">Research</button>
+          <button class="doc-type-btn selected" data-type="PDF" id="doctype-pdf">PDF</button>
+          <button class="doc-type-btn" data-type="Word" id="doctype-word">Word</button>
+          <button class="doc-type-btn" data-type="Excel" id="doctype-excel">Excel</button>
+          <button class="doc-type-btn" data-type="PowerPoint" id="doctype-ppt">PPT</button>
+          <button class="doc-type-btn" data-type="Resume" id="doctype-resume">Resume</button>
+          <button class="doc-type-btn" data-type="Invoice" id="doctype-invoice">Invoice</button>
+          <button class="doc-type-btn" data-type="Business Plan" id="doctype-biz">Biz Plan</button>
+          <button class="doc-type-btn" data-type="Research Paper" id="doctype-research">Research</button>
         </div>
       </div>
       <div class="form-group">
@@ -470,10 +470,22 @@ function switchTab(name) {
 }
 
 function selectDocType(btn, type) {
-  document.querySelectorAll('.doc-type-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.doc-type-btn').forEach((button) => {
+    button.classList.remove('selected');
+    button.style.background = 'white';
+    button.style.color = '#374151';
+    button.style.borderColor = '#e5e7eb';
+  });
   btn.classList.add('selected');
-  selectedDocType = type;
+  btn.style.background = '#7c3aed';
+  btn.style.color = 'white';
+  btn.style.borderColor = '#7c3aed';
+  selectedDocType = type || btn.dataset.type || 'PDF';
 }
+
+document.querySelectorAll('.doc-type-btn').forEach((btn) => {
+  btn.addEventListener('click', function () { selectDocType(this, this.dataset.type); });
+});
 
 /* generateImage() is provided by image-generation.js — real server-side API call */
 
@@ -632,8 +644,8 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="public-config.js"></script>
 <script src="project-context.js"></script>
 <script src="generation-tabs.js?v=tabs-r1"></script>
-<script src="generation-storage.js?v=2"></script>
+<script src="generation-storage.js?v=3"></script>
 <script src="image-generation.js?v=images-r9"></script>
-<script src="document-generation.js?v=documents-r10"></script>
+<script src="document-generation.js?v=documents-r11"></script>
 </body>
 </html>
