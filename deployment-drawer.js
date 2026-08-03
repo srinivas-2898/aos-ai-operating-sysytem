@@ -3,7 +3,7 @@
   const platforms = {
     Vercel: { color: '#111827', badge: 'Free', description: 'Deploy frontend applications and serverless functions.', token: ['vercel-token', 'Paste your Vercel API Token here'], link: ['Open Vercel Token Page', 'https://vercel.com/account/tokens'], fields: [['vercel-project-name', 'Project Name', 'my-awesome-app'], ['vercel-repo-url', 'GitHub Repo URL', 'https://github.com/username/repo'], ['vercel-framework', 'Framework', 'select:Auto Detect|React|Next.js|Vue.js|HTML/CSS/JS|Vite|Angular|Svelte'], ['vercel-root-dir', 'Root Directory', './ (leave empty for root)'], ['vercel-build-cmd', 'Build Command', 'npm run build (leave empty for auto)'], ['vercel-output-dir', 'Output Directory', 'dist (leave empty for auto)']], url: name => `https://${name}.vercel.app` },
     Firebase: { color: '#f5a623', badge: 'Free', description: 'Publish a fast, secure site through Firebase Hosting.', token: ['firebase-token', 'Paste Firebase CI Token'], link: ['How to get Firebase Token', 'https://firebase.google.com/docs/cli#cli-ci-systems'], fields: [['firebase-project-id', 'Firebase Project ID', 'your-project-id']], extra: ['Open Firebase Console', 'https://console.firebase.google.com', 'Get Firebase Project ID'], url: name => `https://${name}.web.app` },
-    Netlify: { color: '#06b6d4', badge: 'Free', description: 'Deploy web projects with continuous GitHub delivery.', token: ['netlify-token', 'Paste Netlify Auth Token'], link: ['Open Netlify Token Page', 'https://app.netlify.com/user/applications'], fields: [['netlify-site-name', 'Site Name', 'my-site-name'], ['netlify-repo-url', 'GitHub Repo URL', 'https://github.com/username/repo'], ['netlify-build-cmd', 'Build Command', 'npm run build'], ['netlify-publish-dir', 'Publish Directory', 'dist']], url: name => `https://${name}.netlify.app` },
+    Netlify: { color: '#06b6d4', badge: 'Free', description: 'Deploy web projects with continuous GitHub delivery.', token: ['netlify-token', 'Paste Netlify Auth Token'], link: ['Open Netlify Token Page', 'https://app.netlify.com/user/applications'], fields: [['netlify-site-name', 'Site Name', 'my-site-name'], ['netlify-repo-url', 'GitHub Repo URL', 'https://github.com/username/repo'], ['netlify-build-cmd', 'Build Command', 'npm run build (leave empty for auto)'], ['netlify-publish-dir', 'Publish Directory', 'dist (leave empty for auto)']], url: name => `https://${name}.netlify.app` },
     Render: { color: '#7c3aed', badge: 'Free', description: 'Deploy static sites and production web services.', token: ['render-api-key', 'Paste Render API Key'], link: ['Open Render API Settings', 'https://dashboard.render.com/u/settings#api-keys'], fields: [['render-service-name', 'Service Name', 'my-service'], ['render-repo-url', 'GitHub Repo URL', 'https://github.com/username/repo'], ['render-service-type', 'Service Type', 'select:Static Site|Web Service|Node.js'], ['render-build-cmd', 'Build Command', 'npm run build'], ['render-publish', 'Publish Path', 'dist']], url: name => `https://${name}.onrender.com` },
     Cloudflare: { color: '#f5a623', badge: 'Free', description: 'Deploy a global Cloudflare Pages project.', token: ['cf-token', 'Paste Cloudflare API Token'], link: ['Open Cloudflare API Tokens', 'https://dash.cloudflare.com/profile/api-tokens'], fields: [['cf-account-id', 'Cloudflare Account ID', 'Paste Account ID'], ['cf-project-name', 'Project Name', 'my-pages-project']], extra: ['Open Cloudflare Dashboard', 'https://dash.cloudflare.com', 'Get Account ID'], url: name => `https://${name}.pages.dev` },
     Railway: { color: '#111827', badge: 'Free', description: 'Deploy full-stack services directly from GitHub.', token: ['railway-token', 'Paste Railway API Token'], link: ['Open Railway Account Settings', 'https://railway.app/account/tokens'], fields: [['railway-project-name', 'Project Name', 'my-railway-project'], ['railway-repo-url', 'GitHub Repo URL', 'https://github.com/username/repo'], ['railway-environment', 'Environment', 'select:production|staging|development']], url: name => `https://${name}.railway.app` }
@@ -100,43 +100,88 @@
         setTimeout(() => showDeploySuccess(info.url(name)), 3500);
       } else if (platform === 'Netlify') {
         const projectId = document.getElementById('github-proj-select')?.value || document.getElementById('deploy-proj-select')?.value;
-        if (!projectId) throw new Error('Please select an AOS project to deploy.');
-        const { data: files, error: dbError } = await window.supabase.from('project_files').select('path, content').eq('project_id', projectId);
-        if (dbError) throw new Error(`Failed to load project files: ${dbError.message}`);
-        if (!files || files.length === 0) throw new Error('No files found in the project to deploy.');
-        const JSZip = await loadJSZip();
-        const zip = new JSZip();
-        files.forEach(file => {
-          const path = file.path.replace(/^\//, '');
-          zip.file(path, file.content || '');
-        });
-        const zipBlob = await zip.generateAsync({ type: 'blob' });
-        const createResponse = await fetch('https://api.netlify.com/api/v1/sites', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ name })
-        });
-        let siteData = await createResponse.json();
-        if (!createResponse.ok) {
-          throw new Error(siteData.error || siteData.message || 'Netlify site creation failed.');
+        const buildCmd = get('netlify-build-cmd')?.value.trim();
+        const publishDir = get('netlify-publish-dir')?.value.trim();
+
+        if (!projectId && !repo) {
+          throw new Error('Please select an AOS project to deploy, or enter a GitHub Repository URL.');
         }
-        const siteId = siteData.id;
-        const deployResponse = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/deploys`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/zip'
-          },
-          body: zipBlob
-        });
-        let deployData = await deployResponse.json();
-        if (!deployResponse.ok) {
-          throw new Error(deployData.error || deployData.message || 'Netlify zip deployment failed.');
+
+        let siteUrl = '';
+
+        if (projectId) {
+          // ZIP deployment of local AOS project files
+          const { data: files, error: dbError } = await window.supabase.from('project_files').select('path, content').eq('project_id', projectId);
+          if (dbError) throw new Error(`Failed to load project files: ${dbError.message}`);
+          if (!files || files.length === 0) throw new Error('No files found in the project to deploy.');
+          const JSZip = await loadJSZip();
+          const zip = new JSZip();
+          files.forEach(file => {
+            const path = file.path.replace(/^\//, '');
+            zip.file(path, file.content || '');
+          });
+          const zipBlob = await zip.generateAsync({ type: 'blob' });
+          const createResponse = await fetch('https://api.netlify.com/api/v1/sites', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name })
+          });
+          let siteData = await createResponse.json();
+          if (!createResponse.ok) {
+            throw new Error(siteData.error || siteData.message || 'Netlify site creation failed.');
+          }
+          const siteId = siteData.id;
+          const deployResponse = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/deploys`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/zip'
+            },
+            body: zipBlob
+          });
+          let deployData = await deployResponse.json();
+          if (!deployResponse.ok) {
+            throw new Error(deployData.error || deployData.message || 'Netlify zip deployment failed.');
+          }
+          siteUrl = siteData.ssl_url || siteData.url || deployData.ssl_url || deployData.url;
+        } else {
+          // GitHub Repository Deployment
+          const repoPath = repo
+            .replace('https://github.com/', '')
+            .replace('http://github.com/', '')
+            .replace(/\.git$/, '')
+            .replace(/\/$/, '')
+            .trim();
+
+          const createBody = {
+            name: name,
+            repo: {
+              provider: "github",
+              repo: repoPath,
+              private: false,
+              branch: "main"
+            }
+          };
+          if (buildCmd) createBody.repo.cmd = buildCmd;
+          if (publishDir) createBody.repo.dir = publishDir;
+
+          const createResponse = await fetch('https://api.netlify.com/api/v1/sites', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(createBody)
+          });
+          let siteData = await createResponse.json();
+          if (!createResponse.ok) {
+            throw new Error(siteData.error || siteData.message || 'Netlify site creation failed.');
+          }
+          siteUrl = siteData.ssl_url || siteData.url;
         }
-        const siteUrl = siteData.ssl_url || siteData.url || deployData.ssl_url || deployData.url;
         setTimeout(() => showDeploySuccess(siteUrl), 3500);
       } else {
         throw new Error(`${platform} deployment needs a secure server-side deployment connector. Your token is not sent to a third-party browser script.`);
