@@ -436,6 +436,16 @@ a{text-decoration:none;color:inherit}
           <div class="val" id="settings-uid">—</div>
         </div>
       </div>
+      <div class="settings-card" style="margin-top:18px">
+        <h3>Your Projects</h3>
+        <p style="font-size:13px;color:#71809a;margin:6px 0 14px">Projects created in your AOS workspace.</p>
+        <div id="settings-projects"><div style="font-size:13px;color:#94a3b8">Loading projects…</div></div>
+      </div>
+      <div class="settings-card" style="margin-top:18px">
+        <h3>Recent Deployments</h3>
+        <p style="font-size:13px;color:#71809a;margin:6px 0 14px">Real deployment records from all providers.</p>
+        <div id="settings-deployments"><div style="font-size:13px;color:#94a3b8">Loading deployments…</div></div>
+      </div>
       <!-- CHAT SHELL -->
   <div id="chat-shell">
     <div id="chat-sidebar">
@@ -1221,5 +1231,6 @@ document.getElementById('chat-start-modal').addEventListener('click', function(e
 
  </script>
 <script src="project-dashboard.js?v=project-r9"></script>
+<script src="settings-dashboard.js?v=2"></script>
 </body>
 </html>
