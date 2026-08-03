@@ -22,6 +22,7 @@ CREATE INDEX IF NOT EXISTS github_repositories_user_project_idx ON public.github
 ALTER TABLE public.github_repositories ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "own project resources" ON public.github_connections;
 DROP POLICY IF EXISTS "own github connections" ON public.github_connections;
+DROP POLICY IF EXISTS "own github repositories" ON public.github_repositories;
 CREATE POLICY "own github connections" ON public.github_connections FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 CREATE POLICY "own github repositories" ON public.github_repositories FOR ALL USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
 CREATE OR REPLACE FUNCTION public.aos_github_updated_at() RETURNS TRIGGER LANGUAGE plpgsql AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$;
