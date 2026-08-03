@@ -8,7 +8,7 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-family:'Inter',sans-serif;background:#f7faff;color:#111827}
-body{display:flex;flex-direction:column;overflow:hidden;height:100vh}
+body{display:flex;flex-direction:column;min-height:100vh}
 button{cursor:pointer;border:none;background:none;font-family:inherit}
 input,textarea,select{font-family:inherit}
 a{text-decoration:none;color:inherit}
@@ -40,10 +40,10 @@ a{text-decoration:none;color:inherit}
 .dd-sep{height:1px;background:#f3f4f6;margin:4px 0}
 
 /* APP SHELL */
-#app-shell{display:flex;flex:1;overflow:hidden}
+#app-shell{display:flex;flex:1;min-height:0}
 
 /* SIDEBAR */
-#main-sidebar{width:200px;background:#fff;border-right:1px solid #e5e7eb;display:flex;flex-direction:column;flex-shrink:0;transition:width 0.2s;overflow:hidden}
+#main-sidebar{width:200px;background:#fff;border-right:1px solid #e5e7eb;display:flex;flex-direction:column;flex-shrink:0;transition:width 0.2s;overflow:hidden;position:sticky;top:56px;height:calc(100vh - 56px)}
 #main-sidebar.collapsed{width:64px;align-items:center}
 #main-sidebar.collapsed .nav-text{display:none}
 #main-sidebar.collapsed .nav-item{padding:10px;justify-content:center}
@@ -55,15 +55,15 @@ a{text-decoration:none;color:inherit}
 .nav-item svg{flex-shrink:0}
 
 /* MAIN AREA */
-#main-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#main-area{flex:1;display:flex;flex-direction:column;overflow-y:auto;min-height:0}
 
 /* PAGE HEADER */
-#page-header{background:#fff;border-bottom:1px solid #e5e7eb;padding:18px 24px;flex-shrink:0}
-#page-header h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:700;color:#111827;margin-bottom:2px}
-#page-header p{font-size:13px;color:#6b7280}
+#page-header{background:#fff;border-bottom:1px solid #e5e7eb;padding:20px 32px;flex-shrink:0}
+#page-header h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:700;color:#111827;margin-bottom:4px}
+#page-header p{font-size:14px;color:#6b7280}
 
 /* STEPS BAR */
-#steps-bar{background:#fff;border-bottom:1px solid #e5e7eb;padding:0 24px;display:flex;align-items:center;height:52px;flex-shrink:0;gap:0}
+#steps-bar{background:#fff;border-bottom:1px solid #e5e7eb;padding:0 32px;display:flex;align-items:center;height:52px;flex-shrink:0;gap:0}
 .step-item{display:flex;align-items:center;gap:8px;padding:0 16px 0 0;position:relative}
 .step-circle{width:26px;height:26px;border-radius:50%;border:2px solid #d1d5db;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#9ca3af;background:#fff;flex-shrink:0;transition:all 0.3s}
 .step-circle.done{background:#2563eb;border-color:#2563eb;color:#fff}
@@ -74,78 +74,79 @@ a{text-decoration:none;color:inherit}
 .step-line{width:40px;height:2px;background:#e5e7eb;margin:0 8px;flex-shrink:0;transition:background 0.3s}
 .step-line.done{background:#2563eb}
 
-/* PHASES AREA */
-#phases-area{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:20px;padding:20px 24px;background:#f7faff}
+/* PHASES AREA - scrollable content */
+#phases-area{display:flex;flex-direction:column;gap:36px;padding:28px 32px 40px;background:#f7faff}
 
-/* PHASE CARD */
-.phase-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden}
-.phase-header{background:#f9fafb;border-bottom:1px solid #e5e7eb;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
-.phase-header-left{display:flex;align-items:center;gap:10px}
-.phase-step-badge{background:#eff6ff;color:#2563eb;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700}
-.phase-title{font-size:14px;font-weight:700;color:#111827}
-.phase-body{padding:20px}
+/* PHASE SECTIONS - no card wrapper, clean open layout */
+.phase-section{display:flex;flex-direction:column;gap:16px}
+.phase-section-header{display:flex;align-items:center;gap:12px;padding-bottom:4px}
+.phase-step-badge{background:#eff6ff;color:#2563eb;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:0.3px}
+.phase-title{font-size:16px;font-weight:700;color:#111827}
+.phase-section-content{}
 
 /* PHASE 1 – CONNECT GITHUB */
-.ph1-cols{display:flex;gap:24px}
-.ph1-left{width:320px;flex-shrink:0}
-.ph1-right{flex:1}
-.gh-connect-box{border:1.5px dashed #d1d5db;border-radius:12px;padding:20px;text-align:center;margin-bottom:14px}
-.gh-icon{width:44px;height:44px;border-radius:10px;background:#111827;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
-.gh-connect-text{font-size:14px;font-weight:600;color:#111827;margin-bottom:6px}
-.gh-connect-sub{font-size:12px;color:#9ca3af;margin-bottom:14px}
-.btn-dark{background:#111827;color:#fff;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
+.ph1-wrapper{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:24px 28px}
+.ph1-cols{display:flex;gap:32px}
+.ph1-left{flex:0 0 300px}
+.ph1-right{flex:1;padding-top:4px}
+.gh-connect-box{border:1.5px dashed #d1d5db;border-radius:12px;padding:24px;text-align:center}
+.gh-icon{width:52px;height:52px;border-radius:12px;background:#111827;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+.gh-connect-text{font-size:15px;font-weight:600;color:#111827;margin-bottom:4px}
+.gh-connect-sub{font-size:12px;color:#9ca3af;margin-bottom:16px}
+.btn-dark{background:#111827;color:#fff;border-radius:10px;padding:11px 16px;font-size:13px;font-weight:600;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s}
 .btn-dark:hover{background:#1f2937}
-.or-divider{display:flex;align-items:center;gap:10px;margin:12px 0;color:#9ca3af;font-size:12px}
+.or-divider{display:flex;align-items:center;gap:10px;margin:14px 0;color:#9ca3af;font-size:12px}
 .or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:#e5e7eb}
-.btn-outline{border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;color:#374151;width:100%;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-outline{border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;color:#374151;width:100%;text-align:center;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s}
 .btn-outline:hover{background:#f9fafb;border-color:#d1d5db}
-#token-form{display:none;margin-top:12px;display:flex;flex-direction:column;gap:10px}
+#token-form{display:none;margin-top:14px;flex-direction:column;gap:10px}
 #token-form.visible{display:flex}
-#token-form input{border:1.5px solid #e5e7eb;border-radius:10px;padding:9px 12px;font-size:13px;outline:none;color:#111827;background:#f9fafb;width:100%}
+#token-form input{border:1.5px solid #e5e7eb;border-radius:10px;padding:10px 12px;font-size:13px;outline:none;color:#111827;background:#f9fafb;width:100%}
 #token-form input:focus{border-color:#2563eb;background:#fff}
-.btn-primary-sm{background:#2563eb;color:#fff;border-radius:10px;padding:9px 16px;font-size:13px;font-weight:600;width:100%}
+.btn-primary-sm{background:#2563eb;color:#fff;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:600;width:100%;transition:background 0.2s}
 .btn-primary-sm:hover{background:#1d4ed8}
-.checklist{display:flex;flex-direction:column;gap:8px}
+.checklist{display:flex;flex-direction:column;gap:10px}
 .check-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#374151}
 .check-icon{width:20px;height:20px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
-.your-projects-title{font-size:13px;font-weight:700;color:#111827;margin:16px 0 8px}
+.your-projects-title{font-size:14px;font-weight:700;color:#111827;margin:20px 0 8px}
 .proj-chip{background:#f3f4f6;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:500;color:#374151;display:inline-flex;align-items:center;gap:6px;margin:3px}
 
 /* PHASE 2 – DEPLOYMENT */
-.platform-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.platform-card{border:1.5px solid #e5e7eb;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;transition:border-color 0.2s,box-shadow 0.2s}
-.platform-card:hover{border-color:#2563eb;box-shadow:0 4px 12px rgba(37,99,235,0.1)}
+.platform-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.platform-card{background:#fff;border:1.5px solid #e5e7eb;border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:12px;transition:border-color 0.2s,box-shadow 0.2s,transform 0.2s}
+.platform-card:hover{border-color:#2563eb;box-shadow:0 6px 20px rgba(37,99,235,0.1);transform:translateY(-2px)}
 .plat-top{display:flex;align-items:center;justify-content:space-between}
 .plat-info{display:flex;align-items:center;gap:10px}
-.plat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
-.plat-name{font-size:14px;font-weight:700;color:#111827}
-.plat-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px}
+.plat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+.plat-name{font-size:15px;font-weight:700;color:#111827}
+.plat-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px}
 .badge-free{background:#d1fae5;color:#065f46}
 .badge-pro{background:#ede9fe;color:#5b21b6}
 .badge-scale{background:#dbeafe;color:#1e40af}
-.plat-desc{font-size:12px;color:#6b7280;line-height:1.5}
-.plat-tier{font-size:11px;color:#9ca3af}
-.plat-deploy-btn{background:#111827;color:#fff;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;width:100%;display:flex;align-items:center;justify-content:center;gap:6px}
+.plat-desc{font-size:13px;color:#6b7280;line-height:1.5}
+.plat-tier{font-size:12px;color:#9ca3af;margin-top:auto}
+.plat-deploy-btn{background:#111827;color:#fff;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;transition:background 0.2s;margin-top:4px}
 .plat-deploy-btn:hover{background:#1f2937}
 
 /* PHASE 3 – MOBILE */
-.mobile-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.mobile-card{border:1.5px solid #e5e7eb;border-radius:12px;padding:20px}
-.mobile-card h3{font-size:15px;font-weight:700;color:#111827;margin-bottom:6px;display:flex;align-items:center;gap:8px}
-.mobile-card p{font-size:13px;color:#6b7280;margin-bottom:14px;line-height:1.5}
-.feature-list{list-style:none;display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
-.feature-list li{font-size:12px;color:#374151;display:flex;align-items:center;gap:6px}
+.mobile-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.mobile-card{background:#fff;border:1.5px solid #e5e7eb;border-radius:14px;padding:24px;transition:border-color 0.2s,box-shadow 0.2s}
+.mobile-card:hover{border-color:#2563eb;box-shadow:0 6px 20px rgba(37,99,235,0.1)}
+.mobile-card h3{font-size:16px;font-weight:700;color:#111827;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.mobile-card p{font-size:13px;color:#6b7280;margin-bottom:16px;line-height:1.6}
+.feature-list{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.feature-list li{font-size:13px;color:#374151;display:flex;align-items:center;gap:6px}
 .feature-list li::before{content:'✓';color:#2563eb;font-weight:700}
-.btn-mobile{background:#2563eb;color:#fff;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;width:100%;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn-mobile{background:#2563eb;color:#fff;border-radius:10px;padding:11px 16px;font-size:14px;font-weight:600;width:100%;display:flex;align-items:center;justify-content:center;gap:6px;transition:background 0.2s}
 .btn-mobile:hover{background:#1d4ed8}
 
 /* BOTTOM BAR */
-#bottom-bar{background:#fff;border-top:1px solid #e5e7eb;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+#bottom-bar{background:#fff;border-top:1px solid #e5e7eb;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .bottom-left{font-size:13px;color:#9ca3af}
 .bottom-right{display:flex;gap:10px}
-.btn-cancel{padding:9px 18px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-weight:600;color:#374151}
+.btn-cancel{padding:9px 18px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-weight:600;color:#374151;transition:background 0.2s}
 .btn-cancel:hover{background:#f3f4f6}
-.btn-save{padding:9px 18px;background:#2563eb;color:#fff;border-radius:10px;font-size:14px;font-weight:600}
+.btn-save{padding:9px 18px;background:#2563eb;color:#fff;border-radius:10px;font-size:14px;font-weight:600;transition:background 0.2s}
 .btn-save:hover{background:#1d4ed8}
 
 /* MODALS */
@@ -176,6 +177,12 @@ a{text-decoration:none;color:inherit}
 /* CONNECTED STATE */
 .gh-connected{background:#d1fae5;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:#065f46;display:none}
 .gh-connected.visible{display:flex}
+
+/* SCROLLBAR STYLING */
+#main-area::-webkit-scrollbar{width:6px}
+#main-area::-webkit-scrollbar-track{background:transparent}
+#main-area::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}
+#main-area::-webkit-scrollbar-thumb:hover{background:#9ca3af}
 </style>
 </head>
 <body>
@@ -277,24 +284,22 @@ a{text-decoration:none;color:inherit}
     <!-- PHASES AREA -->
     <div id="phases-area">
 
-      <!-- PHASE 1 -->
-      <div class="phase-card">
-        <div class="phase-header">
-          <div class="phase-header-left">
-            <span class="phase-step-badge">STEP 1</span>
-            <span class="phase-title">Connect GitHub</span>
-          </div>
-          <div class="gh-connected visible" id="gh-connected-badge" style="display:none">
+      <!-- PHASE 1 – Connect GitHub -->
+      <div class="phase-section">
+        <div class="phase-section-header">
+          <span class="phase-step-badge">STEP 1</span>
+          <span class="phase-title">Connect GitHub</span>
+          <div class="gh-connected visible" id="gh-connected-badge" style="display:none;margin-left:auto">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
             Connected
           </div>
         </div>
-        <div class="phase-body">
+        <div class="ph1-wrapper">
           <div class="ph1-cols">
             <div class="ph1-left">
               <div class="gh-connect-box" id="gh-connect-box">
                 <div class="gh-icon">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
                 </div>
                 <div class="gh-connect-text">Connect with GitHub</div>
                 <div class="gh-connect-sub">Link your GitHub account to deploy repositories</div>
@@ -302,16 +307,7 @@ a{text-decoration:none;color:inherit}
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
                   Add GitHub Connection
                 </button>
-                <div class="or-divider">or</div>
-                <button class="btn-outline" onclick="toggleTokenForm()">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                  Use Repository URL + Token
-                </button>
-                <div id="token-form">
-                  <input type="url" id="repo-url" placeholder="https://github.com/user/repo">
-                  <input type="password" id="repo-token" placeholder="Personal access token">
-                  <button class="btn-primary-sm" onclick="pushWithToken()">Connect Repository</button>
-                </div>
+                <p style="margin:14px 0 0;font-size:12px;color:#64748b">Secure OAuth connection — AOS never asks for a Personal Access Token.</p>
               </div>
             </div>
             <div class="ph1-right">
@@ -342,160 +338,152 @@ a{text-decoration:none;color:inherit}
         </div>
       </div>
 
-      <!-- PHASE 2 -->
-      <div class="phase-card">
-        <div class="phase-header">
-          <div class="phase-header-left">
-            <span class="phase-step-badge">STEP 2</span>
-            <span class="phase-title">Deployment</span>
-          </div>
+      <!-- PHASE 2 – Deployment -->
+      <div class="phase-section">
+        <div class="phase-section-header">
+          <span class="phase-step-badge">STEP 2</span>
+          <span class="phase-title">Deployment</span>
         </div>
-        <div class="phase-body">
-          <div class="platform-grid">
-            <!-- Vercel -->
-            <div class="platform-card">
-              <div class="plat-top">
-                <div class="plat-info">
-                  <div class="plat-icon" style="background:#111827;color:#fff;font-size:13px;font-weight:800">▲</div>
-                  <span class="plat-name">Vercel</span>
-                </div>
-                <span class="plat-badge badge-free">Free</span>
+        <div class="platform-grid">
+          <!-- Vercel -->
+          <div class="platform-card">
+            <div class="plat-top">
+              <div class="plat-info">
+                <div class="plat-icon" style="background:#111827;color:#fff;font-size:13px;font-weight:800">▲</div>
+                <span class="plat-name">Vercel</span>
               </div>
-              <p class="plat-desc">Deploy frontend apps and serverless functions with zero config.</p>
-              <span class="plat-tier">Free · Pro $20/mo</span>
-              <button class="plat-deploy-btn" onclick="openDeployModal('Vercel')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
-                Deploy to Vercel
-              </button>
+              <span class="plat-badge badge-free">Free</span>
             </div>
-            <!-- Render -->
-            <div class="platform-card">
-              <div class="plat-top">
-                <div class="plat-info">
-                  <div class="plat-icon" style="background:#46e3b7;color:#fff">R</div>
-                  <span class="plat-name">Render</span>
-                </div>
-                <span class="plat-badge badge-free">Free</span>
+            <p class="plat-desc">Deploy frontend apps and serverless functions with zero config.</p>
+            <span class="plat-tier">Free · Pro $20/mo</span>
+            <button class="plat-deploy-btn" onclick="openDeployModal('Vercel')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+              Deploy to Vercel
+            </button>
+          </div>
+          <!-- Render -->
+          <div class="platform-card">
+            <div class="plat-top">
+              <div class="plat-info">
+                <div class="plat-icon" style="background:#46e3b7;color:#fff">R</div>
+                <span class="plat-name">Render</span>
               </div>
-              <p class="plat-desc">Full-stack cloud with web services, databases and cron jobs.</p>
-              <span class="plat-tier">Free · Starter $7/mo</span>
-              <button class="plat-deploy-btn" onclick="openDeployModal('Render')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
-                Deploy to Render
-              </button>
+              <span class="plat-badge badge-free">Free</span>
             </div>
-            <!-- Firebase -->
-            <div class="platform-card">
-              <div class="plat-top">
-                <div class="plat-info">
-                  <div class="plat-icon" style="background:#ffca28;color:#111827">🔥</div>
-                  <span class="plat-name">Firebase</span>
-                </div>
-                <span class="plat-badge badge-free">Free</span>
+            <p class="plat-desc">Full-stack cloud with web services, databases and cron jobs.</p>
+            <span class="plat-tier">Free · Starter $7/mo</span>
+            <button class="plat-deploy-btn" onclick="openDeployModal('Render')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+              Deploy to Render
+            </button>
+          </div>
+          <!-- Firebase -->
+          <div class="platform-card">
+            <div class="plat-top">
+              <div class="plat-info">
+                <div class="plat-icon" style="background:#ffca28;color:#111827">🔥</div>
+                <span class="plat-name">Firebase</span>
               </div>
-              <p class="plat-desc">Google's platform for web and mobile apps with hosting.</p>
-              <span class="plat-tier">Spark Free · Blaze Pay-as-go</span>
-              <button class="plat-deploy-btn" onclick="openDeployModal('Firebase')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
-                Deploy to Firebase
-              </button>
+              <span class="plat-badge badge-free">Free</span>
             </div>
-            <!-- Runway -->
-            <div class="platform-card">
-              <div class="plat-top">
-                <div class="plat-info">
-                  <div class="plat-icon" style="background:#6366f1;color:#fff">Rw</div>
-                  <span class="plat-name">Runway</span>
-                </div>
-                <span class="plat-badge badge-pro">Pro</span>
+            <p class="plat-desc">Google's platform for web and mobile apps with hosting.</p>
+            <span class="plat-tier">Spark Free · Blaze Pay-as-go</span>
+            <button class="plat-deploy-btn" onclick="openDeployModal('Firebase')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+              Deploy to Firebase
+            </button>
+          </div>
+          <!-- Runway -->
+          <div class="platform-card">
+            <div class="plat-top">
+              <div class="plat-info">
+                <div class="plat-icon" style="background:#6366f1;color:#fff">Rw</div>
+                <span class="plat-name">Runway</span>
               </div>
-              <p class="plat-desc">CI/CD automation for mobile and web application releases.</p>
-              <span class="plat-tier">Starter $49/mo</span>
-              <button class="plat-deploy-btn" onclick="openDeployModal('Runway')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
-                Deploy to Runway
-              </button>
+              <span class="plat-badge badge-pro">Pro</span>
             </div>
-            <!-- Cloudflare -->
-            <div class="platform-card">
-              <div class="plat-top">
-                <div class="plat-info">
-                  <div class="plat-icon" style="background:#f38020;color:#fff">CF</div>
-                  <span class="plat-name">Cloudflare</span>
-                </div>
-                <span class="plat-badge badge-scale">Scale</span>
+            <p class="plat-desc">CI/CD automation for mobile and web application releases.</p>
+            <span class="plat-tier">Starter $49/mo</span>
+            <button class="plat-deploy-btn" onclick="openDeployModal('Runway')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+              Deploy to Runway
+            </button>
+          </div>
+          <!-- Cloudflare -->
+          <div class="platform-card">
+            <div class="plat-top">
+              <div class="plat-info">
+                <div class="plat-icon" style="background:#f38020;color:#fff">CF</div>
+                <span class="plat-name">Cloudflare</span>
               </div>
-              <p class="plat-desc">Edge network with Pages, Workers and global CDN deployment.</p>
-              <span class="plat-tier">Free · Pro $20/mo</span>
-              <button class="plat-deploy-btn" onclick="openDeployModal('Cloudflare')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
-                Deploy to Cloudflare
-              </button>
+              <span class="plat-badge badge-scale">Scale</span>
             </div>
-            <!-- Netlify -->
-            <div class="platform-card">
-              <div class="plat-top">
-                <div class="plat-info">
-                  <div class="plat-icon" style="background:#00c7b7;color:#fff">N</div>
-                  <span class="plat-name">Netlify</span>
-                </div>
-                <span class="plat-badge badge-free">Free</span>
+            <p class="plat-desc">Edge network with Pages, Workers and global CDN deployment.</p>
+            <span class="plat-tier">Free · Pro $20/mo</span>
+            <button class="plat-deploy-btn" onclick="openDeployModal('Cloudflare')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+              Deploy to Cloudflare
+            </button>
+          </div>
+          <!-- Netlify -->
+          <div class="platform-card">
+            <div class="plat-top">
+              <div class="plat-info">
+                <div class="plat-icon" style="background:#00c7b7;color:#fff">N</div>
+                <span class="plat-name">Netlify</span>
               </div>
-              <p class="plat-desc">Jamstack platform with instant deploys and edge functions.</p>
-              <span class="plat-tier">Free · Pro $19/mo</span>
-              <button class="plat-deploy-btn" onclick="openDeployModal('Netlify')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
-                Deploy to Netlify
-              </button>
+              <span class="plat-badge badge-free">Free</span>
             </div>
+            <p class="plat-desc">Jamstack platform with instant deploys and edge functions.</p>
+            <span class="plat-tier">Free · Pro $19/mo</span>
+            <button class="plat-deploy-btn" onclick="openDeployModal('Netlify')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+              Deploy to Netlify
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- PHASE 3 -->
-      <div class="phase-card">
-        <div class="phase-header">
-          <div class="phase-header-left">
-            <span class="phase-step-badge">STEP 3</span>
-            <span class="phase-title">Convert to Mobile App</span>
-          </div>
+      <!-- PHASE 3 – Convert to Mobile App -->
+      <div class="phase-section">
+        <div class="phase-section-header">
+          <span class="phase-step-badge">STEP 3</span>
+          <span class="phase-title">Convert to Mobile App</span>
         </div>
-        <div class="phase-body">
-          <div class="mobile-cols">
-            <div class="mobile-card">
-              <h3>
-                <span style="font-size:20px">📱</span>
-                Progressive Web App (PWA)
-              </h3>
-              <p>Convert your web app to an installable PWA that works offline and on any device.</p>
-              <ul class="feature-list">
-                <li>Offline support with service workers</li>
-                <li>Installable on home screen</li>
-                <li>Push notifications support</li>
-                <li>Works on iOS, Android and Desktop</li>
-              </ul>
-              <button class="btn-mobile" onclick="openPWAModal()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
-                Generate PWA
-              </button>
-            </div>
-            <div class="mobile-card">
-              <h3>
-                <span style="font-size:20px">⚡</span>
-                Capacitor (Native App)
-              </h3>
-              <p>Wrap your web app in a native shell and publish to App Store and Google Play.</p>
-              <ul class="feature-list">
-                <li>Native iOS and Android builds</li>
-                <li>Access native device APIs</li>
-                <li>Publish to app stores</li>
-                <li>Native performance and feel</li>
-              </ul>
-              <button class="btn-mobile" onclick="openCapModal()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
-                Generate Native App
-              </button>
-            </div>
+        <div class="mobile-cols">
+          <div class="mobile-card">
+            <h3>
+              <span style="font-size:20px">📱</span>
+              Progressive Web App (PWA)
+            </h3>
+            <p>Convert your web app to an installable PWA that works offline and on any device.</p>
+            <ul class="feature-list">
+              <li>Offline support with service workers</li>
+              <li>Installable on home screen</li>
+              <li>Push notifications support</li>
+              <li>Works on iOS, Android and Desktop</li>
+            </ul>
+            <button class="btn-mobile" onclick="openPWAModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+              Generate PWA
+            </button>
+          </div>
+          <div class="mobile-card">
+            <h3>
+              <span style="font-size:20px">⚡</span>
+              Capacitor (Native App)
+            </h3>
+            <p>Wrap your web app in a native shell and publish to App Store and Google Play.</p>
+            <ul class="feature-list">
+              <li>Native iOS and Android builds</li>
+              <li>Access native device APIs</li>
+              <li>Publish to app stores</li>
+              <li>Native performance and feel</li>
+            </ul>
+            <button class="btn-mobile" onclick="openCapModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/></svg>
+              Generate Native App
+            </button>
           </div>
         </div>
       </div>
@@ -654,9 +642,7 @@ function toggleSidebar() {
 async function loadProjects() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return;
-  const projectId = new URLSearchParams(window.location.search).get('project_id');
-  if (!projectId) { window.location.href = 'mode-selection.html'; return; }
-  const { data: projects, error } = await supabase.from('projects').select('*').eq('id', projectId).single().then(({ data, error }) => ({ data: data ? [data] : [], error }));
+  const { data: projects, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
   if (error) { console.error('Error loading projects:', error); return; }
   const listEl = document.getElementById('sidebar-proj-list');
   const selectEl = document.getElementById('deploy-proj-select');
@@ -669,29 +655,19 @@ async function loadProjects() {
   selectEl.innerHTML = '<option value="">Select a project...</option>' + projects.map((p,i) => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
 }
 
-function connectGitHub() {
+async function connectGitHub() {
+  const projectId = document.getElementById('deploy-proj-select')?.value;
+  if (!projectId) { showToast('Select a project before connecting GitHub.'); return; }
   const box = document.getElementById('gh-connect-box');
-  box.innerHTML = '<div style="text-align:center;padding:12px"><div style="font-size:24px;margin-bottom:8px">⏳</div><p style="font-size:13px;color:#6b7280">Connecting to GitHub...</p></div>';
-  setTimeout(() => {
-    box.innerHTML = '<div style="background:#d1fae5;border-radius:10px;padding:16px;text-align:center"><div style="font-size:24px;margin-bottom:6px">✅</div><p style="font-size:14px;font-weight:700;color:#065f46;margin-bottom:4px">GitHub Connected!</p><p style="font-size:12px;color:#047857">Your repositories are now linked</p></div>';
-    document.getElementById('gh-connected-badge').style.display = 'flex';
-    advStep(2);
-    showToast('GitHub connected successfully!');
-  }, 1500);
-}
-
-function toggleTokenForm() {
-  const form = document.getElementById('token-form');
-  form.classList.toggle('visible');
-}
-
-function pushWithToken() {
-  const url = document.getElementById('repo-url').value.trim();
-  const token = document.getElementById('repo-token').value.trim();
-  if (!url || !token) { showToast('Please fill in both URL and token'); return; }
-  showToast('Repository connected via token!');
-  document.getElementById('gh-connected-badge').style.display = 'flex';
-  advStep(2);
+  box.innerHTML = '<div style="text-align:center;padding:12px"><p style="font-size:13px;color:#6b7280">Redirecting to GitHub OAuth…</p></div>';
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const base = (window.AOS_AI_API_URL || '/api/chat').replace(/\/api\/chat(?:\?.*)?$/, '');
+    const response = await fetch(base + '/api/github/connect', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token || ''}` }, body: JSON.stringify({ project_id: projectId }) });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.detail || 'GitHub OAuth could not start.');
+    window.location.assign(result.authorization_url);
+  } catch (error) { box.innerHTML = '<div style="padding:12px;color:#b91c1c;font-size:13px">GitHub connection could not start.</div>'; showToast(error.message); }
 }
 
 function openDeployModal(platform) {
@@ -892,6 +868,5 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
  </script>
-<script src="project-context.js"></script>
 </body>
 </html>
