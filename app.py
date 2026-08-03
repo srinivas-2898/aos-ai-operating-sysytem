@@ -549,11 +549,14 @@ def deploy_netlify(data: dict):
             site_url = site_data.get('ssl_url') or site_data.get('url') or deploy_data.get('ssl_url') or deploy_data.get('url')
             return {'ssl_url': site_url}
         else:
-            repo_path = (repo or '') \
-                .replace('https://github.com/', '') \
-                .replace('http://github.com/', '') \
-                .replace('.git', '') \
-                .strip('/')
+            import re
+            clean_url = (repo or '').strip()
+            clean_url = re.sub(r'^https?://', '', clean_url)
+            clean_url = re.sub(r'^github\.com/*', '', clean_url)
+            clean_url = re.sub(r'^com/*', '', clean_url)
+            clean_url = re.sub(r'/+', '/', clean_url)
+            clean_url = re.sub(r'\.git(hub)?$|\.gi$', '', clean_url)
+            repo_path = clean_url.strip('/')
             
             create_body = {
                 'name': name,
