@@ -537,6 +537,13 @@ def deploy_netlify(data: dict):
                 return response
 
             last_response = response
+            if response.status_code == 429:
+                retry_after = response.headers.get('Retry-After')
+                wait_message = f' Wait {retry_after} seconds before trying again.' if retry_after else ' Wait a few minutes before trying again.'
+                raise HTTPException(
+                    status_code=429,
+                    detail='Netlify temporarily rate-limited site creation for this application.' + wait_message
+                )
             error_text = response.text.lower()
             is_taken_subdomain = response.status_code == 422 and 'subdomain' in error_text and 'unique' in error_text
             if not is_taken_subdomain:
