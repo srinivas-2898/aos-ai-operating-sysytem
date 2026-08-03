@@ -22,12 +22,18 @@ def service_headers(): return {"apikey": cfg("SUPABASE_SERVICE_ROLE_KEY"), "Auth
 def rest(path, method="GET", payload=None, params=None, extra_headers=None):
     headers=service_headers(); headers.update(extra_headers or {})
     response = requests.request(method, f"{cfg('SUPABASE_URL').rstrip('/')}/rest/v1/{path}", headers=headers, json=payload, params=params, timeout=30)
-    response.raise_for_status(); return response.json() if response.content else None
+    if not response.ok:
+        try: detail = response.json().get("message") or response.json().get("hint") or response.text
+        except ValueError: detail = response.text
+        raise HTTPException(502, f"Supabase request failed: {detail[:300]}")
+    return response.json() if response.content else None
 def github(method, path, token, payload=None):
     response = requests.request(method, f"{GH_API}{path}", headers={"Authorization":f"Bearer {token}","Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"}, json=payload, timeout=45)
     if not response.ok: raise HTTPException(response.status_code, f"GitHub API: {response.text[:300]}")
     return response.json() if response.content else {}
-def cipher(): return Fernet(cfg("TOKEN_ENCRYPTION_KEY").encode())
+def cipher():
+    try: return Fernet(cfg("TOKEN_ENCRYPTION_KEY").encode())
+    except ValueError as error: raise HTTPException(503, "TOKEN_ENCRYPTION_KEY is invalid. Generate a Fernet key for Railway.") from error
 def encrypt(value): return cipher().encrypt(value.encode()).decode()
 def decrypt(value):
     try: return cipher().decrypt(value.encode()).decode()

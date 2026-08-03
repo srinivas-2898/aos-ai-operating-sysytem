@@ -8,7 +8,10 @@ ALTER TABLE public.github_connections ADD COLUMN IF NOT EXISTS refresh_token TEX
 ALTER TABLE public.github_connections ADD COLUMN IF NOT EXISTS connected_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 ALTER TABLE public.github_connections ALTER COLUMN project_id DROP NOT NULL;
 UPDATE public.github_connections gc SET user_id = p.user_id FROM public.projects p WHERE p.id = gc.project_id AND gc.user_id IS NULL;
-CREATE UNIQUE INDEX IF NOT EXISTS github_connections_user_unique ON public.github_connections(user_id) WHERE user_id IS NOT NULL;
+-- A full unique index is required by the REST upsert used after OAuth.
+-- PostgreSQL allows multiple NULLs in a unique index, so legacy unlinked rows remain valid.
+DROP INDEX IF EXISTS public.github_connections_user_unique;
+CREATE UNIQUE INDEX IF NOT EXISTS github_connections_user_unique ON public.github_connections(user_id);
 CREATE INDEX IF NOT EXISTS github_connections_github_user_idx ON public.github_connections(github_user_id);
 
 CREATE TABLE IF NOT EXISTS public.github_repositories (
