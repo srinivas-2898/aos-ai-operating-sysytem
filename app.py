@@ -574,6 +574,16 @@ def deploy_netlify(data: dict):
                         return latest
                     if state in {'error', 'failed'}:
                         summary = latest.get('error_message') or latest.get('summary') or 'Netlify build failed.'
+                        clone_error = summary.lower()
+                        if any(marker in clone_error for marker in ('unable to access repository', 'host key verification', 'could not read from remote repository')):
+                            raise HTTPException(
+                                status_code=502,
+                                detail=(
+                                    'Netlify cannot access this GitHub repository. In Netlify, open User settings → '
+                                    'Applications → GitHub, connect GitHub, and grant Netlify access to this repository. '
+                                    'Then deploy again.'
+                                )
+                            )
                         raise HTTPException(status_code=502, detail=f'Netlify build failed: {summary}')
             time.sleep(3)
         if not latest:
