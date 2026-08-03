@@ -303,6 +303,10 @@ a{text-decoration:none;color:inherit}
                 </div>
                 <div class="gh-connect-text">Connect with GitHub</div>
                 <div class="gh-connect-sub">Link your GitHub account to deploy repositories</div>
+                <label for="github-proj-select" style="display:block;text-align:left;font-size:12px;font-weight:700;color:#475569;margin:0 0 7px">Project to connect</label>
+                <select id="github-proj-select" style="width:100%;margin:0 0 12px;border:1.5px solid #dbe3f0;border-radius:9px;padding:10px 11px;background:#fff;color:#1f2937;font-size:13px">
+                  <option value="">Loading your projects…</option>
+                </select>
                 <button class="btn-dark" onclick="connectGitHub()">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
                   Add GitHub Connection
@@ -646,17 +650,20 @@ async function loadProjects() {
   if (error) { console.error('Error loading projects:', error); return; }
   const listEl = document.getElementById('sidebar-proj-list');
   const selectEl = document.getElementById('deploy-proj-select');
+  const githubSelect = document.getElementById('github-proj-select');
   if (!projects || !projects.length) {
     listEl.innerHTML = '<span style="font-size:12px;color:#9ca3af">No projects saved yet</span>';
     selectEl.innerHTML = '<option value="">No projects — create one first</option>';
+    githubSelect.innerHTML = '<option value="">No projects — create one first</option>';
     return;
   }
   listEl.innerHTML = projects.map(p => `<span class="proj-chip"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${esc(p.name)}</span>`).join('');
   selectEl.innerHTML = '<option value="">Select a project...</option>' + projects.map((p,i) => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  githubSelect.innerHTML = '<option value="">Select a project...</option>' + projects.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
 }
 
 async function connectGitHub() {
-  const projectId = document.getElementById('deploy-proj-select')?.value;
+  const projectId = document.getElementById('github-proj-select')?.value;
   if (!projectId) { showToast('Select a project before connecting GitHub.'); return; }
   const box = document.getElementById('gh-connect-box');
   box.innerHTML = '<div style="text-align:center;padding:12px"><p style="font-size:13px;color:#6b7280">Redirecting to GitHub OAuth…</p></div>';
