@@ -112,6 +112,8 @@
     if (!token) return drawerError(`Please enter your ${platform} deployment credential.`);
     if (!name) return drawerError('Please enter a project name.');
     if (info.fields.some(item => item[0].endsWith('repo-url')) && !repo) return drawerError('Please enter your GitHub repository URL.');
+    const selectedProjectId = document.getElementById('github-proj-select')?.value || document.getElementById('deploy-proj-select')?.value;
+    if (!selectedProjectId) return drawerError('Select an AOS project first. Every deployment is saved inside its project workspace.');
     const button = get('drawer-deploy'); button.disabled = true; button.textContent = 'Deploying…';
     progress(['Connecting to ' + platform + '…', 'Validating credential…', 'Creating project…', 'Uploading files…', 'Building application…']);
     try {
@@ -121,13 +123,9 @@
         const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || 'Vercel project creation failed.');
         setTimeout(() => showDeploySuccess(info.url(name)), 3500);
       } else if (platform === 'Netlify') {
-        const projectId = document.getElementById('github-proj-select')?.value || document.getElementById('deploy-proj-select')?.value;
+        const projectId = selectedProjectId;
         const buildCmd = get('netlify-build-cmd')?.value.trim();
         const publishDir = get('netlify-publish-dir')?.value.trim();
-
-        if (!projectId && !repo) {
-          throw new Error('Please select an AOS project to deploy, or enter a GitHub Repository URL.');
-        }
 
         const base = (window.AOS_AI_API_URL || '').replace(/\/api\/chat(?:\?.*)?$/, '');
         let deployData;
@@ -173,11 +171,15 @@
 
   async function saveDeploymentRecord(url, status = 'success') {
     const projectId = document.getElementById('github-proj-select')?.value || document.getElementById('deploy-proj-select')?.value;
-    if (!projectId || !activePlatform || !window.supabase?.createClient) return;
+    if (!projectId) throw new Error('No AOS project is selected for this deployment.');
+    if (!activePlatform || !window.supabase?.createClient) throw new Error('Supabase is unavailable.');
+    const repositoryInput = platforms[activePlatform]?.fields.find(item => item[0].endsWith('repo-url'))?.[0];
+    const repositoryUrl = repositoryInput ? get(repositoryInput)?.value.trim() : '';
     const client = window.supabase.createClient('https://gdqapoopqijohrtovjza.supabase.co', 'eyJhbGciOiJIUzI1NiIsInJlZiI6ImFub24iLCJpYXQiOjE3ODQ5MjcyNzAsImV4cCI6MjEwMDUwMzI3MH0.mQsxKSmGBC3EfGLbuG2c5zAAzJKKIkq8wzsKzoO8oyI');
-    await client.from('deployments').insert({ project_id: projectId, provider: activePlatform, status, deployment_url: url, metadata: { source: 'aos-deploy-drawer' } });
+    const { error } = await client.from('deployments').insert({ project_id: projectId, provider: activePlatform, status, deployment_url: url, metadata: { source: 'aos-deploy-drawer', source_type: repositoryUrl ? 'github' : 'aos-project', source_url: repositoryUrl || null } });
+    if (error) throw error;
   }
-  function showDeploymentResult(url, heading, message, status, canOpen = true) { get('drawer-progress').style.display = 'none'; const button = get('drawer-deploy'); button.disabled = false; button.textContent = status === 'success' ? `Deploy to ${activePlatform} again` : 'Check deployment again'; const result = get('drawer-result'); result.querySelector('h3').textContent = heading; result.querySelector('h3').style.color = status === 'success' ? '#16a34a' : '#b45309'; let note = get('drawer-result-note'); if (!note) { note = document.createElement('p'); note.id = 'drawer-result-note'; note.style.cssText = 'font:13px Inter,sans-serif;color:#6b7280;margin:8px 0'; result.querySelector('h3').after(note); } note.textContent = message; const liveLink = get('drawer-live-url'); const openLink = get('drawer-open'); liveLink.href = url; liveLink.textContent = url; openLink.href = url; liveLink.style.display = canOpen ? '' : 'none'; openLink.style.display = canOpen ? '' : 'none'; result.style.display = 'block'; saveDeploymentRecord(url, status).catch(() => {}); get('drawer-copy').onclick = async () => { await navigator.clipboard.writeText(url); get('drawer-copy').textContent = 'Copied'; setTimeout(() => { get('drawer-copy').textContent = 'Copy URL'; }, 2000); }; }
+  function showDeploymentResult(url, heading, message, status, canOpen = true) { get('drawer-progress').style.display = 'none'; const button = get('drawer-deploy'); button.disabled = false; button.textContent = status === 'success' ? `Deploy to ${activePlatform} again` : 'Check deployment again'; const result = get('drawer-result'); result.querySelector('h3').textContent = heading; result.querySelector('h3').style.color = status === 'success' ? '#16a34a' : '#b45309'; let note = get('drawer-result-note'); if (!note) { note = document.createElement('p'); note.id = 'drawer-result-note'; note.style.cssText = 'font:13px Inter,sans-serif;color:#6b7280;margin:8px 0'; result.querySelector('h3').after(note); } note.textContent = message; const liveLink = get('drawer-live-url'); const openLink = get('drawer-open'); liveLink.href = url; liveLink.textContent = url; openLink.href = url; liveLink.style.display = canOpen ? '' : 'none'; openLink.style.display = canOpen ? '' : 'none'; result.style.display = 'block'; saveDeploymentRecord(url, status).catch(error => drawerError(`Deployment completed, but could not save history: ${error.message || error}`)); get('drawer-copy').onclick = async () => { await navigator.clipboard.writeText(url); get('drawer-copy').textContent = 'Copied'; setTimeout(() => { get('drawer-copy').textContent = 'Copy URL'; }, 2000); }; }
   function showDeploySuccess(url) { showDeploymentResult(url, 'Deployment Successful!', 'Netlify reports that the latest deployment is ready.', 'success'); }
   function showDeployPending(url) { showDeploymentResult(url, 'Deployment is still building', 'Netlify is building your project. A live URL will appear when Netlify marks the build as ready.', 'building', false); }
   function openDeployDrawer(platform) { if (!platforms[platform]) return; inject(); activePlatform = platform; render(platform); get('deploy-drawer').classList.add('open'); get('deploy-drawer-overlay').classList.add('open'); }
