@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 import os
 import sys
@@ -132,6 +132,17 @@ def call_deepseek(system_prompt: str, user_prompt: str) -> str:
 @app.get("/api/health")
 def health():
     return {"status": "ok", "message": "AOS Backend Running"}
+
+
+@app.get("/")
+def root():
+    """A safe landing response for Railway; the web UI is hosted by Firebase."""
+    return JSONResponse({
+        "status": "ok",
+        "message": "AOS Backend API is running.",
+        "health": "/api/health",
+        "docs": "/docs",
+    })
 
 
 # PDF GENERATION ROUTE IMPORTED FROM pdf_generator.py
