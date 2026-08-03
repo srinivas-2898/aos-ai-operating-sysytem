@@ -61,8 +61,20 @@
     avatar.src = profile.avatar || 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png';
     card.style.display = 'flex';
     document.getElementById('gh-connected-badge').style.display = 'flex';
-    const button = document.getElementById('github-connect-button');
-    if (button) button.textContent = `GitHub connected as @${profile.username}`;
+    const oldButton = document.getElementById('github-connect-button');
+    if (oldButton) {
+      const button = oldButton.cloneNode(false);
+      button.id = 'github-connect-button';
+      button.type = 'button';
+      button.className = oldButton.className;
+      button.textContent = 'Add your project to GitHub';
+      oldButton.replaceWith(button);
+      button.addEventListener('click', () => {
+        const select = document.getElementById('github-proj-select');
+        select?.focus();
+        setStatus('Choose a project, then create its GitHub repository.', '#2563eb');
+      });
+    }
   }
 
   async function loadConnectedProfile(client) {
