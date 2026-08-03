@@ -637,7 +637,6 @@ def deploy_netlify(data: dict):
             site_url = site_data.get('ssl_url') or site_data.get('url') or deploy_data.get('ssl_url') or deploy_data.get('url')
             return {'ssl_url': site_url, 'status': (deployment.get('state') or 'building').lower()}
         else:
-            import re
             clean_url = (repo or '').strip()
             clean_url = re.sub(r'^https?://', '', clean_url)
             clean_url = re.sub(r'^github\.com/*', '', clean_url)
@@ -645,24 +644,76 @@ def deploy_netlify(data: dict):
             clean_url = re.sub(r'/+', '/', clean_url)
             clean_url = re.sub(r'\.git(hub)?$|\.gi$', '', clean_url)
             repo_path = clean_url.strip('/')
-            
-            create_body = {
-                'name': name,
-                'repo': {
-                    'provider': 'github',
-                    'repo': repo_path,
-                    'private': False,
-                    'branch': 'main'
-                }
-            }
+            if not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', repo_path):
+                raise HTTPException(status_code=400, detail='Enter a valid public GitHub repository URL.')
             if cmd:
-                create_body['repo']['cmd'] = cmd
-            if pub_dir:
-                create_body['repo']['dir'] = pub_dir
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        'This repository needs a build command. Connect GitHub in Netlify to use Netlify builds, '
+                        'or provide a repository that already contains its publish-ready files.'
+                    )
+                )
 
-            create_response = create_site_with_fallback(create_body, repo)
-            
+            # Netlify documents that its API repo object is complex and relies on a separate
+            # Netlify GitHub App connection. For a public static repository, deploy the actual
+            # repository files directly instead of asking Netlify to clone via that connection.
+            repo_metadata = requests.get(
+                f'https://api.github.com/repos/{repo_path}',
+                headers={'Accept': 'application/vnd.github+json', 'User-Agent': 'AOS-Netlify-Deploy'},
+                timeout=30
+            )
+            if not repo_metadata.ok:
+                raise HTTPException(
+                    status_code=400,
+                    detail='AOS could not read this public GitHub repository. Check the URL, or connect GitHub in Netlify for a private repository.'
+                )
+            branch = repo_metadata.json().get('default_branch') or 'main'
+            archive_response = requests.get(
+                f'https://api.github.com/repos/{repo_path}/zipball/{quote(branch, safe="")}',
+                headers={'Accept': 'application/vnd.github+json', 'User-Agent': 'AOS-Netlify-Deploy'},
+                timeout=60
+            )
+            if not archive_response.ok:
+                raise HTTPException(status_code=502, detail='AOS could not download the GitHub repository archive.')
+
+            # GitHub archives have a generated top-level folder. Remove it so index.html is
+            # published at the Netlify site root. If a publish directory is supplied, use it.
+            source_archive = BytesIO(archive_response.content)
+            deploy_archive = BytesIO()
+            selected_directory = (pub_dir or '').strip().strip('/')
+            included_files = 0
+            with zipfile.ZipFile(source_archive) as source_zip, zipfile.ZipFile(deploy_archive, 'w', zipfile.ZIP_DEFLATED) as deploy_zip:
+                for entry in source_zip.infolist():
+                    if entry.is_dir():
+                        continue
+                    parts = entry.filename.split('/', 1)
+                    if len(parts) != 2:
+                        continue
+                    relative_path = parts[1]
+                    if selected_directory:
+                        prefix = selected_directory + '/'
+                        if not relative_path.startswith(prefix):
+                            continue
+                        relative_path = relative_path[len(prefix):]
+                    if not relative_path:
+                        continue
+                    deploy_zip.writestr(relative_path, source_zip.read(entry))
+                    included_files += 1
+            if not included_files:
+                raise HTTPException(status_code=400, detail='No files were found in the selected Netlify publish directory.')
+
+            create_response = create_site_with_fallback({'name': name}, repo)
             site_data = create_response.json()
+            site_id = site_data.get('id')
+            deploy_response = requests.post(
+                f'https://api.netlify.com/api/v1/sites/{site_id}/deploys',
+                headers={'Authorization': f'Bearer {token}', 'Content-Type': 'application/zip'},
+                data=deploy_archive.getvalue(),
+                timeout=90
+            )
+            if not deploy_response.ok:
+                raise HTTPException(status_code=deploy_response.status_code, detail=f'Netlify file deployment failed: {deploy_response.text}')
             site_url = site_data.get('ssl_url') or site_data.get('url')
             deployment = wait_for_netlify_deploy(site_data.get('id'))
             return {'ssl_url': site_url, 'status': (deployment.get('state') or 'building').lower()}
