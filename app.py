@@ -485,6 +485,7 @@ def generate_presentation(data: dict):
 @app.post('/api/deploy/netlify')
 def deploy_netlify(data: dict):
     import zipfile
+    import secrets
     from backend.github_oauth import rest
     
     token = (data.get('token') or '').strip()
@@ -504,6 +505,48 @@ def deploy_netlify(data: dict):
         'Content-Type': 'application/json'
     }
 
+    def netlify_slug(value: str) -> str:
+        """Convert a repository or user label into a valid Netlify subdomain."""
+        value = (value or '').strip().lower()
+        value = value.removesuffix('.git').split('/')[-1]
+        value = re.sub(r'[^a-z0-9-]+', '-', value)
+        value = re.sub(r'-{2,}', '-', value).strip('-')
+        return value[:54] or 'aos-project'
+
+    def create_site_with_fallback(create_body: dict, repository_url: str | None = None):
+        """Retry a taken subdomain using the GitHub repository name and a safe suffix."""
+        requested_name = netlify_slug(create_body.get('name'))
+        repository_name = netlify_slug(repository_url or '')
+        candidates = [requested_name]
+        if repository_name and repository_name not in candidates:
+            candidates.append(repository_name)
+        # A suffix guarantees the final retry is unique without overwriting another site.
+        candidates.append(f"{repository_name or requested_name}-{secrets.token_hex(3)}")
+
+        last_response = None
+        for candidate in candidates:
+            body = {**create_body, 'name': candidate}
+            response = requests.post(
+                'https://api.netlify.com/api/v1/sites',
+                headers=headers,
+                json=body,
+                timeout=30
+            )
+            if response.ok:
+                return response
+
+            last_response = response
+            error_text = response.text.lower()
+            is_taken_subdomain = response.status_code == 422 and 'subdomain' in error_text and 'unique' in error_text
+            if not is_taken_subdomain:
+                break
+
+        detail = last_response.text if last_response is not None else 'Netlify site creation failed.'
+        raise HTTPException(
+            status_code=last_response.status_code if last_response is not None else 502,
+            detail=f"Netlify site creation failed after trying a GitHub repository fallback: {detail}"
+        )
+
     try:
         if project_id:
             files = rest("project_files", params={"project_id": f"eq.{project_id}", "select": "path,content"})
@@ -520,14 +563,7 @@ def deploy_netlify(data: dict):
             
             zip_data = zip_buffer.getvalue()
 
-            create_response = requests.post(
-                'https://api.netlify.com/api/v1/sites',
-                headers=headers,
-                json={'name': name},
-                timeout=30
-            )
-            if not create_response.ok:
-                raise HTTPException(status_code=create_response.status_code, detail=f"Netlify site creation failed: {create_response.text}")
+            create_response = create_site_with_fallback({'name': name}, repo)
             
             site_data = create_response.json()
             site_id = site_data.get('id')
@@ -537,7 +573,7 @@ def deploy_netlify(data: dict):
                 'Content-Type': 'application/zip'
             }
             deploy_response = requests.post(
-                f'https://api.netlify.com/api/v1/sites/{siteId}/deploys',
+                f'https://api.netlify.com/api/v1/sites/{site_id}/deploys',
                 headers=deploy_headers,
                 data=zip_data,
                 timeout=45
@@ -572,14 +608,7 @@ def deploy_netlify(data: dict):
             if pub_dir:
                 create_body['repo']['dir'] = pub_dir
 
-            create_response = requests.post(
-                'https://api.netlify.com/api/v1/sites',
-                headers=headers,
-                json=create_body,
-                timeout=30
-            )
-            if not create_response.ok:
-                raise HTTPException(status_code=create_response.status_code, detail=f"Netlify site creation failed: {create_response.text}")
+            create_response = create_site_with_fallback(create_body, repo)
             
             site_data = create_response.json()
             site_url = site_data.get('ssl_url') or site_data.get('url')
