@@ -52,6 +52,38 @@
     }
   }
 
+  function showConnectedProfile(profile) {
+    const card = document.getElementById('github-profile-card');
+    const avatar = document.getElementById('github-profile-avatar');
+    const name = document.getElementById('github-profile-name');
+    if (!card || !avatar || !name) return;
+    name.textContent = `@${profile.username}`;
+    avatar.src = profile.avatar || 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png';
+    card.style.display = 'flex';
+    document.getElementById('gh-connected-badge').style.display = 'flex';
+    const button = document.getElementById('github-connect-button');
+    if (button) button.textContent = `GitHub connected as @${profile.username}`;
+  }
+
+  async function loadConnectedProfile(client) {
+    const { data: { session } } = await client.auth.getSession();
+    if (!session?.access_token) return;
+    const base = (window.AOS_AI_API_URL || '').replace(/\/api\/chat(?:\?.*)?$/, '');
+    if (!base) return;
+    const response = await fetch(`${base}/api/github/connection`, {
+      headers: { Authorization: `Bearer ${session.access_token}` }
+    });
+    if (response.status === 409) return;
+    const raw = await response.text();
+    let result = {};
+    try { result = raw ? JSON.parse(raw) : {}; } catch { return; }
+    if (!response.ok) {
+      if (new URLSearchParams(window.location.search).get('github') === 'connected') setStatus(result.detail || 'GitHub connection could not be loaded.', '#b91c1c');
+      return;
+    }
+    showConnectedProfile(result);
+  }
+
   function initialise() {
     if (!window.supabase?.createClient) return;
     const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -64,6 +96,9 @@
       startConnection(client);
     });
     loadProjects(client).catch(error => setStatus(error.message || 'Projects could not load.', '#b91c1c'));
+    loadConnectedProfile(client).catch(error => {
+      if (new URLSearchParams(window.location.search).get('github') === 'connected') setStatus(error.message || 'GitHub connection could not be loaded.', '#b91c1c');
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initialise);

@@ -98,6 +98,17 @@ def status(project_id: str, request: Request):
     repo=rest("github_repositories",params={"project_id":f"eq.{project_id}","select":"*"})
     return {"connected":True,"username":conn["github_username"],"avatar":conn.get("github_avatar"),"repository":repo[0] if repo else None}
 
+@router.get("/connection")
+def connection_details(request: Request):
+    user = current_user(request)
+    conn = connection(user)
+    return {
+        "connected": True,
+        "username": conn["github_username"],
+        "avatar": conn.get("github_avatar"),
+        "connected_at": conn.get("connected_at"),
+    }
+
 @router.post("/repositories")
 def create_repository(body: RepositoryRequest, request: Request):
     user=current_user(request); project=owned_project(user,body.project_id); token=decrypt(connection(user)["access_token"])
