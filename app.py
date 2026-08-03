@@ -658,24 +658,23 @@ def deploy_netlify(data: dict):
             # Netlify documents that its API repo object is complex and relies on a separate
             # Netlify GitHub App connection. For a public static repository, deploy the actual
             # repository files directly instead of asking Netlify to clone via that connection.
-            repo_metadata = requests.get(
-                f'https://api.github.com/repos/{repo_path}',
-                headers={'Accept': 'application/vnd.github+json', 'User-Agent': 'AOS-Netlify-Deploy'},
-                timeout=30
-            )
-            if not repo_metadata.ok:
+            # Do not call api.github.com here: Railway shares its outgoing IP and can hit
+            # GitHub's anonymous API rate limit. Codeload is the public archive endpoint.
+            archive_response = None
+            for branch in ('main', 'master'):
+                response = requests.get(
+                    f'https://codeload.github.com/{repo_path}/zip/refs/heads/{branch}',
+                    headers={'User-Agent': 'AOS-Netlify-Deploy'},
+                    timeout=60
+                )
+                if response.ok:
+                    archive_response = response
+                    break
+            if archive_response is None:
                 raise HTTPException(
                     status_code=400,
-                    detail='AOS could not read this public GitHub repository. Check the URL, or connect GitHub in Netlify for a private repository.'
+                    detail='AOS could not download this public GitHub repository. Check the repository URL and ensure its default branch is main or master.'
                 )
-            branch = repo_metadata.json().get('default_branch') or 'main'
-            archive_response = requests.get(
-                f'https://api.github.com/repos/{repo_path}/zipball/{quote(branch, safe="")}',
-                headers={'Accept': 'application/vnd.github+json', 'User-Agent': 'AOS-Netlify-Deploy'},
-                timeout=60
-            )
-            if not archive_response.ok:
-                raise HTTPException(status_code=502, detail='AOS could not download the GitHub repository archive.')
 
             # GitHub archives have a generated top-level folder. Remove it so index.html is
             # published at the Netlify site root. If a publish directory is supplied, use it.
