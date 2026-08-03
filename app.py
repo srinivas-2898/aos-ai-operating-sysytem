@@ -30,6 +30,8 @@ from pptx.dml.color import RGBColor
 
 load_dotenv()
 
+from backend.github_oauth import router as github_router
+
 app = FastAPI(title='AOS API')
 app.add_middleware(
     CORSMiddleware,
@@ -38,6 +40,8 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
+
+app.include_router(github_router)
 
 
 @app.exception_handler(HTTPException)
