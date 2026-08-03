@@ -486,6 +486,7 @@ def generate_presentation(data: dict):
 def deploy_netlify(data: dict):
     import zipfile
     import secrets
+    import time
     from backend.github_oauth import rest
     
     token = (data.get('token') or '').strip()
@@ -547,6 +548,31 @@ def deploy_netlify(data: dict):
             detail=f"Netlify site creation failed after trying a GitHub repository fallback: {detail}"
         )
 
+    def wait_for_netlify_deploy(site_id: str) -> dict:
+        """Wait briefly for Netlify's actual build result; never report a pending site as ready."""
+        deadline = time.monotonic() + 75
+        latest = {}
+        while time.monotonic() < deadline:
+            response = requests.get(
+                f'https://api.netlify.com/api/v1/sites/{site_id}/deploys?per_page=1',
+                headers=headers,
+                timeout=20
+            )
+            if response.ok:
+                deployments = response.json() or []
+                if deployments:
+                    latest = deployments[0]
+                    state = (latest.get('state') or '').lower()
+                    if state == 'ready':
+                        return latest
+                    if state in {'error', 'failed'}:
+                        summary = latest.get('error_message') or latest.get('summary') or 'Netlify build failed.'
+                        raise HTTPException(status_code=502, detail=f'Netlify build failed: {summary}')
+            time.sleep(3)
+        # Netlify can need more than a minute for a first Git-based build.
+        # Return its real pending state rather than a false "successful" result.
+        return latest or {'state': 'building'}
+
     try:
         if project_id:
             files = rest("project_files", params={"project_id": f"eq.{project_id}", "select": "path,content"})
@@ -582,8 +608,9 @@ def deploy_netlify(data: dict):
                 raise HTTPException(status_code=deploy_response.status_code, detail=f"Netlify zip deployment failed: {deploy_response.text}")
             
             deploy_data = deploy_response.json()
+            deployment = wait_for_netlify_deploy(site_id)
             site_url = site_data.get('ssl_url') or site_data.get('url') or deploy_data.get('ssl_url') or deploy_data.get('url')
-            return {'ssl_url': site_url}
+            return {'ssl_url': site_url, 'status': (deployment.get('state') or 'building').lower()}
         else:
             import re
             clean_url = (repo or '').strip()
@@ -612,7 +639,8 @@ def deploy_netlify(data: dict):
             
             site_data = create_response.json()
             site_url = site_data.get('ssl_url') or site_data.get('url')
-            return {'ssl_url': site_url}
+            deployment = wait_for_netlify_deploy(site_data.get('id'))
+            return {'ssl_url': site_url, 'status': (deployment.get('state') or 'building').lower()}
 
     except HTTPException as e:
         raise e

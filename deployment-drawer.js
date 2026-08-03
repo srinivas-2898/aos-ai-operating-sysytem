@@ -160,20 +160,26 @@
           throw new Error(lastError || 'Netlify could not find an available subdomain.');
         }
 
-        setTimeout(() => showDeploySuccess(deployData.ssl_url), 3500);
+        if (deployData.status === 'ready') {
+          showDeploySuccess(deployData.ssl_url);
+        } else {
+          showDeployPending(deployData.ssl_url);
+        }
       } else {
         throw new Error(`${platform} deployment needs a secure server-side deployment connector. Your token is not sent to a third-party browser script.`);
       }
     } catch (error) { drawerError(`Deployment failed: ${error.message}`); button.disabled = false; button.textContent = `Deploy to ${platform}`; }
   }
 
-  async function saveDeploymentRecord(url) {
+  async function saveDeploymentRecord(url, status = 'success') {
     const projectId = document.getElementById('github-proj-select')?.value || document.getElementById('deploy-proj-select')?.value;
     if (!projectId || !activePlatform || !window.supabase?.createClient) return;
     const client = window.supabase.createClient('https://gdqapoopqijohrtovjza.supabase.co', 'eyJhbGciOiJIUzI1NiIsInJlZiI6ImFub24iLCJpYXQiOjE3ODQ5MjcyNzAsImV4cCI6MjEwMDUwMzI3MH0.mQsxKSmGBC3EfGLbuG2c5zAAzJKKIkq8wzsKzoO8oyI');
-    await client.from('deployments').insert({ project_id: projectId, provider: activePlatform, status: 'success', deployment_url: url, metadata: { source: 'aos-deploy-drawer' } });
+    await client.from('deployments').insert({ project_id: projectId, provider: activePlatform, status, deployment_url: url, metadata: { source: 'aos-deploy-drawer' } });
   }
-  function showDeploySuccess(url) { get('drawer-progress').style.display = 'none'; const result = get('drawer-result'); get('drawer-live-url').href = url; get('drawer-live-url').textContent = url; get('drawer-open').href = url; result.style.display = 'block'; saveDeploymentRecord(url).catch(() => {}); get('drawer-copy').onclick = async () => { await navigator.clipboard.writeText(url); get('drawer-copy').textContent = 'Copied'; setTimeout(() => { get('drawer-copy').textContent = 'Copy URL'; }, 2000); }; }
+  function showDeploymentResult(url, heading, message, status) { get('drawer-progress').style.display = 'none'; const button = get('drawer-deploy'); button.disabled = false; button.textContent = status === 'success' ? `Deploy to ${activePlatform} again` : 'Check deployment again'; const result = get('drawer-result'); result.querySelector('h3').textContent = heading; result.querySelector('h3').style.color = status === 'success' ? '#16a34a' : '#b45309'; let note = get('drawer-result-note'); if (!note) { note = document.createElement('p'); note.id = 'drawer-result-note'; note.style.cssText = 'font:13px Inter,sans-serif;color:#6b7280;margin:8px 0'; result.querySelector('h3').after(note); } note.textContent = message; get('drawer-live-url').href = url; get('drawer-live-url').textContent = url; get('drawer-open').href = url; result.style.display = 'block'; saveDeploymentRecord(url, status).catch(() => {}); get('drawer-copy').onclick = async () => { await navigator.clipboard.writeText(url); get('drawer-copy').textContent = 'Copied'; setTimeout(() => { get('drawer-copy').textContent = 'Copy URL'; }, 2000); }; }
+  function showDeploySuccess(url) { showDeploymentResult(url, 'Deployment Successful!', 'Netlify reports that the latest deployment is ready.', 'success'); }
+  function showDeployPending(url) { showDeploymentResult(url, 'Deployment is still building', 'Netlify accepted the deployment. Keep this page open or check the link again in a few minutes.', 'building'); }
   function openDeployDrawer(platform) { if (!platforms[platform]) return; inject(); activePlatform = platform; render(platform); get('deploy-drawer').classList.add('open'); get('deploy-drawer-overlay').classList.add('open'); }
   function closeDeployDrawer() { get('deploy-drawer')?.classList.remove('open'); get('deploy-drawer-overlay')?.classList.remove('open'); activePlatform = null; }
   async function deployApplication() {
