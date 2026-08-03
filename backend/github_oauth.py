@@ -9,6 +9,7 @@ router = APIRouter(prefix="/api/github", tags=["github"])
 GH_API = "https://api.github.com"
 
 class ProjectRequest(BaseModel): project_id: str
+class ConnectRequest(BaseModel): project_id: str | None = None
 class RepositoryRequest(ProjectRequest): name: str = ""; description: str = ""; private: bool = True; auto_init: bool = True; gitignore_template: str | None = None; license_template: str | None = None
 class RenameRequest(ProjectRequest): name: str
 class CommitRequest(ProjectRequest): message: str = "Update project files"
@@ -63,8 +64,9 @@ def repository(user_id, project_id):
     return rows[0]
 
 @router.post("/connect")
-def connect(body: ProjectRequest, request: Request):
-    user=current_user(request); owned_project(user,body.project_id)
+def connect(body: ConnectRequest, request: Request):
+    user=current_user(request)
+    if body.project_id: owned_project(user,body.project_id)
     callback=cfg("GITHUB_OAUTH_REDIRECT_URI")
     oauth_state=state({"user":user,"project":body.project_id,"exp":time.time()+600})
     url=f"https://github.com/login/oauth/authorize?client_id={cfg('GITHUB_CLIENT_ID')}&redirect_uri={callback}&scope=read:user%20repo&state={oauth_state}"
@@ -79,7 +81,10 @@ def callback(code: str, state: str):
     profile=github("GET","/user",token)
     record={"user_id":data["user"],"github_user_id":profile["id"],"github_username":profile["login"],"github_avatar":profile.get("avatar_url"),"access_token":encrypt(token),"refresh_token":encrypt(exchange["refresh_token"]) if exchange.get("refresh_token") else None}
     rest("github_connections?on_conflict=user_id","POST",record,extra_headers={"Prefer":"resolution=merge-duplicates,return=minimal"})
-    return RedirectResponse(f"{cfg('AOS_WEB_URL').rstrip('/')}/deploy.html?github=connected&project_id={data['project']}")
+    url = f"{cfg('AOS_WEB_URL').rstrip('/')}/deploy.html?github=connected"
+    if data.get("project"):
+        url += f"&project_id={data['project']}"
+    return RedirectResponse(url)
 
 @router.get("/status")
 def status(project_id: str, request: Request):

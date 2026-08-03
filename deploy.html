@@ -303,7 +303,7 @@ a{text-decoration:none;color:inherit}
                 </div>
                 <div class="gh-connect-text">Connect with GitHub</div>
                 <div class="gh-connect-sub">Link your GitHub account to deploy repositories</div>
-                <label for="github-proj-select" style="display:block;text-align:left;font-size:12px;font-weight:700;color:#475569;margin:0 0 7px">Project to connect</label>
+                <label for="github-proj-select" style="display:block;text-align:left;font-size:12px;font-weight:700;color:#475569;margin:0 0 7px">Project for a repository (choose after connecting)</label>
                 <select id="github-proj-select" style="width:100%;margin:0 0 12px;border:1.5px solid #dbe3f0;border-radius:9px;padding:10px 11px;background:#fff;color:#1f2937;font-size:13px">
                   <option value="">Loading your projects…</option>
                 </select>
@@ -662,11 +662,20 @@ async function loadProjects() {
   listEl.innerHTML = projects.map(p => `<span class="proj-chip"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${esc(p.name)}</span>`).join('');
   selectEl.innerHTML = '<option value="">Select a project...</option>' + projects.map((p,i) => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
   githubSelect.innerHTML = '<option value="">Select a project...</option>' + projects.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
-  const callbackProjectId = new URLSearchParams(window.location.search).get('project_id');
+  const callbackParams = new URLSearchParams(window.location.search);
+  const callbackProjectId = callbackParams.get('project_id');
   if (callbackProjectId && projects.some(project => project.id === callbackProjectId)) {
     githubSelect.value = callbackProjectId;
     selectEl.value = callbackProjectId;
-    if (new URLSearchParams(window.location.search).get('github') === 'connected') loadGitHubProject(callbackProjectId);
+    if (callbackParams.get('github') === 'connected') loadGitHubProject(callbackProjectId);
+  } else if (callbackParams.get('github') === 'connected') {
+    document.getElementById('gh-connected-badge').style.display = 'flex';
+    const status = document.getElementById('github-connect-status');
+    status.textContent = 'GitHub is connected. Select a project to create its repository.';
+    status.style.cssText = 'display:block;margin:0 0 10px;font-size:12px;line-height:1.45;color:#047857';
+    githubSelect.addEventListener('change', () => {
+      if (githubSelect.value) loadGitHubProject(githubSelect.value);
+    }, { once: true });
   }
 }
 
@@ -678,20 +687,12 @@ async function connectGitHub() {
     status.style.display = 'block';
     status.style.color = color;
   };
-  if (!projectId) {
-    setStatus('Choose the AOS project that you want to connect before continuing.', '#b45309');
-    return;
-  }
-  const box = { innerHTML: '' };
-  box.innerHTML = '<div style="text-align:center;padding:12px"><p style="font-size:13px;color:#6b7280">Redirecting to GitHub OAuth…</p></div>';
-  // Preserve the project selector while the OAuth request is being prepared.
-  box.innerHTML = '';
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.access_token) throw new Error('Your AOS session has expired. Please sign in again.');
     setStatus('Opening GitHub securely…', '#2563eb');
     const base = (window.AOS_AI_API_URL || '/api/chat').replace(/\/api\/chat(?:\?.*)?$/, '');
-    const response = await fetch(base + '/api/github/connect', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token || ''}` }, body: JSON.stringify({ project_id: projectId }) });
+    const response = await fetch(base + '/api/github/connect', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token || ''}` }, body: JSON.stringify({}) });
     const result = await response.json();
     if (!response.ok) throw new Error(result.detail || 'GitHub OAuth could not start.');
     window.location.assign(result.authorization_url);
