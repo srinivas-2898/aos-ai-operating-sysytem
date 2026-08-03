@@ -85,6 +85,28 @@
     const error = get('drawer-error'); error.textContent = message; error.style.display = 'block'; setTimeout(() => { error.style.display = 'none'; }, 6000);
   }
 
+  function netlifySafeName(value) {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\.git$/i, '')
+      .split('/')
+      .pop()
+      .replace(/[^a-z0-9-]+/g, '-')
+      .replace(/-{2,}/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 54) || 'aos-project';
+  }
+
+  function netlifyNameCandidates(requestedName, repositoryUrl) {
+    const requested = netlifySafeName(requestedName);
+    const repository = netlifySafeName(repositoryUrl);
+    const candidates = [requested];
+    if (!candidates.includes(repository)) candidates.push(repository);
+    candidates.push(`${repository}-${Date.now().toString(36).slice(-6)}`);
+    return candidates;
+  }
+
   async function deploy(platform, nameId) {
     const info = platforms[platform]; const token = get(info.token[0])?.value.trim(); const name = get(nameId)?.value.trim(); const repo = get(info.fields.find(item => item[0].endsWith('repo-url'))?.[0])?.value.trim();
     if (!token) return drawerError(`Please enter your ${platform} deployment credential.`);
@@ -108,24 +130,34 @@
         }
 
         const base = (window.AOS_AI_API_URL || '').replace(/\/api\/chat(?:\?.*)?$/, '');
-        const response = await fetch(`${base}/api/deploy/netlify`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            token,
-            name,
-            project_id: projectId || null,
-            repo: repo || null,
-            cmd: buildCmd || null,
-            dir: publishDir || null
-          })
-        });
+        let deployData;
+        let lastError = '';
+        for (const candidateName of netlifyNameCandidates(name, repo)) {
+          const response = await fetch(`${base}/api/deploy/netlify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token,
+              name: candidateName,
+              project_id: projectId || null,
+              repo: repo || null,
+              cmd: buildCmd || null,
+              dir: publishDir || null
+            })
+          });
 
-        const deployData = await response.json();
-        if (!response.ok) {
-          throw new Error(deployData.detail || deployData.error || deployData.message || 'Netlify deployment failed.');
+          deployData = await response.json().catch(() => ({}));
+          if (response.ok) break;
+
+          lastError = deployData.detail || deployData.error || deployData.message || 'Netlify deployment failed.';
+          if (!/subdomain.*unique|must be unique/i.test(lastError)) {
+            throw new Error(lastError);
+          }
+          deployData = null;
+        }
+
+        if (!deployData) {
+          throw new Error(lastError || 'Netlify could not find an available subdomain.');
         }
 
         setTimeout(() => showDeploySuccess(deployData.ssl_url), 3500);
