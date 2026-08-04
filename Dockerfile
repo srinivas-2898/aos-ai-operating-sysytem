@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     && curl -sL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && apt-get install -y \
+    chromium \
     libnss3 \
     libnspr4 \
     libatk1.0-0 \
@@ -30,7 +31,8 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Install npm dependencies
+# Install npm dependencies without downloading Chromium during build
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 COPY package.json ./
 RUN npm install
 

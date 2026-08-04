@@ -14,10 +14,17 @@ const path = require('path');
     const title = args[2] || 'AOS Document';
     const category = args[3] || 'General';
 
-    const browser = await puppeteer.launch({
+    const launchOptions = {
       headless: 'new',
       args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    };
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+      launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    } else if (process.platform === 'linux') {
+      launchOptions.executablePath = 'chromium';
+    }
+
+    const browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
     
