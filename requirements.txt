@@ -1,4 +1,14 @@
-flask
-flask-cors
+fastapi
+uvicorn
+python-multipart
+python-docx
+openpyxl
+python-pptx
+fpdf2
+reportlab
 requests
 python-dotenv
+openai
+httpx
+Pillow
+cryptography
