@@ -59,7 +59,7 @@ class ExcelRequest(BaseModel):
     sheet_type: str = "report"
 
 
-def call_deepseek(system_prompt: str, user_prompt: str) -> str:
+def call_deepseek(system_prompt: str, user_prompt: str, response_format: str = "text") -> str:
     """Generate document content using configured providers without exposing keys."""
     messages = [
         {"role": "system", "content": system_prompt},
@@ -68,10 +68,13 @@ def call_deepseek(system_prompt: str, user_prompt: str) -> str:
     failures = []
 
     def openai_compatible(url: str, api_key: str, model: str, provider: str) -> str:
+        payload = {"model": model, "messages": messages, "max_tokens": 8000, "temperature": 0.7}
+        if response_format == "json":
+            payload["response_format"] = {"type": "json_object"}
         response = requests.post(
             url,
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json={"model": model, "messages": messages, "max_tokens": 4000, "temperature": 0.7},
+            json=payload,
             timeout=90,
         )
         response.raise_for_status()
@@ -80,13 +83,16 @@ def call_deepseek(system_prompt: str, user_prompt: str) -> str:
     # Gemini is preferred for document generation when it is configured.
     if GEMINI_API_KEY:
         try:
+            gen_config = {"temperature": 0.7, "maxOutputTokens": 8000}
+            if response_format == "json":
+                gen_config["responseMimeType"] = "application/json"
             response = requests.post(
                 f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent",
                 params={"key": GEMINI_API_KEY},
                 json={
                     "system_instruction": {"parts": [{"text": system_prompt}]},
                     "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
-                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 4000},
+                    "generationConfig": gen_config,
                 },
                 timeout=90,
             )

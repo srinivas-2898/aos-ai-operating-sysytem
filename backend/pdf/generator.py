@@ -58,7 +58,7 @@ Rules for layouts:
 
 Ensure you generate a minimum of 4-6 detailed sections appropriate for a professional "{category}". Make the content extremely rich, informative, and complete. Avoid placeholders or truncated sentences."""
 
-    response = call_deepseek(system_prompt, f"Generate professional content for: {prompt}")
+    response = call_deepseek(system_prompt, f"Generate professional content for: {prompt}", response_format="json")
     clean_response = response.strip()
     if clean_response.startswith("```"):
         clean_response = clean_response.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
