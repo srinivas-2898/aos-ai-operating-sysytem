@@ -210,6 +210,22 @@
           button.disabled = false;
           button.textContent = `Deploy to Render again`;
         }
+      } else if (platform === 'Railway') {
+        const environment = get('railway-environment')?.value || 'production';
+        try {
+          const base = (window.AOS_AI_API_URL || '').replace(/\/api\/chat(?:\?.*)?$/, '');
+          const response = await fetch(`${base}/api/deploy/railway`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, name, repo, environment })
+          });
+          const deployData = await response.json();
+          if (!response.ok) throw new Error(deployData.detail || 'Railway deployment failed.');
+          showDeployPending(deployData.ssl_url, 'Railway');
+        } catch (error) {
+          drawerError(`Deployment failed: ${error.message}`);
+          button.disabled = false;
+          button.textContent = 'Deploy to Railway again';
+        }
       } else {
         const randomSuffix = Math.random().toString(36).substring(2, 6);
         const safeSubdomain = name.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '') || 'app';

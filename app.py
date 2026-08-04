@@ -951,6 +951,89 @@ def render_deployment_status(data: dict):
     return {'status': status, 'ssl_url': service_url, 'service_id': service_id}
 
 
+@app.post('/api/deploy/railway')
+def deploy_railway(data: dict):
+    """Create a real Railway project/service from a GitHub repository."""
+    token = (data.get('token') or '').strip()
+    name = (data.get('name') or '').strip()
+    repo = (data.get('repo') or '').strip()
+    environment = (data.get('environment') or 'production').strip()
+    if not token or not name or not repo:
+        raise HTTPException(status_code=400, detail='Railway API token, project name, and GitHub repository URL are required.')
+
+    repo_path = re.sub(r'^https?://github\.com/', '', repo, flags=re.I).removesuffix('.git').strip('/')
+    if '/' not in repo_path:
+        raise HTTPException(status_code=400, detail='Use a GitHub repository URL such as https://github.com/owner/repository.')
+
+    headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
+
+    def gql(query: str, variables: dict) -> dict:
+        response = requests.post(
+            'https://backboard.railway.com/graphql/v2',
+            headers=headers,
+            json={'query': query, 'variables': variables},
+            timeout=30
+        )
+        if response.status_code == 401:
+            raise HTTPException(status_code=401, detail='Railway rejected this API token. Create a new token in Railway Account Settings → Tokens.')
+        if not response.ok:
+            raise HTTPException(status_code=response.status_code, detail=f'Railway API request failed: {response.text}')
+        result = response.json()
+        if result.get('errors'):
+            message = '; '.join(error.get('message', 'Railway request failed') for error in result['errors'])
+            raise HTTPException(status_code=400, detail=f'Railway API: {message}')
+        return result.get('data') or {}
+
+    project_data = gql(
+        'mutation projectCreate($input: ProjectCreateInput!) { projectCreate(input: $input) { id } }',
+        {'input': {'name': name}}
+    )
+    project_id = (project_data.get('projectCreate') or {}).get('id')
+    if not project_id:
+        raise HTTPException(status_code=502, detail='Railway did not return a project ID.')
+
+    project_info = gql(
+        'query project($id: String!) { project(id: $id) { environments { edges { node { id name } } } } }',
+        {'id': project_id}
+    )
+    environments = ((project_info.get('project') or {}).get('environments') or {}).get('edges') or []
+    environment_id = next((edge['node']['id'] for edge in environments if edge.get('node', {}).get('name', '').lower() == environment.lower()), None)
+    if not environment_id and environments:
+        environment_id = environments[0].get('node', {}).get('id')
+    if not environment_id:
+        raise HTTPException(status_code=502, detail='Railway created the project but no deployable environment is available yet.')
+
+    service_data = gql(
+        'mutation serviceCreate($input: ServiceCreateInput!) { serviceCreate(input: $input) { id } }',
+        {'input': {'projectId': project_id, 'name': name[:32], 'source': {'repo': repo_path}}}
+    )
+    service_id = (service_data.get('serviceCreate') or {}).get('id')
+    if not service_id:
+        raise HTTPException(status_code=502, detail='Railway did not return a service ID.')
+
+    domain_data = gql(
+        'mutation serviceDomainCreate($input: ServiceDomainCreateInput!) { serviceDomainCreate(input: $input) { domain } }',
+        {'input': {'serviceId': service_id, 'environmentId': environment_id}}
+    )
+    domain = (domain_data.get('serviceDomainCreate') or {}).get('domain')
+    if not domain:
+        raise HTTPException(status_code=502, detail='Railway created the service but did not return a public domain.')
+
+    # Creating a service connects the repository; this explicitly starts a
+    # deployment of that source instead of returning a fabricated Railway URL.
+    gql(
+        'mutation serviceInstanceDeploy($serviceId: String!, $environmentId: String!) { serviceInstanceDeploy(serviceId: $serviceId, environmentId: $environmentId) }',
+        {'serviceId': service_id, 'environmentId': environment_id}
+    )
+
+    return {
+        'ssl_url': f"https://{domain}" if not domain.startswith('http') else domain,
+        'status': 'building',
+        'project_id': project_id,
+        'service_id': service_id
+    }
+
+
 if __name__ == '__main__':
     import uvicorn
     uvicorn.run(app, host='0.0.0.0', port=int(os.getenv('PORT', '8080')))
