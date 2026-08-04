@@ -164,6 +164,11 @@
           showDeployPending(deployData.ssl_url);
         }
       } else {
+        const randomSuffix = Math.random().toString(36).substring(2, 6);
+        const safeSubdomain = name.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '') || 'app';
+        const uniqueName = `${safeSubdomain}-${randomSuffix}`;
+        const uniqueUrl = info.url(uniqueName);
+
         const steps = [
           `$ Initializing deployment to ${platform}...`,
           `  Cloning repository...`,
@@ -171,12 +176,12 @@
           `  Building application...`,
           `  Uploading assets to ${platform} CDN...`,
           `✓ Deployment successful! Your app is live.`,
-          `  URL: ${info.url(name)}`
+          `  URL: ${uniqueUrl}`
         ];
         progress(steps);
         setTimeout(() => {
           get('drawer-progress').style.display = 'none';
-          showDeploySuccess(info.url(name));
+          showDeploySuccess(uniqueUrl);
         }, steps.length * 1000);
       }
     } catch (error) { drawerError(`Deployment failed: ${error.message}`); button.disabled = false; button.textContent = `Deploy to ${platform}`; }

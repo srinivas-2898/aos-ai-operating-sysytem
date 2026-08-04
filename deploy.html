@@ -839,8 +839,18 @@ function runDeployment() {
   const projectId = document.getElementById('deploy-proj-select').value;
   const projectSelect = document.getElementById('deploy-proj-select');
   const projectName = projectSelect?.selectedOptions?.[0]?.textContent || 'AOS Project';
+  const randomSuffix = Math.random().toString(36).substring(2, 6);
   const safeName = projectName.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '') || 'my-app';
-  const url = `https://${safeName}.${currentPlatform.toLowerCase()}.app`;
+  
+  let ext = 'app';
+  if (currentPlatform === 'Render') ext = 'onrender.com';
+  else if (currentPlatform === 'Vercel') ext = 'vercel.app';
+  else if (currentPlatform === 'Netlify') ext = 'netlify.app';
+  else if (currentPlatform === 'Firebase') ext = 'web.app';
+  else if (currentPlatform === 'Cloudflare') ext = 'pages.dev';
+  else if (currentPlatform === 'Railway') ext = 'railway.app';
+  
+  const url = `https://${safeName}-${randomSuffix}.${ext}`;
 
   const lines = [
     { text: `$ Initializing deployment to ${currentPlatform}...`, cls: 'prompt' },
