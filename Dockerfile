@@ -32,7 +32,9 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Install npm dependencies without downloading Chromium during build
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_SKIP_CHROME_DOWNLOAD=true
 COPY package.json ./
 RUN npm install
 
