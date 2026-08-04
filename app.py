@@ -1061,7 +1061,9 @@ def railway_deployment_status(data: dict):
     if result.get('errors'):
         raise HTTPException(status_code=400, detail='Railway API: ' + '; '.join(error.get('message', 'status request failed') for error in result['errors']))
     edges = (((result.get('data') or {}).get('deployments') or {}).get('edges') or [])
-    raw_status = str((edges[0].get('node') or {}).get('status') if edges else 'BUILDING').upper()
+    if not edges:
+        return {'status': 'not_started', 'railway_status': 'NO_DEPLOYMENT', 'project_id': project_id, 'service_id': service_id}
+    raw_status = str((edges[0].get('node') or {}).get('status') or 'BUILDING').upper()
     if raw_status == 'SUCCESS':
         status = 'ready'
     elif raw_status in {'FAILED', 'CRASHED', 'REMOVED', 'SKIPPED'}:

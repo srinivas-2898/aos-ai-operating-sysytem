@@ -466,6 +466,9 @@
       const result = await response.json();
       if (!response.ok) throw new Error(result.detail || 'Could not check the Railway build.');
       if (result.status === 'ready') return showDeploySuccess(url, 'Railway');
+      if (result.status === 'not_started') {
+        throw new Error('Railway created the service but has not started a build. In Railway Dashboard, open the new project, connect GitHub under Service settings, then choose Deploy Latest Commit.');
+      }
       if (result.status === 'failed') throw new Error(`Railway reported ${result.railway_status}. Open the Railway deployment logs for this service.`);
       showDeployPending(url, 'Railway', { projectId, serviceId, token });
     } catch (error) {
