@@ -200,10 +200,11 @@
             throw new Error(deployData.detail || deployData.error || deployData.message || 'Render deployment failed.');
           }
 
-          setTimeout(() => {
-            get('drawer-progress').style.display = 'none';
-            showDeploySuccess(deployData.ssl_url);
-          }, 5000);
+          if (deployData.status === 'ready') {
+            showDeploySuccess(deployData.ssl_url, 'Render');
+          } else {
+            showDeployPending(deployData.ssl_url, 'Render');
+          }
         } catch (error) {
           drawerError(`Deployment failed: ${error.message}`);
           button.disabled = false;
@@ -388,8 +389,8 @@
       setTimeout(() => { get('drawer-copy').textContent = 'Copy URL'; }, 2000);
     };
   }
-  function showDeploySuccess(url) { showDeploymentResult(url, 'Deployment Successful!', 'Netlify reports that the latest deployment is ready.', 'success'); }
-  function showDeployPending(url) { showDeploymentResult(url, 'Deployment is still building', 'Netlify is building your project. A live URL will appear when Netlify marks the build as ready.', 'building', false); }
+  function showDeploySuccess(url, provider = activePlatform) { showDeploymentResult(url, 'Deployment Successful!', `${provider} reports that the latest deployment is ready.`, 'success'); }
+  function showDeployPending(url, provider = activePlatform) { showDeploymentResult(url, 'Deployment is still building', `${provider} is building your project. The live URL will appear when the build is ready.`, 'building', false); }
   function openDeployDrawer(platform) { if (!platforms[platform]) return; inject(); activePlatform = platform; render(platform); get('deploy-drawer').classList.add('open'); get('deploy-drawer-overlay').classList.add('open'); }
   function closeDeployDrawer() { get('deploy-drawer')?.classList.remove('open'); get('deploy-drawer-overlay')?.classList.remove('open'); activePlatform = null; }
   async function deployApplication() {

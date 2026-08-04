@@ -8,6 +8,7 @@ import os
 import base64
 import html
 import re
+import time
 from datetime import date
 from urllib.parse import quote
 from pathlib import Path
@@ -772,39 +773,139 @@ def deploy_render(data: dict):
             raise e
         raise HTTPException(status_code=500, detail=f"Failed to fetch Render account owner ID: {str(e)}")
 
-    # Step 2: Create service
+    # Render requires the type-specific configuration inside one `serviceDetails`
+    # object.  The previous payload used `staticSiteDetails` at the top level,
+    # which could create an incomplete service that never served the repository.
+    service_kind = "web_service" if service_type in {"web_service", "node.js", "node"} else "static_site"
     body = {
-        "type": "static_site" if "web_service" not in service_type else "web_service",
+        "type": service_kind,
         "name": name,
         "ownerId": owner_id,
-        "repo": repo,
-        "autoDeploy": "yes",
-        "branch": "main"
+        "repo": repo.removesuffix('.git'),
+        "autoDeploy": "yes"
     }
 
-    if body["type"] == "static_site":
-        body["staticSiteDetails"] = {
-            "buildCommand": cmd or "npm run build",
-            "publishPath": pub_dir or "dist"
+    if service_kind == "static_site":
+        # Do not force `npm run build`: plain HTML repositories do not have a
+        # package.json.  Render receives a build command only when the user gave one.
+        body["serviceDetails"] = {
+            "publishPath": pub_dir or "."
         }
+        if cmd:
+            body["serviceDetails"]["buildCommand"] = cmd
     else:
-        body["webServiceDetails"] = {
-            "env": "node",
-            "buildCommand": cmd or "npm run build",
-            "startCommand": "npm start"
+        body["serviceDetails"] = {
+            "runtime": "node",
+            "envSpecificDetails": {
+                "buildCommand": cmd or "npm install",
+                "startCommand": "npm start"
+            }
         }
 
+    def service_url(service: dict) -> str:
+        details = service.get('serviceDetails') or {}
+        return details.get('url') or service.get('url') or ''
+
+    def latest_deploy(service_id: str) -> dict:
+        response = requests.get(
+            f'https://api.render.com/v1/services/{service_id}/deploys?limit=1',
+            headers=headers,
+            timeout=20
+        )
+        if not response.ok:
+            return {}
+        result = response.json()
+        if isinstance(result, list):
+            item = result[0] if result else {}
+        else:
+            item = (result.get('items') or result.get('deploys') or [{}])[0]
+        return item.get('deploy', item) if isinstance(item, dict) else {}
+
+    def wait_for_render_deploy(service_id: str) -> dict:
+        """Return Render's real outcome; never mark an in-progress build as live."""
+        deadline = time.monotonic() + 70
+        last = {}
+        while time.monotonic() < deadline:
+            last = latest_deploy(service_id)
+            status = str(last.get('status') or last.get('state') or '').lower()
+            if status in {'live', 'deployed', 'build_failed', 'failed', 'canceled', 'cancelled'}:
+                return last
+            time.sleep(5)
+        return last
+
     try:
-        create_response = requests.post('https://api.render.com/v1/services', headers=headers, json=body, timeout=20)
-        if not create_response.ok:
+        create_response = requests.post('https://api.render.com/v1/services', headers=headers, json=body, timeout=30)
+        if create_response.status_code == 409:
+            # A previous attempt can leave a service with the same name but an
+            # invalid build configuration. Repair that service and trigger a
+            # fresh deploy instead of forcing the user to delete it manually.
+            services_response = requests.get(
+                'https://api.render.com/v1/services',
+                params={'name': name, 'ownerId': owner_id, 'limit': 20},
+                headers=headers,
+                timeout=20
+            )
+            services = services_response.json() if services_response.ok else []
+            existing = next(
+                (item.get('service', item) for item in services
+                 if (item.get('service', item).get('name') == name)),
+                None
+            )
+            if not existing or not existing.get('id'):
+                raise HTTPException(status_code=409, detail='A Render service with this name already exists. Choose a different service name.')
+            if existing.get('type') != service_kind:
+                raise HTTPException(status_code=409, detail='A Render service with this name uses a different service type. Choose a different service name.')
+
+            update_body = {
+                'repo': body['repo'],
+                'autoDeploy': body['autoDeploy'],
+                'serviceDetails': body['serviceDetails']
+            }
+            update_response = requests.patch(
+                f"https://api.render.com/v1/services/{existing['id']}",
+                headers=headers,
+                json=update_body,
+                timeout=30
+            )
+            if not update_response.ok:
+                raise HTTPException(status_code=update_response.status_code, detail=f"Render service update failed: {update_response.text}")
+            service_data = update_response.json()
+            trigger_response = requests.post(
+                f"https://api.render.com/v1/services/{existing['id']}/deploys",
+                headers=headers,
+                json={'clearCache': 'do_not_clear'},
+                timeout=30
+            )
+            if not trigger_response.ok:
+                raise HTTPException(status_code=trigger_response.status_code, detail=f"Render deploy trigger failed: {trigger_response.text}")
+        elif not create_response.ok:
             raise HTTPException(status_code=create_response.status_code, detail=f"Render service creation failed: {create_response.text}")
-        
-        service_data = create_response.json()
-        site_url = service_data.get('url') or service_data.get('dashboardUrl')
+        else:
+            created = create_response.json()
+            # The create endpoint returns a service-and-deploy wrapper, while
+            # update returns the service directly.
+            service_data = created.get('service', created)
+        service_id = service_data.get('id')
+        if not service_id:
+            raise HTTPException(status_code=502, detail='Render created no service ID. Please retry the deployment.')
+
+        site_url = service_url(service_data)
         if not site_url:
-            site_url = f"https://{name}.onrender.com"
-            
-        return {'ssl_url': site_url, 'status': 'building'}
+            # Fetch the full service record instead of inventing a hostname.
+            service_response = requests.get(f'https://api.render.com/v1/services/{service_id}', headers=headers, timeout=20)
+            if service_response.ok:
+                site_url = service_url(service_response.json())
+        if not site_url:
+            raise HTTPException(status_code=502, detail='Render did not return a public service URL.')
+
+        deployment = wait_for_render_deploy(service_id)
+        status = str(deployment.get('status') or deployment.get('state') or 'building').lower()
+        if status in {'build_failed', 'failed', 'canceled', 'cancelled'}:
+            raise HTTPException(
+                status_code=502,
+                detail='Render could not build this repository. Check the Render build logs and confirm the build command and publish path.'
+            )
+        return {'ssl_url': site_url, 'status': 'ready' if status in {'live', 'deployed'} else 'building', 'service_id': service_id}
     except Exception as e:
         if isinstance(e, HTTPException):
             raise e
