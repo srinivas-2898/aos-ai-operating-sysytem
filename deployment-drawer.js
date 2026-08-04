@@ -282,7 +282,8 @@
     openLink.style.display = canOpen ? '' : 'none';
     result.style.display = 'block';
     
-    // Save only a confirmed live deployment. A building URL is not useful yet.
+    // Save confirmed deployments automatically. Pending links can still be saved
+    // manually so they remain visible in the project's deployment activity.
     const projectId = document.getElementById('github-proj-select')?.value || document.getElementById('deploy-proj-select')?.value;
     if (status === 'success') saveDeploymentRecord(url, status).catch(() => {});
     
@@ -294,13 +295,31 @@
     const saveDialogError = get('save-dialog-error');
     
     if (saveBtn) {
-      saveBtn.style.display = canOpen ? 'block' : 'none';
-      if (projectId) {
+      saveBtn.style.display = url ? 'block' : 'none';
+      if (projectId && status === 'success') {
         saveBtn.textContent = '✓ Saved to AOS';
         saveBtn.disabled = true;
         saveBtn.style.background = '#e5e7eb';
         saveBtn.style.color = '#9ca3af';
         saveBtn.style.borderColor = '#d1d5db';
+      } else if (projectId && status === 'building') {
+        saveBtn.textContent = 'Save pending deployment';
+        saveBtn.disabled = false;
+        saveBtn.style.background = '#7c3aed';
+        saveBtn.style.color = '#fff';
+        saveBtn.style.borderColor = '#6d28d9';
+        saveBtn.onclick = async () => {
+          saveBtn.disabled = true;
+          saveBtn.textContent = 'Saving…';
+          try {
+            await saveDeploymentRecord(url, 'building');
+            saveBtn.textContent = 'Pending deployment saved';
+          } catch (error) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save pending deployment';
+            drawerError(`Could not save deployment: ${error.message}`);
+          }
+        };
       } else {
         saveBtn.textContent = 'Save to AOS';
         saveBtn.disabled = false;
@@ -383,7 +402,7 @@
       }
     };
     
-    get('drawer-copy').style.display = canOpen ? '' : 'none';
+    get('drawer-copy').style.display = url ? '' : 'none';
     get('drawer-copy').onclick = async () => {
       await navigator.clipboard.writeText(url);
       get('drawer-copy').textContent = 'Copied';
