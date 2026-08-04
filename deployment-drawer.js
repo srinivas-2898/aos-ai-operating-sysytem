@@ -218,8 +218,13 @@
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token, name, repo, environment })
           });
-          const deployData = await response.json();
-          if (!response.ok) throw new Error(deployData.detail || 'Railway deployment failed.');
+          const responseText = await response.text();
+          let deployData = {};
+          try { deployData = responseText ? JSON.parse(responseText) : {}; } catch (_) { /* Show raw API text below. */ }
+          if (!response.ok) {
+            throw new Error(deployData.detail || deployData.error || deployData.message || `Railway API returned ${response.status}: ${responseText.slice(0, 300) || 'no error details returned'}`);
+          }
+          if (!deployData.ssl_url) throw new Error('Railway did not return a public deployment URL.');
           showDeployPending(deployData.ssl_url, 'Railway');
         } catch (error) {
           drawerError(`Deployment failed: ${error.message}`);
