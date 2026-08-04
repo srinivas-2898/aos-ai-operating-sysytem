@@ -203,7 +203,7 @@
           if (deployData.status === 'ready') {
             showDeploySuccess(deployData.ssl_url, 'Render');
           } else {
-            showDeployPending(deployData.ssl_url, 'Render', deployData.service_id, token);
+            showDeployPending(deployData.ssl_url, 'Render', { serviceId: deployData.service_id, token });
           }
         } catch (error) {
           drawerError(`Deployment failed: ${error.message}`);
@@ -225,7 +225,7 @@
             throw new Error(deployData.detail || deployData.error || deployData.message || `Railway API returned ${response.status}: ${responseText.slice(0, 300) || 'no error details returned'}`);
           }
           if (!deployData.ssl_url) throw new Error('Railway did not return a public deployment URL.');
-          showDeployPending(deployData.ssl_url, 'Railway');
+          showDeployPending(deployData.ssl_url, 'Railway', { serviceId: deployData.service_id, projectId: deployData.project_id, token });
         } catch (error) {
           drawerError(`Deployment failed: ${error.message}`);
           button.disabled = false;
@@ -445,7 +445,7 @@
       if (!response.ok) throw new Error(result.detail || 'Could not check the Render build.');
       if (result.status === 'ready') return showDeploySuccess(result.ssl_url || url, 'Render');
       if (result.status === 'failed') throw new Error('Render reported that the build failed. Open Render logs and check the build command and publish path.');
-      showDeployPending(result.ssl_url || url, 'Render', serviceId, token);
+      showDeployPending(result.ssl_url || url, 'Render', { serviceId, token });
     } catch (error) {
       drawerError(`Render build check failed: ${error.message}`);
       button.disabled = false;
@@ -453,13 +453,44 @@
       button.onclick = () => deploy('Render', 'render-service-name');
     }
   }
-  function showDeployPending(url, provider = activePlatform, serviceId = '', token = '') {
+  async function checkRailwayBuild(projectId, serviceId, token, url) {
+    const button = get('drawer-deploy');
+    button.disabled = true;
+    button.textContent = 'Checking Railway build…';
+    try {
+      const base = (window.AOS_AI_API_URL || '').replace(/\/api\/chat(?:\?.*)?$/, '');
+      const response = await fetch(`${base}/api/deploy/railway/status`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, project_id: projectId, service_id: serviceId })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.detail || 'Could not check the Railway build.');
+      if (result.status === 'ready') return showDeploySuccess(url, 'Railway');
+      if (result.status === 'failed') throw new Error(`Railway reported ${result.railway_status}. Open the Railway deployment logs for this service.`);
+      showDeployPending(url, 'Railway', { projectId, serviceId, token });
+    } catch (error) {
+      drawerError(`Railway build check failed: ${error.message}`);
+      button.disabled = false;
+      button.textContent = 'Deploy to Railway again';
+      button.onclick = () => deploy('Railway', 'railway-project-name');
+    }
+  }
+  function showDeployPending(url, provider = activePlatform, tracking = {}) {
     showDeploymentResult(url, 'Deployment is still building', `${provider} is building your project. Wait a minute, then check its build status.`, 'building', false);
     const button = get('drawer-deploy');
-    if (provider === 'Render' && serviceId && token) {
+    if (provider === 'Render' && tracking.serviceId && tracking.token) {
       button.disabled = false;
       button.textContent = 'Check Render build status';
-      button.onclick = () => checkRenderBuild(serviceId, token, url);
+      button.onclick = () => checkRenderBuild(tracking.serviceId, tracking.token, url);
+    } else if (provider === 'Railway' && tracking.projectId && tracking.serviceId && tracking.token) {
+      button.disabled = false;
+      button.textContent = 'Check Railway build status';
+      button.onclick = () => checkRailwayBuild(tracking.projectId, tracking.serviceId, tracking.token, url);
+    } else if (provider === 'Railway') {
+      // An older AOS backend did not return the IDs needed for a safe status
+      // lookup. Do not let this button create another Railway project.
+      button.disabled = true;
+      button.textContent = 'Update backend to check status';
     }
   }
   function openDeployDrawer(platform) { if (!platforms[platform]) return; inject(); activePlatform = platform; render(platform); get('deploy-drawer').classList.add('open'); get('deploy-drawer-overlay').classList.add('open'); }
