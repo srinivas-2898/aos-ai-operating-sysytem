@@ -1036,6 +1036,41 @@ def deploy_railway(data: dict):
     }
 
 
+@app.post('/api/deploy/railway/status')
+def railway_deployment_status(data: dict):
+    """Read Railway's latest status without creating another project or service."""
+    token = (data.get('token') or '').strip()
+    project_id = (data.get('project_id') or '').strip()
+    service_id = (data.get('service_id') or '').strip()
+    if not token or not project_id or not service_id:
+        raise HTTPException(status_code=400, detail='Railway token, project ID, and service ID are required.')
+    response = requests.post(
+        'https://backboard.railway.com/graphql/v2',
+        headers={'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'},
+        json={
+            'query': 'query deployments($input: DeploymentListInput!) { deployments(input: $input, first: 1) { edges { node { status } } } }',
+            'variables': {'input': {'projectId': project_id, 'serviceId': service_id}}
+        },
+        timeout=30
+    )
+    if response.status_code == 401:
+        raise HTTPException(status_code=401, detail='Railway rejected this API token.')
+    if not response.ok:
+        raise HTTPException(status_code=response.status_code, detail=f'Railway status request failed: {response.text}')
+    result = response.json()
+    if result.get('errors'):
+        raise HTTPException(status_code=400, detail='Railway API: ' + '; '.join(error.get('message', 'status request failed') for error in result['errors']))
+    edges = (((result.get('data') or {}).get('deployments') or {}).get('edges') or [])
+    raw_status = str((edges[0].get('node') or {}).get('status') if edges else 'BUILDING').upper()
+    if raw_status == 'SUCCESS':
+        status = 'ready'
+    elif raw_status in {'FAILED', 'CRASHED', 'REMOVED', 'SKIPPED'}:
+        status = 'failed'
+    else:
+        status = 'building'
+    return {'status': status, 'railway_status': raw_status, 'project_id': project_id, 'service_id': service_id}
+
+
 if __name__ == '__main__':
     import uvicorn
     uvicorn.run(app, host='0.0.0.0', port=int(os.getenv('PORT', '8080')))
