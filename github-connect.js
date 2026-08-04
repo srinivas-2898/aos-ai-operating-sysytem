@@ -55,27 +55,61 @@
   }
 
   function showConnectedProfile(profile) {
-    const card = document.getElementById('github-profile-card');
-    const avatar = document.getElementById('github-profile-avatar');
-    const name = document.getElementById('github-profile-name');
-    if (!card || !avatar || !name) return;
-    name.textContent = `@${profile.username}`;
-    avatar.src = profile.avatar || 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png';
-    card.style.display = 'flex';
-    document.getElementById('gh-connected-badge').style.display = 'flex';
-    const oldButton = document.getElementById('github-connect-button');
-    if (oldButton) {
-      const button = oldButton.cloneNode(false);
+    const title = document.getElementById('gh-connect-title');
+    const subtitle = document.getElementById('gh-connect-subtitle');
+    const iconWrapper = document.getElementById('gh-connect-icon-wrapper');
+    const footer = document.getElementById('gh-connect-footer');
+    const btn = document.getElementById('github-connect-button');
+    const selectLabel = document.querySelector('label[for="github-proj-select"]');
+
+    if (title) title.textContent = `@${profile.username}`;
+    if (subtitle) {
+      subtitle.innerHTML = '<span style="color:#10b981;font-weight:600">✓ GitHub Connected</span>';
+    }
+    if (iconWrapper) {
+      iconWrapper.innerHTML = `<img src="${profile.avatar || 'https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png'}" alt="GitHub Profile" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #7c3aed;">`;
+      iconWrapper.style.background = 'none';
+      iconWrapper.style.padding = '0';
+    }
+    if (selectLabel) selectLabel.textContent = 'Select AOS Project to Link:';
+    
+    if (btn) {
+      const button = btn.cloneNode(false);
       button.id = 'github-connect-button';
       button.type = 'button';
-      button.className = oldButton.className;
-      button.textContent = 'Add your project to GitHub';
-      oldButton.replaceWith(button);
+      button.className = btn.className;
+      button.textContent = 'Link project & Create GitHub Repo';
+      btn.replaceWith(button);
       button.addEventListener('click', () => {
         const select = document.getElementById('github-proj-select');
-        select?.focus();
-        setStatus('Choose a project, then create its GitHub repository.', '#2563eb');
+        if (!select || !select.value) {
+          setStatus('Please select an AOS project from the dropdown first.', '#b91c1c');
+          return;
+        }
+        if (window.createRepository) {
+          window.createRepository();
+        }
       });
+    }
+
+    if (footer) {
+      footer.innerHTML = `<a href="#" id="github-disconnect-link" style="color:#ef4444;text-decoration:underline;font-weight:600;">Disconnect GitHub Account</a>`;
+      document.getElementById('github-disconnect-link').onclick = async (e) => {
+        e.preventDefault();
+        if (!confirm('Are you sure you want to disconnect your GitHub account?')) return;
+        try {
+          const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+          const { data: { session } } = await client.auth.getSession();
+          const base = (window.AOS_AI_API_URL || '').replace(/\/api\/chat(?:\?.*)?$/, '');
+          await fetch(`${base}/api/github/disconnect`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.access_token}` }
+          });
+          window.location.reload();
+        } catch (err) {
+          alert('Failed to disconnect: ' + err.message);
+        }
+      };
     }
   }
 
