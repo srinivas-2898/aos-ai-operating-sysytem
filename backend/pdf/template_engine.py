@@ -224,7 +224,7 @@ def build_html_document(doc_json: dict) -> str:
         </div>
         """ for h in headings_list])
         toc_html = f"""
-        <div class="page-break min-h-screen py-16 flex flex-col">
+        <div class="page-break flex flex-col justify-start" style="height: 235mm; max-height: 235mm; box-sizing: border-box; overflow: hidden; padding-top: 15mm;">
             <h2 class="text-3xl font-extrabold tracking-tight mb-8" style="color: {palette['primary']}; font-family: {font_family};">
                 Table of Contents
             </h2>
@@ -263,9 +263,12 @@ def build_html_document(doc_json: dict) -> str:
     <!-- ChartJS -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        html {{
+            background: {palette['bg_accent']};
+        }}
         body {{
             font-family: 'Inter', sans-serif;
-            background-color: #ffffff;
+            background: linear-gradient(135deg, {palette['bg_accent']} 0%, #ffffff 58%, {palette['border_color']} 100%);
             color: #1f2937;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
@@ -295,26 +298,35 @@ def build_html_document(doc_json: dict) -> str:
 <body class="p-2 md:p-8 max-w-4xl mx-auto">
 
     <!-- COVER PAGE -->
-    <div class="page-break min-h-screen flex flex-col justify-between py-16 relative">
-        <div class="absolute left-0 top-0 w-2 h-full rounded-r" style="background-color: {palette['primary']};"></div>
-        
-        <div class="pl-8 pt-12">
-            <span class="text-xs font-bold uppercase tracking-widest" style="color: {palette['accent']};">{doc_json.get("category", "Document").upper()}</span>
-            <h1 class="text-5xl font-extrabold tracking-tight mt-4 mb-3" style="color: {palette['primary']}; font-family: {font_family};">
-                {doc_json.get("title", "AOS Document")}
-            </h1>
-            <p class="text-xl text-gray-500 font-light max-w-xl">
-                {doc_json.get("subtitle", "")}
-            </p>
-            <div class="h-1.5 w-32 mt-8" style="background-color: {palette['accent']};"></div>
+    <div class="page-break relative flex flex-col justify-between p-12 rounded-3xl border shadow-sm" style="height: 235mm; max-height: 235mm; box-sizing: border-box; overflow: hidden; border-color: {palette['border_color']}; background: linear-gradient(135deg, {palette['primary']} 0%, {palette['secondary']} 55%, {palette['accent']} 150%);">
+        <!-- Colored decorative corner shapes -->
+        <div class="absolute -top-12 -right-12 w-48 h-48 rounded-full opacity-10" style="background-color: {palette['primary']};"></div>
+        <div class="absolute -bottom-16 -left-16 w-64 h-64 rounded-full opacity-5" style="background-color: {palette['accent']};"></div>
+
+        <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-widest px-3.5 py-1.5 rounded-full" style="color: {palette['primary']}; background-color: #ffffff;">{doc_json.get("category", "Document").upper()}</span>
+            <div class="font-mono text-xs tracking-wider" style="color: #ffffff; opacity: .82;">AOS GENERATIVE STUDIO</div>
         </div>
         
-        <div class="pl-8 pb-8 flex items-center justify-between text-sm text-gray-400">
+        <div class="my-auto py-8">
+            <h1 class="text-5xl font-extrabold tracking-tight mb-5 leading-tight" style="color: #ffffff; font-family: {font_family};">
+                {doc_json.get("title", "AOS Document")}
+            </h1>
+            <p class="text-lg font-light max-w-2xl leading-relaxed" style="color: #ffffff; opacity: .9;">
+                {doc_json.get("subtitle", "")}
+            </p>
+            <div class="h-1.5 w-24 mt-8 rounded-full" style="background-color: {palette['accent']};"></div>
+        </div>
+        
+        <div class="flex items-end justify-between pt-6 text-sm" style="border-top: 1px solid rgba(255,255,255,.32); color: #ffffff;">
             <div>
-                <span class="block font-semibold" style="color: {palette['primary']};">{doc_json.get("author", "AOS AI Document Studio")}</span>
-                <span>{doc_json.get("date", date.today().isoformat())}</span>
+                <span class="block text-xs uppercase tracking-wider mb-1" style="opacity: .72;">Prepared By</span>
+                <span class="font-bold text-base">{doc_json.get("author", "AOS AI Document Studio")}</span>
             </div>
-            <div class="font-mono text-xs tracking-wider">AOS GENERATIVE STUDIO</div>
+            <div class="text-right">
+                <span class="block text-xs uppercase tracking-wider mb-1" style="opacity: .72;">Date</span>
+                <span class="font-semibold">{doc_json.get("date", date.today().isoformat())}</span>
+            </div>
         </div>
     </div>
 

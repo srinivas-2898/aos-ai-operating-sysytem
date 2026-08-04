@@ -15,6 +15,51 @@ def robust_json_loads(s: str) -> dict:
     s = re.sub(r'^\s*//.*$', '', s, flags=re.MULTILINE)
     return json.loads(s)
 
+
+def fallback_document(prompt: str, category: str, layout_style: str, color_palette: str) -> dict:
+    """Return a real, readable document if an AI provider returns invalid JSON.
+
+    A provider response must never be copied into a PDF as a raw code block.  It
+    can contain partial JSON when a provider reaches its output limit, which is
+    useful for diagnostics but not for an end user's document.
+    """
+    subject = re.sub(r'\s+', ' ', prompt).strip() or 'the requested topic'
+    title = subject[:90].rstrip('.').title() or 'AOS Professional Report'
+    overview = f"This {category.lower()} presents a structured starting point for {subject}. It is organized for clear review, practical decision-making, and future refinement. The content should be validated with project-specific facts before formal submission."
+    sections = [
+        ("Executive Overview", overview, "standard"),
+        ("Purpose and Scope", f"The purpose of this document is to define the intended outcomes, audience, and boundaries for {subject}. A clear scope keeps the work focused and makes progress easier to assess. Stakeholders should agree on priorities before implementation begins.", "highlight_box"),
+        ("Key Requirements", f"Successful delivery of {subject} depends on well-defined requirements, ownership, and measurable acceptance criteria. The team should record dependencies, risks, timelines, and review points. Each requirement should be traceable to a real user or business need.", "information_cards"),
+        ("Implementation Approach", f"A phased approach is recommended for {subject}: plan the work, build the highest-value components, test results, and refine based on feedback. This sequence reduces uncertainty while keeping delivery visible to stakeholders. Decisions and changes should be documented throughout the process.", "standard"),
+        ("Conclusion and Next Steps", f"The next step is to review this draft with the relevant stakeholders and add verified project details. Confirm owners, dates, resources, and evidence before publishing. With those additions, this document can serve as a professional submission-ready foundation.", "highlight_box"),
+    ]
+    return {
+        "title": title,
+        "subtitle": f"Professional {category} prepared for review",
+        "author": "AOS AI Document Studio",
+        "date": date.today().isoformat(),
+        "category": category,
+        "layout_style": layout_style,
+        "color_palette": color_palette,
+        "sections": [
+            {
+                "heading": heading,
+                "paragraphs": [body],
+                "layout_type": layout,
+                "list_items": ["Define a measurable outcome and owner.", "Validate important facts before publication.", "Review progress with stakeholders regularly."],
+                "quote_text": "", "quote_author": "", "timeline_items": [],
+                "table_headers": [], "table_rows": [], "chart_type": "", "chart_title": "",
+                "chart_labels": [], "chart_values": [], "code_content": "", "code_language": "",
+                "cards": ([
+                    {"title": "Scope", "content": "Keep deliverables aligned with the agreed objective."},
+                    {"title": "Quality", "content": "Use review and validation before final submission."},
+                ] if layout == "information_cards" else []),
+            }
+            for heading, body, layout in sections
+        ],
+        "references": [],
+    }
+
 def generate_document_json(prompt: str, category: str, layout_style: str, color_palette: str) -> dict:
     from main import call_deepseek
     """Generate structured document JSON content using DeepSeek."""
@@ -73,7 +118,7 @@ Rules for layouts:
 CRITICAL STRING RULES:
 - Inside string values (like 'paragraphs', 'quote_text', 'subtitle', 'title', etc.), NEVER use raw double quotes ("). If you need to enclose words or show quotes, use single quotes (') instead. Do not escape double quotes; just use single quotes.
 
-Ensure you generate a minimum of 4-6 detailed sections appropriate for a professional "{category}". Make the content extremely rich, informative, and complete. Avoid placeholders or truncated sentences."""
+Generate exactly five sections. Each section must contain one or two concise paragraphs and at most four list items. Keep the full JSON response below 5,000 words. Do not use markdown fences. Avoid placeholders, truncated sentences, and invented citations."""
 
     response = call_deepseek(system_prompt, f"Generate professional content for: {prompt}", response_format="json")
     clean_response = response.strip()
@@ -87,74 +132,8 @@ Ensure you generate a minimum of 4-6 detailed sections appropriate for a profess
             raise ValueError("Invalid format: sections is not a list")
         return content
     except Exception as e:
-        print("Failed to parse JSON from DeepSeek, generating fallback structured JSON:", e)
-        # Fallback structured JSON content
-        return {
-            "title": f"{category} - Document Studio",
-            "subtitle": f"Generated plan based on: {prompt[:120]}",
-            "author": "AOS AI Document Studio",
-            "date": date.today().isoformat(),
-            "category": category,
-            "layout_style": layout_style,
-            "color_palette": color_palette,
-            "sections": [
-                {
-                    "heading": "Overview",
-                    "paragraphs": ["This document was generated by the AOS dynamic template engine based on your request. Below is a structured presentation of the content created by the language model."],
-                    "layout_type": "standard",
-                    "list_items": [],
-                    "quote_text": "",
-                    "quote_author": "",
-                    "timeline_items": [],
-                    "table_headers": [],
-                    "table_rows": [],
-                    "chart_type": "",
-                    "chart_title": "",
-                    "chart_labels": [],
-                    "chart_values": [],
-                    "code_content": "",
-                    "code_language": "",
-                    "cards": []
-                },
-                {
-                    "heading": "Raw Content Output",
-                    "paragraphs": ["An error occurred while generating the parsed structured layout. The raw text response from the assistant is printed below."],
-                    "layout_type": "highlight_box",
-                    "list_items": [],
-                    "quote_text": "",
-                    "quote_author": "",
-                    "timeline_items": [],
-                    "table_headers": [],
-                    "table_rows": [],
-                    "chart_type": "",
-                    "chart_title": "",
-                    "chart_labels": [],
-                    "chart_values": [],
-                    "code_content": "",
-                    "code_language": "",
-                    "cards": []
-                },
-                {
-                    "heading": "Raw Text",
-                    "paragraphs": [],
-                    "layout_type": "code_block",
-                    "list_items": [],
-                    "quote_text": "",
-                    "quote_author": "",
-                    "timeline_items": [],
-                    "table_headers": [],
-                    "table_rows": [],
-                    "chart_type": "",
-                    "chart_title": "",
-                    "chart_labels": [],
-                    "chart_values": [],
-                    "code_content": response,
-                    "code_language": "text",
-                    "cards": []
-                }
-            ],
-            "references": []
-        }
+        print("Failed to parse AI document JSON; using polished document fallback:", e)
+        return fallback_document(prompt, category, layout_style, color_palette)
 
 from .analyzer import analyze_document_type
 from .template_engine import build_html_document
