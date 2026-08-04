@@ -763,6 +763,11 @@ def deploy_render(data: dict):
     try:
         owners_response = requests.get('https://api.render.com/v1/owners', headers=headers, timeout=20)
         if not owners_response.ok:
+            if owners_response.status_code == 401:
+                raise HTTPException(
+                    status_code=401,
+                    detail='Render rejected this API key. Create a new API key in Render Dashboard → Account Settings → API Keys, then paste that key into AOS.'
+                )
             raise HTTPException(status_code=owners_response.status_code, detail=f"Render owner fetch failed: {owners_response.text}")
         owners = owners_response.json()
         if not owners or len(owners) == 0:
@@ -911,6 +916,39 @@ def deploy_render(data: dict):
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=500, detail=f"Failed to create service on Render: {str(e)}")
+
+
+@app.post('/api/deploy/render/status')
+def render_deployment_status(data: dict):
+    """Check an existing Render build without creating another deployment."""
+    token = (data.get('token') or '').strip()
+    service_id = (data.get('service_id') or '').strip()
+    if not token or not service_id:
+        raise HTTPException(status_code=400, detail='Render API Key and service ID are required.')
+
+    headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/json'}
+    service_response = requests.get(f'https://api.render.com/v1/services/{service_id}', headers=headers, timeout=20)
+    if service_response.status_code == 401:
+        raise HTTPException(status_code=401, detail='Render rejected this API key.')
+    if not service_response.ok:
+        raise HTTPException(status_code=service_response.status_code, detail='Render service could not be found.')
+    service = service_response.json()
+    service_url = (service.get('serviceDetails') or {}).get('url') or service.get('url')
+
+    deploy_response = requests.get(f'https://api.render.com/v1/services/{service_id}/deploys?limit=1', headers=headers, timeout=20)
+    if not deploy_response.ok:
+        raise HTTPException(status_code=deploy_response.status_code, detail='Render deployment status could not be loaded.')
+    deploys = deploy_response.json()
+    item = deploys[0] if isinstance(deploys, list) and deploys else {}
+    deploy = item.get('deploy', item) if isinstance(item, dict) else {}
+    raw_status = str(deploy.get('status') or deploy.get('state') or 'building').lower()
+    if raw_status in {'live', 'deployed'}:
+        status = 'ready'
+    elif raw_status in {'build_failed', 'failed', 'canceled', 'cancelled'}:
+        status = 'failed'
+    else:
+        status = 'building'
+    return {'status': status, 'ssl_url': service_url, 'service_id': service_id}
 
 
 if __name__ == '__main__':

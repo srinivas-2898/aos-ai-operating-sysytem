@@ -60,7 +60,7 @@
     get('drawer-body').innerHTML = `<div class="drawer-platform"><h3>${platform}</h3><p>${esc(info.description)}</p><span class="drawer-badge">${info.badge}</span></div>${tokenStep(platform, info)}<section class="deploy-step"><div class="deploy-step-head"><span class="deploy-step-num">2</span><h4>Enter Project Details</h4></div><p>Provide the deployment configuration for this project.</p>${info.fields.map(field).join('')}</section><section class="deploy-step"><div class="deploy-step-head"><span class="deploy-step-num">3</span><h4>Deploy Your Application</h4></div><p>Start the deployment. Platform build time can take several minutes.</p><button type="button" class="drawer-deploy" id="drawer-deploy" style="--platform:${info.color}">Deploy to ${platform}</button><div class="drawer-error" id="drawer-error"></div></section><div class="drawer-progress" id="drawer-progress"></div><section class="drawer-result" id="drawer-result"><h3>Deployment Successful!</h3><a id="drawer-live-url" target="_blank" rel="noopener"></a><div class="drawer-result-actions"><button type="button" id="drawer-copy">Copy URL</button><a id="drawer-open" target="_blank" rel="noopener">Open in browser</a><button type="button" id="drawer-save-btn" style="background:#7c3aed;color:#fff;border-color:#6d28d9;">Save to AOS</button></div><div id="drawer-save-dialog" style="margin-top: 15px; padding: 12px; background: #f3f4f6; border-radius: 8px; display: none; text-align: left;"><p style="font-size:12px; font-weight:600; color:#374151; margin-bottom:8px; text-align:left;">Save outside deployment link to AOS:</p><label class="drawer-label" style="margin-top:0; text-align:left;">Project Name</label><input class="drawer-input" id="save-dialog-proj-name" placeholder="e.g. My Outside Project" style="margin-top:4px; height:32px;"><label class="drawer-label" style="margin-top:8px; text-align:left;">Web URL</label><input class="drawer-input" id="save-dialog-url" disabled style="margin-top:4px; height:32px; background:#e5e7eb;"><div style="display:flex; gap:8px; margin-top:12px;"><button type="button" id="save-dialog-confirm" class="drawer-link" style="height:32px; font-size:11px; background:#7c3aed; padding: 0 10px;">Save URL</button><button type="button" id="save-dialog-cancel" class="drawer-link" style="height:32px; font-size:11px; background:#6b7280; padding: 0 10px;">Cancel</button></div><div id="save-dialog-error" style="color:#b91c1c; font-size:11px; margin-top:8px; display:none;"></div></div></section>`;
     const repoField = info.fields.find(item => item[0].endsWith('repo-url'));
     if (repoField) prefillRepository(repoField[0]);
-    get('drawer-deploy').addEventListener('click', () => deploy(platform, nameField?.[0]));
+    get('drawer-deploy').onclick = () => deploy(platform, nameField?.[0]);
   }
 
   async function prefillRepository(inputId) {
@@ -203,7 +203,7 @@
           if (deployData.status === 'ready') {
             showDeploySuccess(deployData.ssl_url, 'Render');
           } else {
-            showDeployPending(deployData.ssl_url, 'Render');
+            showDeployPending(deployData.ssl_url, 'Render', deployData.service_id, token);
           }
         } catch (error) {
           drawerError(`Deployment failed: ${error.message}`);
@@ -282,9 +282,9 @@
     openLink.style.display = canOpen ? '' : 'none';
     result.style.display = 'block';
     
-    // Auto-save if project selected
+    // Save only a confirmed live deployment. A building URL is not useful yet.
     const projectId = document.getElementById('github-proj-select')?.value || document.getElementById('deploy-proj-select')?.value;
-    saveDeploymentRecord(url, status).catch(() => {});
+    if (status === 'success') saveDeploymentRecord(url, status).catch(() => {});
     
     // Save to AOS Button Logic
     const saveBtn = get('drawer-save-btn');
@@ -294,7 +294,7 @@
     const saveDialogError = get('save-dialog-error');
     
     if (saveBtn) {
-      saveBtn.style.display = 'block';
+      saveBtn.style.display = canOpen ? 'block' : 'none';
       if (projectId) {
         saveBtn.textContent = '✓ Saved to AOS';
         saveBtn.disabled = true;
@@ -383,6 +383,7 @@
       }
     };
     
+    get('drawer-copy').style.display = canOpen ? '' : 'none';
     get('drawer-copy').onclick = async () => {
       await navigator.clipboard.writeText(url);
       get('drawer-copy').textContent = 'Copied';
@@ -390,7 +391,37 @@
     };
   }
   function showDeploySuccess(url, provider = activePlatform) { showDeploymentResult(url, 'Deployment Successful!', `${provider} reports that the latest deployment is ready.`, 'success'); }
-  function showDeployPending(url, provider = activePlatform) { showDeploymentResult(url, 'Deployment is still building', `${provider} is building your project. The live URL will appear when the build is ready.`, 'building', false); }
+  async function checkRenderBuild(serviceId, token, url) {
+    const button = get('drawer-deploy');
+    button.disabled = true;
+    button.textContent = 'Checking Render build…';
+    try {
+      const base = (window.AOS_AI_API_URL || '').replace(/\/api\/chat(?:\?.*)?$/, '');
+      const response = await fetch(`${base}/api/deploy/render/status`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, service_id: serviceId })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.detail || 'Could not check the Render build.');
+      if (result.status === 'ready') return showDeploySuccess(result.ssl_url || url, 'Render');
+      if (result.status === 'failed') throw new Error('Render reported that the build failed. Open Render logs and check the build command and publish path.');
+      showDeployPending(result.ssl_url || url, 'Render', serviceId, token);
+    } catch (error) {
+      drawerError(`Render build check failed: ${error.message}`);
+      button.disabled = false;
+      button.textContent = 'Deploy to Render again';
+      button.onclick = () => deploy('Render', 'render-service-name');
+    }
+  }
+  function showDeployPending(url, provider = activePlatform, serviceId = '', token = '') {
+    showDeploymentResult(url, 'Deployment is still building', `${provider} is building your project. Wait a minute, then check its build status.`, 'building', false);
+    const button = get('drawer-deploy');
+    if (provider === 'Render' && serviceId && token) {
+      button.disabled = false;
+      button.textContent = 'Check Render build status';
+      button.onclick = () => checkRenderBuild(serviceId, token, url);
+    }
+  }
   function openDeployDrawer(platform) { if (!platforms[platform]) return; inject(); activePlatform = platform; render(platform); get('deploy-drawer').classList.add('open'); get('deploy-drawer-overlay').classList.add('open'); }
   function closeDeployDrawer() { get('deploy-drawer')?.classList.remove('open'); get('deploy-drawer-overlay')?.classList.remove('open'); activePlatform = null; }
   async function deployApplication() {
