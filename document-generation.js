@@ -1,5 +1,6 @@
 /* Real document and presentation downloads served by the Python backend. */
 (() => {
+  const showToast = window.showToast || ((msg) => console.log('Toast:', msg));
   const apiEndpoint = (path) => {
     const chatUrl = window.AOS_AI_API_URL || '/api/chat';
     const base = chatUrl.replace(/\/api\/chat(?:\?.*)?$/, '');
@@ -13,8 +14,9 @@
 
   const createFileCard = (gallery, blob, filename, label, icon) => {
     const url = URL.createObjectURL(blob);
+    let preview = null;
     if (blob.type === 'application/pdf') {
-      const preview = document.createElement('iframe');
+      preview = document.createElement('iframe');
       preview.className = 'document-pdf-preview';
       preview.src = url;
       preview.title = `${label} preview`;
@@ -40,7 +42,42 @@
     text.append(name, detail);
     card.append(symbol, text, download);
     gallery.prepend(card);
-    return download;
+    return { card, download, preview };
+  };
+
+  const addDeleteButtonToCard = (card, fileId, galleryId, emptyId, previewEl) => {
+    const btn = document.createElement('button');
+    btn.className = 'delete-file-btn';
+    btn.title = 'Delete file';
+    btn.innerHTML = '×';
+    btn.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      if (!confirm('Are you sure you want to delete this file from your account?')) return;
+      try {
+        await window.AOSGenerationStorage.deleteFile(fileId);
+        card.remove();
+        if (previewEl) previewEl.remove();
+        showToast('File deleted.');
+        
+        const gallery = document.getElementById(galleryId);
+        if (gallery && gallery.querySelectorAll('.file-output-card').length === 0) {
+          const empty = document.createElement('div');
+          empty.id = emptyId;
+          empty.className = 'gallery-empty';
+          empty.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:#9ca3af;text-align:center;flex:1';
+          if (galleryId === 'doc-gallery') {
+            empty.innerHTML = `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg><p>Your preview is available here.</p>`;
+          } else {
+            empty.innerHTML = `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.4"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg><p>Your preview is available here.</p>`;
+          }
+          gallery.appendChild(empty);
+        }
+      } catch (err) {
+        showToast(`Could not delete file: ${err.message}`);
+      }
+    });
+    card.appendChild(btn);
   };
 
   const setBusy = (button, busy, label) => {
@@ -64,14 +101,17 @@
       }
       const blob = await response.blob();
       const filename = fileNameFrom(response, fallbackName);
-      const fileCard = createFileCard(gallery, blob, filename, label, icon);
+      const { card, download, preview } = createFileCard(gallery, blob, filename, label, icon);
       try {
-        await window.AOSGenerationStorage?.saveBlob({ blob, filename, title: filename, type: label, prompt: payload.prompt || '' });
+        const savedFile = await window.AOSGenerationStorage?.saveBlob({ blob, filename, title: filename, type: label, prompt: payload.prompt || '' });
+        if (savedFile && savedFile.id) {
+          addDeleteButtonToCard(card, savedFile.id, galleryId, emptyId, preview);
+        }
       } catch (storageError) {
         console.error('Generation storage failed:', storageError);
         showToast(`File created, but could not save its history: ${storageError.message}`);
       }
-      if (blob.type === 'application/pdf') fileCard.click();
+      download.click();
       showToast(`${label} is ready. Click the card to download it.`);
     } catch (error) {
       showToast(error.message || 'File generation failed.');
@@ -114,17 +154,42 @@
 
   document.addEventListener('aos-generation-history', (event) => {
     event.detail.filter((file) => file.generation_type !== 'image' && file.resolved_url).forEach((file) => {
-      const presentation = file.generation_type === 'powerpoint';
+      const type = file.generation_type;
+      const isPdf = type === 'pdf';
+      const isWord = type === 'word';
+      const isExcel = type === 'excel';
+      const isPpt = type === 'powerpoint';
+      
+      const presentation = isPpt;
       const gallery = document.getElementById(presentation ? 'pres-gallery' : 'doc-gallery');
-      document.getElementById(presentation ? 'pres-gallery-empty' : 'doc-gallery-empty')?.remove();
+      const galleryId = presentation ? 'pres-gallery' : 'doc-gallery';
+      const emptyId = presentation ? 'pres-gallery-empty' : 'doc-gallery-empty';
+      document.getElementById(emptyId)?.remove();
+      
       const card = document.createElement('a');
       card.className = 'file-output-card';
       card.href = file.resolved_url;
-      card.target = '_blank';
       card.rel = 'noopener';
-      card.innerHTML = `<span class="file-output-icon">${presentation ? 'PPT' : 'PDF'}</span><span class="file-output-text"><strong></strong><small></small></span><span class="file-download-button">Open file</span>`;
+      
+      if (isPdf) {
+        card.target = '_blank';
+      } else {
+        card.setAttribute('download', file.title);
+      }
+      
+      let icon = '📄';
+      let label = 'PDF';
+      if (isWord) { icon = '📝'; label = 'Word'; }
+      else if (isExcel) { icon = '📊'; label = 'Excel'; }
+      else if (isPpt) { icon = '📈'; label = 'PPT'; }
+      
+      const btnText = isPdf ? 'Open file' : 'Download file';
+      
+      card.innerHTML = `<span class="file-output-icon">${icon}</span><span class="file-output-text"><strong></strong><small></small></span><span class="file-download-button">${btnText}</span>`;
       card.querySelector('strong').textContent = file.title;
-      card.querySelector('small').textContent = `${file.generation_type.toUpperCase()} · ${new Date(file.created_at).toLocaleString()}`;
+      card.querySelector('small').textContent = `${label.toUpperCase()} · ${new Date(file.created_at).toLocaleString()}`;
+      
+      addDeleteButtonToCard(card, file.id, galleryId, emptyId, null);
       gallery.appendChild(card);
     });
   });

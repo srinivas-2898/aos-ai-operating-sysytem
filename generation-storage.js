@@ -14,13 +14,26 @@
     const path = `${session.user.id}/${projectId}/${crypto.randomUUID()}-${safeName}`;
     const { error: uploadError } = await client.storage.from('generation-files').upload(path, blob, { contentType: blob.type || 'application/octet-stream', upsert: false });
     if (uploadError) throw uploadError;
-    const { error } = await client.from('generation_files').insert({ project_id: projectId, title, generation_type: typeFor(type), prompt, storage_path: path, status: 'ready' });
+    const { data, error } = await client.from('generation_files').insert({ project_id: projectId, title, generation_type: typeFor(type), prompt, storage_path: path, status: 'ready' }).select();
     if (error) { await client.storage.from('generation-files').remove([path]); throw error; }
+    return data?.[0];
   }
   async function saveExternal({ title, type, prompt, fileUrl, thumbnailUrl = null }) {
     await activeSession();
-    const { error } = await client.from('generation_files').insert({ project_id: projectId, title, generation_type: typeFor(type), prompt, file_url: fileUrl, thumbnail_url: thumbnailUrl, status: 'ready' });
+    const { data, error } = await client.from('generation_files').insert({ project_id: projectId, title, generation_type: typeFor(type), prompt, file_url: fileUrl, thumbnail_url: thumbnailUrl, status: 'ready' }).select();
     if (error) throw error;
+    return data?.[0];
+  }
+  async function deleteFile(fileId) {
+    await activeSession();
+    const { data: file, error: fetchError } = await client.from('generation_files').select('storage_path').eq('id', fileId).single();
+    if (fetchError) throw fetchError;
+    if (file && file.storage_path) {
+      const { error: storageError } = await client.storage.from('generation-files').remove([file.storage_path]);
+      if (storageError) console.error('Could not delete storage object:', storageError);
+    }
+    const { error: dbError } = await client.from('generation_files').delete().eq('id', fileId);
+    if (dbError) throw dbError;
   }
   async function loadHistory() {
     try {
@@ -38,6 +51,6 @@
       window.showToast?.(`Could not load saved files: ${error.message}`);
     }
   }
-  window.AOSGenerationStorage = { saveBlob, saveExternal, loadHistory };
+  window.AOSGenerationStorage = { saveBlob, saveExternal, loadHistory, deleteFile };
   document.addEventListener('DOMContentLoaded', loadHistory);
 })();

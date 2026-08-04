@@ -145,25 +145,14 @@ def create_pdf_file(content: dict, filename: str) -> str:
     return filepath
 
 
+from backend.pdf.generator import generate_professional_pdf
+
 @router.post("/api/generate-pdf")
 async def generate_pdf(request: PDFRequest):
     try:
         document_type = request.document_type or "general"
-        lower_type = document_type.lower()
-        if "research" in lower_type:
-            template = TEMPLATES["research_paper"]
-        elif "resume" in lower_type:
-            template = TEMPLATES["resume"]
-        elif "invoice" in lower_type:
-            template = TEMPLATES["invoice"]
-        elif "proposal" in lower_type:
-            template = TEMPLATES["proposal"]
-        else:
-            template = TEMPLATES["business_report"]
-        content = generate_pdf_content(request.prompt, document_type, template)
-        filename = f"aos_document_{uuid.uuid4().hex[:8]}"
-        filepath = create_pdf_file(content, filename)
-        safe_name = ''.join(char if char.isalnum() or char in (' ', '-', '_') else '' for char in str(content.get('title', 'document'))).strip() or 'document'
+        filepath, title = generate_professional_pdf(request.prompt, doc_type_override=document_type)
+        safe_name = ''.join(char if char.isalnum() or char in (' ', '-', '_') else '' for char in title).strip() or 'document'
         return FileResponse(filepath, media_type="application/pdf", filename=f"{safe_name}.pdf")
     except HTTPException:
         raise

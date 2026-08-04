@@ -1,5 +1,6 @@
 /* Image requests are sent only to the server. Never place provider keys here. */
 (() => {
+  const showToast = window.showToast || ((msg) => console.log('Toast:', msg));
   const stylePrompts = {
     realistic: 'photorealistic, detailed', artistic: 'artistic, vibrant', anime: 'anime illustration',
     watercolor: 'watercolour painting', oilpainting: 'oil painting', digitalart: 'digital illustration', sketch: 'pencil sketch'
@@ -40,6 +41,34 @@
     viewer.classList.add('open');
   };
 
+  const addDeleteButton = (item, fileId) => {
+    const btn = document.createElement('button');
+    btn.className = 'delete-file-btn';
+    btn.title = 'Delete image';
+    btn.innerHTML = '×';
+    btn.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      if (!confirm('Are you sure you want to delete this image?')) return;
+      try {
+        await window.AOSGenerationStorage.deleteFile(fileId);
+        item.remove();
+        showToast('Image deleted.');
+        const gallery = document.getElementById('img-gallery');
+        if (gallery && gallery.querySelectorAll('.gallery-img').length === 0) {
+          const empty = document.createElement('div');
+          empty.id = 'img-gallery-empty';
+          empty.className = 'gallery-empty';
+          empty.innerHTML = `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><p>Your preview is available here.</p>`;
+          gallery.appendChild(empty);
+        }
+      } catch (err) {
+        showToast(`Could not delete image: ${err.message}`);
+      }
+    });
+    item.appendChild(btn);
+  };
+
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeViewer(); });
 
   document.addEventListener('aos-generation-history', (event) => {
@@ -55,6 +84,7 @@
       caption.textContent = `Saved image · ${new Date(file.created_at).toLocaleDateString()}`;
       item.append(image, caption);
       item.addEventListener('click', () => openViewer(file.resolved_url, file.title));
+      addDeleteButton(item, file.id);
       gallery.appendChild(item);
     });
   });
@@ -102,23 +132,23 @@
       item.append(preview, caption);
       item.addEventListener('click', () => openViewer(result.image_url, rawPrompt));
       item.setAttribute('title', 'Click to view full screen');
-      // The newest result remains visible as the first preview card on the right.
       gallery.prepend(item);
       const projectId = new URLSearchParams(location.search).get('project_id');
       if (projectId) {
         try {
-          // Hugging Face returns a data URL. Persist the actual bytes in the
-          // private project bucket so the image survives logout and reload.
           const imageBlob = await (await fetch(result.image_url)).blob();
           const filename = `generated-image-${Date.now()}.png`;
           if (!window.AOSGenerationStorage) throw new Error('Generation storage is not ready. Refresh and try again.');
-          await window.AOSGenerationStorage.saveBlob({
+          const savedFile = await window.AOSGenerationStorage.saveBlob({
             blob: imageBlob,
             filename,
             title: rawPrompt.slice(0, 90) || 'Generated image',
             type: 'Image',
             prompt: rawPrompt
           });
+          if (savedFile && savedFile.id) {
+            addDeleteButton(item, savedFile.id);
+          }
         } catch (storageError) {
           console.error('Generation history storage failed:', storageError);
           showToast(`Image created, but its project history was not saved: ${storageError.message}`);

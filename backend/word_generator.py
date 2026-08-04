@@ -60,6 +60,38 @@ def hex_to_rgb(hex_color: str) -> RGBColor:
     return RGBColor(int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16))
 
 
+PPR_ORDER = [
+    "w:pStyle", "w:keepNext", "w:keepLines", "w:pageBreakBefore", "w:framePr",
+    "w:widowControl", "w:numPr", "w:pBdr", "w:shd", "w:tabs", "w:spacing",
+    "w:ind", "w:contextualSpacing", "w:mirrorIndents", "w:textboxTightWrap",
+    "w:suppressPaperSync", "w:autoSpaceDE", "w:autoSpaceDN", "w:adjustRightInd",
+    "w:snapToGrid", "w:rPr", "w:sectPr", "w:pPrChange"
+]
+
+TCPR_ORDER = [
+    "w:cnfStyle", "w:tcW", "w:gridSpan", "w:hMerge", "w:vMerge",
+    "w:tcBorders", "w:shd", "w:noWrap", "w:tcMar", "w:textDirection",
+    "w:fitText", "w:vAlign", "w:wmlFlowControl", "w:tcActiveRecord",
+    "w:hideMark", "w:headers", "w:tcTxAlign", "w:tcPrChange"
+]
+
+def insert_xml_element(parent, child, tag_order):
+    child_tag_local = child.tag.split("}")[-1]
+    order_local = [tag.split(":")[-1] for tag in tag_order]
+    if child_tag_local not in order_local:
+        parent.append(child)
+        return
+    child_index = order_local.index(child_tag_local)
+    for index, existing_child in enumerate(parent):
+        existing_tag_local = existing_child.tag.split("}")[-1]
+        if existing_tag_local in order_local:
+            existing_index = order_local.index(existing_tag_local)
+            if existing_index > child_index:
+                parent.insert(index, child)
+                return
+    parent.append(child)
+
+
 def _line(document: Document, color: str) -> None:
     paragraph = document.add_paragraph()
     border = OxmlElement("w:pBdr")
@@ -69,14 +101,16 @@ def _line(document: Document, color: str) -> None:
     bottom.set(qn("w:space"), "1")
     bottom.set(qn("w:color"), str(color).lstrip("#"))
     border.append(bottom)
-    paragraph._p.get_or_add_pPr().append(border)
+    pPr = paragraph._p.get_or_add_pPr()
+    insert_xml_element(pPr, border, PPR_ORDER)
     paragraph.paragraph_format.space_after = Pt(8)
 
 
 def _cell_fill(cell, color: str) -> None:
     shading = OxmlElement("w:shd")
     shading.set(qn("w:fill"), str(color).lstrip("#"))
-    cell._tc.get_or_add_tcPr().append(shading)
+    tcPr = cell._tc.get_or_add_tcPr()
+    insert_xml_element(tcPr, shading, TCPR_ORDER)
 
 
 def create_word_file(content: dict, filename: str) -> str:
