@@ -207,7 +207,7 @@ def build_html_document(doc_json: dict) -> str:
             
         # Wrap each section in a container that supports clean page breaks
         sections_html.append(f"""
-        <section class="section-container page-break mb-10">
+        <section class="section-container mb-10">
             {heading_html}
             {component_html}
         </section>

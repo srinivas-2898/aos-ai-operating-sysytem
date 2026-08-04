@@ -53,7 +53,7 @@ Rules for layouts:
 - Use "timeline" for chronological events, logs, histories, or step-by-step processes. Populate "timeline_items" as array of objects: {{"time": "Q1 2026", "description": "Details..."}}.
 - Use "table" for comparing data or structured numbers. Populate "table_headers" and "table_rows".
 - Use "chart" to visualize quantitative trends. Set "chart_type" ("bar", "pie", or "line"), "chart_title", "chart_labels" (array of strings), and "chart_values" (array of numbers).
-- Use "code_block" for technical content, commands, or source code. Set "code_content" and "code_language".
+- Use "code_block" ONLY if the user prompt explicitly requests programming code, CLI commands, scripts, or query syntax. NEVER use "code_block" to describe templates, design specifications, or structural lists. For descriptive text and lists, use "standard", "highlight_box", or "information_cards" layouts instead.
 - Use "information_cards" for list of items/features. Populate "cards" as array of objects: {{"title": "Card Title", "content": "Card text details..."}}.
 
 Ensure you generate a minimum of 4-6 detailed sections appropriate for a professional "{category}". Make the content extremely rich, informative, and complete. Avoid placeholders or truncated sentences."""
