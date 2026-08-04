@@ -835,13 +835,14 @@ def deploy_render(data: dict):
 
     try:
         create_response = requests.post('https://api.render.com/v1/services', headers=headers, json=body, timeout=30)
-        if create_response.status_code == 409:
+        duplicate_name = 'already in use' in create_response.text.lower()
+        if create_response.status_code == 409 or duplicate_name:
             # A previous attempt can leave a service with the same name but an
             # invalid build configuration. Repair that service and trigger a
             # fresh deploy instead of forcing the user to delete it manually.
             services_response = requests.get(
                 'https://api.render.com/v1/services',
-                params={'name': name, 'ownerId': owner_id, 'limit': 20},
+                params={'ownerId': owner_id, 'limit': 100},
                 headers=headers,
                 timeout=20
             )
