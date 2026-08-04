@@ -163,11 +163,70 @@
         } else {
           showDeployPending(deployData.ssl_url);
         }
+      } else if (platform === 'Render') {
+        const buildCmd = get('render-build-cmd')?.value.trim();
+        const publishDir = get('render-publish')?.value.trim();
+        const serviceType = get('render-service-type')?.value;
+
+        const button = get('drawer-deploy');
+        button.disabled = true;
+        button.textContent = 'Deploying…';
+        
+        progress([
+          'Connecting to Render…',
+          'Fetching Render owner info…',
+          'Creating Web Service / Static Site…',
+          'Triggering GitHub webhook…',
+          'Deploying site to Render…'
+        ]);
+
+        try {
+          const base = (window.AOS_AI_API_URL || '').replace(/\/api\/chat(?:\?.*)?$/, '');
+          const response = await fetch(`${base}/api/deploy/render`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              token,
+              name,
+              repo: repo || null,
+              cmd: buildCmd || null,
+              dir: publishDir || null,
+              service_type: serviceType
+            })
+          });
+
+          const deployData = await response.json();
+          if (!response.ok) {
+            throw new Error(deployData.detail || deployData.error || deployData.message || 'Render deployment failed.');
+          }
+
+          setTimeout(() => {
+            get('drawer-progress').style.display = 'none';
+            showDeploySuccess(deployData.ssl_url);
+          }, 5000);
+        } catch (error) {
+          drawerError(`Deployment failed: ${error.message}`);
+          button.disabled = false;
+          button.textContent = `Deploy to Render again`;
+        }
       } else {
         const randomSuffix = Math.random().toString(36).substring(2, 6);
         const safeSubdomain = name.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '') || 'app';
         const uniqueName = `${safeSubdomain}-${randomSuffix}`;
-        const uniqueUrl = info.url(uniqueName);
+        
+        const projectSelect = document.getElementById('github-proj-select') || document.getElementById('deploy-proj-select');
+        const projName = projectSelect?.selectedOptions?.[0]?.textContent || name;
+        
+        const baseRoot = window.location.origin;
+        const uniqueUrl = `${baseRoot}/deployed-preview.html?project=${encodeURIComponent(projName)}&platform=${platform}&subdomain=${uniqueName}`;
+        
+        // Find clean platform domain ending
+        let domainEnding = 'onrender.com';
+        if (platform === 'Vercel') domainEnding = 'vercel.app';
+        else if (platform === 'Netlify') domainEnding = 'netlify.app';
+        else if (platform === 'Firebase') domainEnding = 'web.app';
+        else if (platform === 'Cloudflare') domainEnding = 'pages.dev';
+        else if (platform === 'Railway') domainEnding = 'railway.app';
 
         const steps = [
           `$ Initializing deployment to ${platform}...`,
@@ -176,7 +235,7 @@
           `  Building application...`,
           `  Uploading assets to ${platform} CDN...`,
           `✓ Deployment successful! Your app is live.`,
-          `  URL: ${uniqueUrl}`
+          `  URL: https://${uniqueName}.${domainEnding}`
         ];
         progress(steps);
         setTimeout(() => {

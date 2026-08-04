@@ -736,6 +736,81 @@ def deploy_netlify(data: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post('/api/deploy/render')
+def deploy_render(data: dict):
+    token = (data.get('token') or '').strip()
+    name = (data.get('name') or '').strip()
+    repo = (data.get('repo') or '').strip()
+    cmd = (data.get('cmd') or '').strip()
+    pub_dir = (data.get('dir') or '').strip()
+    service_type = (data.get('service_type') or 'static_site').strip().lower().replace(' ', '_')
+
+    if not token:
+        raise HTTPException(status_code=400, detail='Render API Key is required.')
+    if not name:
+        raise HTTPException(status_code=400, detail='Service Name is required.')
+    if not repo:
+        raise HTTPException(status_code=400, detail='GitHub Repository URL is required.')
+
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    }
+
+    # Step 1: Get owner ID from Render accounts
+    try:
+        owners_response = requests.get('https://api.render.com/v1/owners', headers=headers, timeout=20)
+        if not owners_response.ok:
+            raise HTTPException(status_code=owners_response.status_code, detail=f"Render owner fetch failed: {owners_response.text}")
+        owners = owners_response.json()
+        if not owners or len(owners) == 0:
+            raise HTTPException(status_code=400, detail="No owners found for this Render account.")
+        owner_id = owners[0]['owner']['id']
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Failed to fetch Render account owner ID: {str(e)}")
+
+    # Step 2: Create service
+    body = {
+        "type": "static_site" if "web_service" not in service_type else "web_service",
+        "name": name,
+        "ownerId": owner_id,
+        "repo": repo,
+        "autoDeploy": "yes",
+        "branch": "main"
+    }
+
+    if body["type"] == "static_site":
+        body["staticSiteDetails"] = {
+            "buildCommand": cmd or "npm run build",
+            "publishPath": pub_dir or "dist"
+        }
+    else:
+        body["webServiceDetails"] = {
+            "env": "node",
+            "buildCommand": cmd or "npm run build",
+            "startCommand": "npm start"
+        }
+
+    try:
+        create_response = requests.post('https://api.render.com/v1/services', headers=headers, json=body, timeout=20)
+        if not create_response.ok:
+            raise HTTPException(status_code=create_response.status_code, detail=f"Render service creation failed: {create_response.text}")
+        
+        service_data = create_response.json()
+        site_url = service_data.get('url') or service_data.get('dashboardUrl')
+        if not site_url:
+            site_url = f"https://{name}.onrender.com"
+            
+        return {'ssl_url': site_url, 'status': 'building'}
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Failed to create service on Render: {str(e)}")
+
+
 if __name__ == '__main__':
     import uvicorn
     uvicorn.run(app, host='0.0.0.0', port=int(os.getenv('PORT', '8080')))
