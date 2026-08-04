@@ -22,9 +22,12 @@ def render_html_to_pdf(html_content: str, title: str, category: str) -> str:
         script_dir = Path(__file__).resolve().parent
         render_js_path = str(script_dir / "render.js")
         
+        import shutil
+        node_executable = shutil.which("node") or "node"
+        
         # Invoke subprocess to run Puppeteer in Node
         command = [
-            "node",
+            node_executable,
             render_js_path,
             temp_html_path,
             output_pdf_path,
