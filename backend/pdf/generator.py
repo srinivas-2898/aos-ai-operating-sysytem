@@ -1,5 +1,19 @@
 import json
+import re
 from datetime import date
+
+def robust_json_loads(s: str) -> dict:
+    s = s.strip()
+    # Try finding the first '{' and the last '}'
+    first_brace = s.find('{')
+    last_brace = s.rfind('}')
+    if first_brace != -1 and last_brace != -1:
+        s = s[first_brace:last_brace+1]
+    # Clean trailing commas inside arrays and objects
+    s = re.sub(r',\s*([\]}])', r'\1', s)
+    # Remove single line comments
+    s = re.sub(r'^\s*//.*$', '', s, flags=re.MULTILINE)
+    return json.loads(s)
 
 def generate_document_json(prompt: str, category: str, layout_style: str, color_palette: str) -> dict:
     from main import call_deepseek
@@ -56,6 +70,9 @@ Rules for layouts:
 - Use "code_block" ONLY if the user prompt explicitly requests programming code, CLI commands, scripts, or query syntax. NEVER use "code_block" to describe templates, design specifications, or structural lists. For descriptive text and lists, use "standard", "highlight_box", or "information_cards" layouts instead.
 - Use "information_cards" for list of items/features. Populate "cards" as array of objects: {{"title": "Card Title", "content": "Card text details..."}}.
 
+CRITICAL STRING RULES:
+- Inside string values (like 'paragraphs', 'quote_text', 'subtitle', 'title', etc.), NEVER use raw double quotes ("). If you need to enclose words or show quotes, use single quotes (') instead. Do not escape double quotes; just use single quotes.
+
 Ensure you generate a minimum of 4-6 detailed sections appropriate for a professional "{category}". Make the content extremely rich, informative, and complete. Avoid placeholders or truncated sentences."""
 
     response = call_deepseek(system_prompt, f"Generate professional content for: {prompt}", response_format="json")
@@ -64,7 +81,7 @@ Ensure you generate a minimum of 4-6 detailed sections appropriate for a profess
         clean_response = clean_response.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
         
     try:
-        content = json.loads(clean_response)
+        content = robust_json_loads(clean_response)
         # Ensure correct schema structure is present
         if not isinstance(content.get("sections"), list):
             raise ValueError("Invalid format: sections is not a list")
