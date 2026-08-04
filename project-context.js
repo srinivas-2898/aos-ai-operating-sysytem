@@ -16,12 +16,9 @@
   document.querySelectorAll('[data-project-name]').forEach((element) => { element.textContent = project.name; });
   document.querySelectorAll('.right-panel h2').forEach((heading) => {
     heading.innerHTML = '';
-    const label = document.createElement('span');
-    label.textContent = 'Project workspace';
-    label.style.cssText = 'display:block;margin-bottom:3px;font:600 11px Inter,system-ui;letter-spacing:.08em;text-transform:uppercase;color:#6b7b97';
     const name = document.createElement('strong');
     name.textContent = project.name;
-    name.style.cssText = 'display:block;font:700 20px "Plus Jakarta Sans",Inter,system-ui;color:#14213d;letter-spacing:-.3px';
-    heading.append(label, name);
+    name.style.cssText = 'display:block;font:700 22px "Plus Jakarta Sans",Inter,system-ui;color:#14213d;letter-spacing:-.35px';
+    heading.append(name);
   });
 })();

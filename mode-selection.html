@@ -261,6 +261,777 @@ a{text-decoration:none;color:inherit}
 .ps-or{text-align:center;font-size:14px;color:#9ca3af;margin:16px 0;position:relative}
 .ps-or::before,.ps-or::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:#e5e7eb}
 .ps-or::before{left:0}.ps-or::after{right:0}
+
+/* Redesigned Settings Page CSS */
+.settings-header-wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.settings-header-title h2 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+.settings-header-title p {
+  font-size: 14px;
+  color: #64748b;
+}
+.profile-settings-card {
+  background: #fff;
+  border: 1.5px solid #edf2f7;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(15,23,42,0.02);
+}
+.profile-card-header {
+  margin-bottom: 20px;
+}
+.profile-card-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+.profile-card-header p {
+  font-size: 13px;
+  color: #64748b;
+}
+.profile-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr 300px;
+  gap: 32px;
+  align-items: start;
+}
+.profile-preview-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 16px;
+  border-right: 1px solid #edf2f7;
+}
+.profile-avatar-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin-bottom: 16px;
+}
+.profile-avatar-large {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #60a5fa, #7c3aed);
+  color: #fff;
+  font-size: 36px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  object-fit: cover;
+  border: 4px solid #fff;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+.avatar-camera-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid #edf2f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s;
+}
+.avatar-camera-btn:hover {
+  background: #f8fafc;
+  color: #2563eb;
+  transform: scale(1.05);
+}
+.profile-preview-col h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+.profile-preview-col p {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 12px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.pro-plan-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 4px 12px;
+  border-radius: 20px;
+  display: inline-block;
+}
+.profile-fields-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+.field-group input, .field-group textarea {
+  width: 100%;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  outline: none;
+  background: #fff;
+  transition: all 0.2s;
+  color: #0f172a;
+}
+.field-group input:focus, .field-group textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
+}
+.field-group input:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+.textarea-wrapper {
+  position: relative;
+}
+.char-count {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+.profile-photo-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.profile-photo-col label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+.profile-photo-col .upload-desc {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+.upload-dropzone {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  background: #f8fafc;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 140px;
+}
+.upload-dropzone:hover {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+.upload-dropzone svg {
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+.upload-dropzone strong {
+  font-size: 13px;
+  color: #0f172a;
+  font-weight: 600;
+}
+.upload-dropzone span {
+  font-size: 11px;
+  color: #64748b;
+}
+.profile-card-footer {
+  grid-column: 2 / span 2;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #edf2f7;
+}
+
+/* Bottom Grid layout */
+.settings-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 24px;
+}
+.bottom-list-card {
+  background: #fff;
+  border: 1.5px solid #edf2f7;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(15,23,42,0.02);
+  display: flex;
+  flex-direction: column;
+  min-height: 480px;
+}
+.list-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+.list-card-header-text h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.list-card-header-text p {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+.list-card-action-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.list-card-action-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+.list-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bottom-list-card-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid #edf2f7;
+}
+
+/* Projects row styling */
+.project-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border: 1px solid #edf2f7;
+  border-radius: 12px;
+  background: #fff;
+  transition: all 0.2s;
+}
+.project-list-row:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+}
+.project-row-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.project-row-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 14px;
+}
+.project-row-info {
+  min-width: 0;
+}
+.project-row-info h4 {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.project-row-info p {
+  font-size: 11.5px;
+  color: #64748b;
+}
+.project-row-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.status-pill-active {
+  font-size: 10px;
+  font-weight: 600;
+  color: #16a34a;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+.row-dots-btn {
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+.row-dots-btn:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+/* Deployments table styling */
+.deployments-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.deployments-table th {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1.5px solid #edf2f7;
+}
+.deployments-table td {
+  padding: 12px;
+  border-bottom: 1px solid #edf2f7;
+  font-size: 13px;
+  color: #0f172a;
+  vertical-align: middle;
+}
+.deploy-project-cell {
+  font-weight: 600;
+  color: #0f172a;
+}
+.deploy-platform-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.deploy-platform-logo {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+.deploy-url-cell a {
+  color: #2563eb;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.deploy-url-cell a:hover {
+  text-decoration: underline;
+}
+.status-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  text-transform: capitalize;
+  display: inline-block;
+}
+.status-badge-success {
+  background: #dcfce7;
+  color: #15803d;
+}
+.status-badge-pending, .status-badge-building {
+  background: #fef3c7;
+  color: #b45309;
+}
+.status-badge-failed, .status-badge-error {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.deploy-time-cell {
+  font-size: 11.5px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+/* Button UI */
+.btn-primary {
+  background: #2563eb;
+  color: #fff;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.btn-primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+.btn-secondary {
+  background: #fff;
+  color: #475569;
+  border: 1.5px solid #dbe2eb;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+.create-project-row-btn {
+  width: 100%;
+  padding: 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  font-size: 13px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.create-project-row-btn:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #2563eb;
+}
+.deployments-footer-link {
+  display: block;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #2563eb;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 4px;
+}
+.deployments-footer-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* User Button & Avatar Header Styling Enhancements */
+#user-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.03), rgba(124, 58, 237, 0.03));
+  border: 1.5px solid rgba(37, 99, 235, 0.1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#user-btn:hover {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(124, 58, 237, 0.08));
+  border-color: #2563eb;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.08);
+  transform: translateY(-1px);
+}
+#topbar-avatar {
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px #2563eb;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#user-btn:hover #topbar-avatar {
+  box-shadow: 0 0 0 2px #7c3aed;
+  transform: rotate(5deg) scale(1.05);
+}
+.icon-btn svg {
+  transition: transform 0.25s ease, stroke 0.25s ease;
+}
+.icon-btn:hover svg {
+  transform: rotate(15deg) scale(1.1);
+  stroke: #2563eb;
+}
+
+/* Dark Mode Overrides */
+body.dark-mode {
+  background: #0f172a !important;
+  color: #f8fafc !important;
+}
+body.dark-mode #topbar {
+  background: #1e293b !important;
+  border-bottom: 1px solid #334155 !important;
+}
+body.dark-mode #topbar .logo-text,
+body.dark-mode #topbar-name {
+  color: #f8fafc !important;
+}
+body.dark-mode #topbar .search-wrap input {
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+body.dark-mode #main-sidebar {
+  background: #1e293b !important;
+  border-right: 1px solid #334155 !important;
+}
+body.dark-mode .nav-item {
+  color: #cbd5e1 !important;
+}
+body.dark-mode .nav-item:hover {
+  background: #334155 !important;
+  color: #fff !important;
+}
+body.dark-mode .nav-item.active {
+  background: #2563eb !important;
+  color: #fff !important;
+}
+body.dark-mode #view-area {
+  background: #0f172a !important;
+}
+body.dark-mode .welcome-title {
+  background: linear-gradient(135deg, #f8fafc, #cbd5e1) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+body.dark-mode .greeting-sub {
+  color: #94a3b8 !important;
+}
+body.dark-mode .section-title {
+  color: #cbd5e1 !important;
+}
+body.dark-mode .feature-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+body.dark-mode .feature-card h3 {
+  color: #fff !important;
+}
+body.dark-mode .feature-card p {
+  color: #94a3b8 !important;
+}
+body.dark-mode .dash-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+body.dark-mode .dash-card h3 {
+  color: #fff !important;
+}
+body.dark-mode .proj-item-name {
+  color: #f8fafc !important;
+}
+body.dark-mode .dashboard-row {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+body.dark-mode .dashboard-row-title {
+  color: #fff !important;
+}
+body.dark-mode .dashboard-row:hover {
+  background: #334155 !important;
+  border-color: #475569 !important;
+}
+body.dark-mode .view-header h2 {
+  color: #fff !important;
+}
+body.dark-mode .project-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+body.dark-mode .project-card h3 {
+  color: #fff !important;
+}
+body.dark-mode .project-card-pro {
+  background: linear-gradient(145deg, #1e293b, #0f172a) !important;
+  border-color: #334155 !important;
+}
+body.dark-mode .project-card-pro h3 {
+  color: #fff !important;
+}
+body.dark-mode .project-card-pro .pc-desc {
+  color: #94a3b8 !important;
+}
+body.dark-mode .project-card-footer {
+  border-top-color: #334155 !important;
+  color: #94a3b8 !important;
+}
+body.dark-mode .project-card-footer strong {
+  color: #cbd5e1 !important;
+}
+body.dark-mode .settings-header-title h2 {
+  color: #fff !important;
+}
+body.dark-mode .settings-header-title p {
+  color: #94a3b8 !important;
+}
+body.dark-mode .profile-settings-card,
+body.dark-mode .bottom-list-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+body.dark-mode .profile-card-header h3,
+body.dark-mode .list-card-header-text h3 {
+  color: #fff !important;
+}
+body.dark-mode .profile-card-header p,
+body.dark-mode .list-card-header-text p {
+  color: #94a3b8 !important;
+}
+body.dark-mode .profile-preview-col {
+  border-right-color: #334155 !important;
+}
+body.dark-mode .profile-preview-col h4 {
+  color: #fff !important;
+}
+body.dark-mode .profile-preview-col p {
+  color: #94a3b8 !important;
+}
+body.dark-mode .field-group label,
+body.dark-mode .profile-photo-col label {
+  color: #cbd5e1 !important;
+}
+body.dark-mode .field-group input,
+body.dark-mode .field-group textarea {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #fff !important;
+}
+body.dark-mode .field-group input:focus,
+body.dark-mode .field-group textarea:focus {
+  border-color: #2563eb !important;
+}
+body.dark-mode .field-group input:disabled {
+  background: #0f172a !important;
+  color: #475569 !important;
+}
+body.dark-mode .upload-dropzone {
+  background: #0f172a !important;
+  border-color: #475569 !important;
+}
+body.dark-mode .upload-dropzone strong {
+  color: #fff !important;
+}
+body.dark-mode .upload-dropzone span {
+  color: #94a3b8 !important;
+}
+body.dark-mode .profile-card-footer,
+body.dark-mode .bottom-list-card-footer {
+  border-top-color: #334155 !important;
+}
+body.dark-mode .btn-secondary {
+  background: #1e293b !important;
+  border-color: #475569 !important;
+  color: #cbd5e1 !important;
+}
+body.dark-mode .btn-secondary:hover {
+  background: #334155 !important;
+  border-color: #64748b !important;
+}
+body.dark-mode .list-card-action-btn {
+  background: #334155 !important;
+  color: #f8fafc !important;
+}
+body.dark-mode .list-card-action-btn:hover {
+  background: #475569 !important;
+}
+body.dark-mode .project-list-row {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+body.dark-mode .project-list-row:hover {
+  border-color: #475569 !important;
+}
+body.dark-mode .project-row-info h4 {
+  color: #fff !important;
+}
+body.dark-mode .project-row-info p {
+  color: #94a3b8 !important;
+}
+body.dark-mode .deployments-table th {
+  color: #cbd5e1 !important;
+  border-bottom-color: #334155 !important;
+}
+body.dark-mode .deployments-table td {
+  color: #f8fafc !important;
+  border-bottom-color: #334155 !important;
+}
+body.dark-mode .deploy-project-cell {
+  color: #fff !important;
+}
+body.dark-mode .deploy-time-cell {
+  color: #cbd5e1 !important;
+}
+body.dark-mode .create-project-row-btn {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+body.dark-mode .create-project-row-btn:hover {
+  border-color: #2563eb !important;
+  color: #2563eb !important;
+}
+body.dark-mode #user-dropdown {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f8fafc !important;
+}
+body.dark-mode .dd-item {
+  color: #cbd5e1 !important;
+}
+body.dark-mode .dd-item:hover {
+  background: #334155 !important;
+  color: #fff !important;
+}
+body.dark-mode .dd-sep {
+  background: #334155 !important;
+}
 </style>
 </head>
 <body>
@@ -280,12 +1051,72 @@ a{text-decoration:none;color:inherit}
     <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <input type="text" placeholder="Search projects, files...">
   </div>
-    <button class="icon-btn" title="Notifications">
-      <img src="notifications_icon.png" style="width: 24px; height: 24px; object-fit: contain;" alt="Notifications">
+  <div class="right">
+    <button class="icon-btn" id="btn-toggle-theme" onclick="toggleTheme(event)" title="Toggle Theme" style="margin-right: 8px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; filter: drop-shadow(0 2px 4px rgba(245,158,11,0.35));">
+        <defs>
+          <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fffbeb" />
+            <stop offset="30%" stop-color="#fef08a" />
+            <stop offset="70%" stop-color="#f59e0b" />
+            <stop offset="100%" stop-color="#d97706" />
+          </radialGradient>
+          <linearGradient id="rayGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#f59e0b" />
+            <stop offset="100%" stop-color="#ea580c" />
+          </linearGradient>
+        </defs>
+        <circle cx="12" cy="12" r="5.5" fill="url(#sunGrad)" />
+        <g stroke="url(#rayGrad)" stroke-width="2.2" stroke-linecap="round">
+          <line x1="12" y1="1" x2="12" y2="3.5" />
+          <line x1="12" y1="20.5" x2="12" y2="23" />
+          <line x1="4.22" y1="4.22" x2="5.99" y2="5.99" />
+          <line x1="18.01" y1="18.01" x2="19.78" y2="19.78" />
+          <line x1="1" y1="12" x2="3.5" y2="12" />
+          <line x1="20.5" y1="12" x2="23" y2="12" />
+          <line x1="4.22" y1="19.78" x2="5.99" y2="18.01" />
+          <line x1="18.01" y1="5.99" x2="19.78" y2="4.22" />
+        </g>
+      </svg>
     </button>
-    <button class="icon-btn" title="Help">
-      <img src="help_icon.png" style="width: 24px; height: 24px; object-fit: contain;" alt="Help">
+    <button class="icon-btn" title="Notifications" style="position: relative; margin-right: 12px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; filter: drop-shadow(0 2px 4px rgba(217,119,6,0.25));">
+        <defs>
+          <linearGradient id="bellGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#fef3c7" />
+            <stop offset="30%" stop-color="#fbbf24" />
+            <stop offset="70%" stop-color="#d97706" />
+            <stop offset="100%" stop-color="#b45309" />
+          </linearGradient>
+          <linearGradient id="bellMetal" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#78716c" />
+            <stop offset="100%" stop-color="#44403c" />
+          </linearGradient>
+        </defs>
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" fill="url(#bellGrad)" stroke="#b45309" stroke-width="1" />
+        <path d="M13.73 21a2 2 0 0 1-3.46 0" fill="url(#bellMetal)" />
+        <circle cx="12" cy="3.5" r="1.5" stroke="#b45309" stroke-width="1.2" />
+      </svg>
+      <span style="position: absolute; top: -2px; right: -2px; background: #ef4444; color: #fff; font-size: 9px; font-weight: 700; border-radius: 50%; width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; border: 2px solid #fff;">3</span>
     </button>
+    <div id="user-btn" style="display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="toggleDropdown(event)">
+      <div class="avatar" id="topbar-avatar" data-initial="true" style="width:32px; height:32px; border-radius:50%; overflow:hidden;">
+        <svg viewBox="0 0 32 32" fill="none" style="width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;">
+          <defs>
+            <linearGradient id="avatarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#3b82f6" />
+              <stop offset="50%" stop-color="#4f46e5" />
+              <stop offset="100%" stop-color="#7c3aed" />
+            </linearGradient>
+          </defs>
+          <rect width="32" height="32" rx="16" fill="url(#avatarGrad)" />
+          <circle cx="16" cy="11.5" r="4.8" fill="#ffffff" />
+          <path d="M6.5 25.5C6.5 19.8 10.7 17.5 16 17.5C21.3 17.5 25.5 19.8 25.5 25.5" fill="#ffffff" />
+        </svg>
+      </div>
+      <span id="topbar-name" style="font-size:14px; font-weight:500; color:#111827;" data-username="true">Loading...</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="chevron"><polyline points="6 9 12 15 18 9"/></svg>
+    </div>
   </div>
 </div>
 
@@ -418,38 +1249,125 @@ a{text-decoration:none;color:inherit}
 
     <!-- SETTINGS VIEW -->
     <div class="view" id="view-settings">
-      <div class="settings-hub" id="settings-hub">
-        <section class="settings-hero"><div class="settings-eyebrow">✦ Account workspace</div><h2>Settings &amp; deployment activity</h2><p>Your projects, live deployment URLs, and recent publishing activity—private to your AOS account.</p></section>
-        <section class="settings-profile"><div class="settings-avatar" id="settings-avatar">A</div><div class="settings-person"><strong id="settings-hub-name">Loading account…</strong><span id="settings-hub-email">—</span></div><span class="settings-id" id="settings-hub-id">—</span></section>
-        <section class="settings-stats"><div class="settings-stat"><div class="settings-stat-icon" style="background:#eef4ff">📁</div><b id="settings-project-count">—</b><span>Projects created</span></div><div class="settings-stat"><div class="settings-stat-icon" style="background:#ecfdf5">🚀</div><b id="settings-deployment-count">—</b><span>Deployments saved</span></div><div class="settings-stat"><div class="settings-stat-icon" style="background:#fff7ed">●</div><b id="settings-live-count">—</b><span>Live deployments</span></div></section>
-        <section class="settings-content-grid"><article class="settings-panel"><div class="settings-panel-head"><div><div class="settings-panel-title"><i>🚀</i>Recent deployments</div><p>Deployment URLs, source repositories, provider, and time.</p></div></div><div id="settings-hub-deployments" class="settings-deploy-list"><div class="settings-empty">Loading deployment history…</div></div></article><aside class="settings-panel"><div class="settings-panel-head"><div><div class="settings-panel-title"><i>✦</i>Your projects</div><p>Only projects in this account.</p></div></div><div id="settings-hub-projects" class="settings-project-list"><div class="settings-empty">Loading projects…</div></div></aside></section>
-      </div>
-      <div class="view-header"><h2>Settings</h2></div>
-      <div class="settings-card">
-        <h3>Account Information</h3>
-        <div class="settings-row">
-          <label>Full Name</label>
-          <div class="val username" id="settings-name" data-username="true">—</div>
-        </div>
-        <div class="settings-row">
-          <label>Email Address</label>
-          <div class="val user-email" id="settings-email" data-email="true">—</div>
-        </div>
-        <div class="settings-row">
-          <label>User ID</label>
-          <div class="val" id="settings-uid">—</div>
+      <div class="settings-header-wrap">
+        <div class="settings-header-title">
+          <h2>Settings</h2>
+          <p>Manage your profile, projects, and deployments</p>
         </div>
       </div>
-      <div class="settings-card" style="margin-top:18px">
-        <h3>Your Projects</h3>
-        <p style="font-size:13px;color:#71809a;margin:6px 0 14px">Projects created in your AOS workspace.</p>
-        <div id="settings-projects"><div style="font-size:13px;color:#94a3b8">Loading projects…</div></div>
+
+      <div class="profile-settings-card">
+        <div class="profile-card-header">
+          <h3>Profile Settings</h3>
+          <p>Update your profile information and preferences</p>
+        </div>
+        <div class="profile-grid">
+          <!-- Preview Column -->
+          <div class="profile-preview-col">
+            <div class="profile-avatar-container">
+              <div class="profile-avatar-large" id="profile-avatar-preview">U</div>
+              <div class="avatar-camera-btn" id="btn-upload-camera" title="Upload Photo">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </div>
+            </div>
+            <h4 id="profile-preview-name" data-username="true">User</h4>
+          </div>
+
+          <!-- Fields Column -->
+          <div class="profile-fields-col">
+            <div class="field-group">
+              <label for="settings-fullname-input">Full Name</label>
+              <input type="text" id="settings-fullname-input" placeholder="Enter your full name">
+            </div>
+            <div class="field-group">
+              <label for="settings-email-input">Email Address</label>
+              <input type="email" id="settings-email-input" disabled placeholder="user@example.com">
+            </div>
+            <div class="field-group">
+              <label for="settings-bio-input">Bio</label>
+              <div class="textarea-wrapper">
+                <textarea id="settings-bio-input" maxlength="120" placeholder="AI enthusiast, Developer, and Creator." rows="3"></textarea>
+                <span class="char-count" id="settings-bio-char-count">0/120</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Photo Upload Column -->
+          <div class="profile-photo-col">
+            <label>Profile Photo</label>
+            <p class="upload-desc">Upload a new photo or keep the default avatar.</p>
+            <div class="upload-dropzone" id="profile-photo-dropzone">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <strong>Click to upload</strong>
+              <span>PNG, JPG or WEBP (max. 5MB)</span>
+              <input type="file" id="profile-photo-file-input" accept="image/*" style="display: none;">
+            </div>
+          </div>
+
+          <!-- Footer Buttons -->
+          <div class="profile-card-footer">
+            <button class="btn-secondary" id="btn-keep-default-avatar">Keep Default</button>
+            <button class="btn-primary" id="btn-save-profile-settings">Save Changes</button>
+          </div>
+        </div>
       </div>
-      <div class="settings-card" style="margin-top:18px">
-        <h3>Recent Deployments</h3>
-        <p style="font-size:13px;color:#71809a;margin:6px 0 14px">Real deployment records from all providers.</p>
-        <div id="settings-deployments"><div style="font-size:13px;color:#94a3b8">Loading deployments…</div></div>
+
+      <!-- Bottom columns (My Projects & My Deployments) -->
+      <div class="settings-bottom-grid">
+        <!-- My Projects -->
+        <div class="bottom-list-card">
+          <div class="list-card-header">
+            <div class="list-card-header-text">
+              <h3>My Projects</h3>
+              <p>Projects you have created in AOS</p>
+            </div>
+            <div class="list-card-action-btn" onclick="switchView('projects')">View All</div>
+          </div>
+          <div class="list-container" id="settings-projects-list">
+            <div class="settings-empty">Loading projects…</div>
+          </div>
+          <div class="bottom-list-card-footer">
+            <button class="create-project-row-btn" onclick="openCreateProject()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Create New Project
+            </button>
+          </div>
+        </div>
+
+        <!-- My Deployments -->
+        <div class="bottom-list-card">
+          <div class="list-card-header">
+            <div class="list-card-header-text">
+              <h3>My Deployments</h3>
+              <p>All deployments you have made</p>
+            </div>
+            <div class="list-card-action-btn" onclick="window.location.href='deploy.html'">View All</div>
+          </div>
+          <div style="flex: 1; overflow-x: auto;">
+            <table class="deployments-table">
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Platform</th>
+                  <th>URL</th>
+                  <th>Status</th>
+                  <th>Deployed At</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="settings-deployments-list">
+                <tr>
+                  <td colspan="6" class="settings-empty">Loading deployments…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="bottom-list-card-footer" style="display: flex; justify-content: center; align-items: center; border-top: 1px solid #edf2f7; padding-top: 16px;">
+            <a class="deployments-footer-link" href="deploy.html">View All Deployments →</a>
+          </div>
+        </div>
       </div>
+    </div>
       <!-- CHAT SHELL -->
   <div id="chat-shell">
     <div id="chat-sidebar">
@@ -731,9 +1649,32 @@ function populateUserUI(user) {
   
   document.querySelectorAll('.user-email, .useremail, [data-email]')
     .forEach(el => el.textContent = email);
+
+  const avatarUrl = localStorage.getItem('aos_avatar_' + user.id) || user.user_metadata?.avatar_url;
   
-  document.querySelectorAll('.user-avatar, .avatar-initial, [data-initial]')
-    .forEach(el => el.textContent = initial);
+  document.querySelectorAll('.user-avatar, .avatar-initial, [data-initial], #topbar-avatar')
+    .forEach(el => {
+      if (avatarUrl) {
+        el.textContent = '';
+        el.innerHTML = `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`;
+      } else {
+        el.textContent = '';
+        el.innerHTML = `
+          <svg viewBox="0 0 32 32" fill="none" style="width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;">
+            <defs>
+              <linearGradient id="avatarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#3b82f6" />
+                <stop offset="50%" stop-color="#4f46e5" />
+                <stop offset="100%" stop-color="#7c3aed" />
+              </linearGradient>
+            </defs>
+            <rect width="32" height="32" rx="16" fill="url(#avatarGrad)" />
+            <circle cx="16" cy="11.5" r="4.8" fill="#ffffff" />
+            <path d="M6.5 25.5C6.5 19.8 10.7 17.5 16 17.5C21.3 17.5 25.5 19.8 25.5 25.5" fill="#ffffff" />
+          </svg>
+        `;
+      }
+    });
   
   const welcome = document.querySelector('.welcome-name, [data-welcome]');
   if (welcome) welcome.textContent = 'Welcome, ' + fullName + '!';
@@ -1233,8 +2174,111 @@ document.getElementById('chat-start-modal').addEventListener('click', function(e
   if (e.target === this) closeChatStartModal();
 });
 
+function toggleDropdown(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  document.getElementById('user-dropdown').classList.toggle('open');
+}
+
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('user-dropdown');
+  const userBtn = document.getElementById('user-btn');
+  if (dd && dd.classList.contains('open') && !dd.contains(e.target) && (!userBtn || !userBtn.contains(e.target))) {
+    dd.classList.remove('open');
+  }
+});
+
+function toggleTheme(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  document.body.classList.toggle('dark-mode');
+  const isDark = document.body.classList.contains('dark-mode');
+  localStorage.setItem('aos_theme', isDark ? 'dark' : 'light');
+  updateThemeIcon();
+}
+
+function updateThemeIcon() {
+  const isDark = document.body.classList.contains('dark-mode');
+  const themeBtn = document.getElementById('btn-toggle-theme');
+  if (!themeBtn) return;
+  if (isDark) {
+    themeBtn.innerHTML = `
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; filter: drop-shadow(0 2px 6px rgba(59,130,246,0.4));">
+        <defs>
+          <linearGradient id="moonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#e0f2fe" />
+            <stop offset="40%" stop-color="#bae6fd" />
+            <stop offset="80%" stop-color="#38bdf8" />
+            <stop offset="100%" stop-color="#0284c7" />
+          </linearGradient>
+          <linearGradient id="starGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#fff" />
+            <stop offset="100%" stop-color="#fef08a" />
+          </linearGradient>
+        </defs>
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="url(#moonGrad)" />
+        <circle cx="19" cy="5" r="0.8" fill="url(#starGrad)" />
+        <circle cx="16" cy="8" r="0.6" fill="url(#starGrad)" />
+        <circle cx="21" cy="9" r="0.5" fill="url(#starGrad)" />
+      </svg>
+    `;
+  } else {
+    themeBtn.innerHTML = `
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" style="vertical-align: middle; filter: drop-shadow(0 2px 4px rgba(245,158,11,0.35));">
+        <defs>
+          <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#fffbeb" />
+            <stop offset="30%" stop-color="#fef08a" />
+            <stop offset="70%" stop-color="#f59e0b" />
+            <stop offset="100%" stop-color="#d97706" />
+          </radialGradient>
+          <linearGradient id="rayGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#f59e0b" />
+            <stop offset="100%" stop-color="#ea580c" />
+          </linearGradient>
+        </defs>
+        <circle cx="12" cy="12" r="5.5" fill="url(#sunGrad)" />
+        <g stroke="url(#rayGrad)" stroke-width="2.2" stroke-linecap="round">
+          <line x1="12" y1="1" x2="12" y2="3.5" />
+          <line x1="12" y1="20.5" x2="12" y2="23" />
+          <line x1="4.22" y1="4.22" x2="5.99" y2="5.99" />
+          <line x1="18.01" y1="18.01" x2="19.78" y2="19.78" />
+          <line x1="1" y1="12" x2="3.5" y2="12" />
+          <line x1="20.5" y1="12" x2="23" y2="12" />
+          <line x1="4.22" y1="19.78" x2="5.99" y2="18.01" />
+          <line x1="18.01" y1="5.99" x2="19.78" y2="4.22" />
+        </g>
+      </svg>
+    `;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const savedTheme = localStorage.getItem('aos_theme');
+  if (savedTheme === 'dark') {
+    document.body.classList.add('dark-mode');
+  }
+  updateThemeIcon();
+});
  </script>
 <script src="project-dashboard.js?v=project-r9"></script>
 <script src="settings-dashboard.js?v=3"></script>
+
+<!-- USER DROPDOWN -->
+<div id="user-dropdown">
+  <div class="dd-item" onclick="switchView('settings'); document.getElementById('user-dropdown').classList.remove('open');">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Settings
+  </div>
+  <div class="dd-sep"></div>
+  <div class="dd-item danger" onclick="performLogout()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    Sign Out
+  </div>
+</div>
 </body>
 </html>

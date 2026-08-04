@@ -536,7 +536,21 @@ a{text-decoration:none;color:inherit}
       <input type="text" id="deploy-output" value="dist" placeholder="dist">
     </div>
     <div class="terminal" id="deploy-terminal" style="display:none"></div>
-    <div class="modal-actions">
+    
+    <div id="modal-save-section" style="margin-top: 15px; padding: 12px; background: #f3f4f6; border-radius: 8px; display: none; text-align: left;">
+      <p style="font-size:12px; font-weight:600; color:#374151; margin-bottom:8px;">Save outside deployment link to AOS:</p>
+      <label style="display:block; font-size:11px; font-weight:600; color:#4b5563; margin-top:8px; text-align:left;">Project Name</label>
+      <input type="text" id="modal-save-proj-name" placeholder="e.g. My External Project" style="width: 100%; border: 1.5px solid #dbe3f0; border-radius: 6px; padding: 6px 10px; font-size: 13px; margin-top:4px;">
+      <label style="display:block; font-size:11px; font-weight:600; color:#4b5563; margin-top:8px; text-align:left;">Web URL</label>
+      <input type="text" id="modal-save-url" disabled style="width: 100%; border: 1.5px solid #dbe3f0; border-radius: 6px; padding: 6px 10px; font-size: 13px; margin-top:4px; background:#e5e7eb;">
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button class="btn-primary-sm" style="width:auto; padding:6px 12px; font-size:12px;" onclick="confirmModalSaveDeployment()">Save URL</button>
+        <button class="btn-cancel" style="width:auto; padding:6px 12px; font-size:12px;" onclick="document.getElementById('modal-save-section').style.display='none'">Cancel</button>
+      </div>
+      <div id="modal-save-error" style="color:#b91c1c; font-size:11px; margin-top:8px; display:none;"></div>
+    </div>
+
+    <div class="modal-actions" id="modal-actions-buttons">
       <button class="btn-cancel" onclick="closeDeployModal()">Cancel</button>
       <button class="btn-primary-sm" style="width:auto;padding:10px 20px" onclick="runDeployment()">Deploy Now</button>
     </div>
@@ -638,9 +652,32 @@ function populateUserUI(user) {
   
   document.querySelectorAll('.user-email, .useremail, [data-email]')
     .forEach(el => el.textContent = email);
+
+  const avatarUrl = localStorage.getItem('aos_avatar_' + user.id) || user.user_metadata?.avatar_url;
   
-  document.querySelectorAll('.user-avatar, .avatar-initial, [data-initial]')
-    .forEach(el => el.textContent = initial);
+  document.querySelectorAll('.user-avatar, .avatar-initial, [data-initial], #topbar-avatar')
+    .forEach(el => {
+      if (avatarUrl) {
+        el.textContent = '';
+        el.innerHTML = `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`;
+      } else {
+        el.textContent = '';
+        el.innerHTML = `
+          <svg viewBox="0 0 32 32" fill="none" style="width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;">
+            <defs>
+              <linearGradient id="avatarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#3b82f6" />
+                <stop offset="50%" stop-color="#4f46e5" />
+                <stop offset="100%" stop-color="#7c3aed" />
+              </linearGradient>
+            </defs>
+            <rect width="32" height="32" rx="16" fill="url(#avatarGrad)" />
+            <circle cx="16" cy="11.5" r="4.8" fill="#ffffff" />
+            <path d="M6.5 25.5C6.5 19.8 10.7 17.5 16 17.5C21.3 17.5 25.5 19.8 25.5 25.5" fill="#ffffff" />
+          </svg>
+        `;
+      }
+    });
   
   const welcome = document.querySelector('.welcome-name, [data-welcome]');
   if (welcome) welcome.textContent = 'Welcome, ' + fullName + '!';
@@ -772,6 +809,18 @@ function openDeployModal(platform) {
   document.getElementById('deploy-modal-title').textContent = 'Deploy to ' + platform;
   document.getElementById('deploy-terminal').style.display = 'none';
   document.getElementById('deploy-terminal').innerHTML = '';
+  
+  const saveSection = document.getElementById('modal-save-section');
+  if (saveSection) saveSection.style.display = 'none';
+  
+  const actions = document.getElementById('modal-actions-buttons');
+  if (actions) {
+    actions.innerHTML = `
+      <button class="btn-cancel" onclick="closeDeployModal()">Cancel</button>
+      <button class="btn-primary-sm" style="width:auto;padding:10px 20px" onclick="runDeployment()">Deploy Now</button>
+    `;
+  }
+  
   document.getElementById('deploy-modal').classList.add('open');
 }
 
@@ -786,6 +835,13 @@ function runDeployment() {
   const branch = document.getElementById('deploy-branch').value || 'main';
   const build = document.getElementById('deploy-build').value || 'npm run build';
   const output = document.getElementById('deploy-output').value || 'dist';
+  
+  const projectId = document.getElementById('deploy-proj-select').value;
+  const projectSelect = document.getElementById('deploy-proj-select');
+  const projectName = projectSelect?.selectedOptions?.[0]?.textContent || 'AOS Project';
+  const safeName = projectName.trim().toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '') || 'my-app';
+  const url = `https://${safeName}.${currentPlatform.toLowerCase()}.app`;
+
   const lines = [
     { text: `$ Initializing deployment to ${currentPlatform}...`, cls: 'prompt' },
     { text: `  Cloning repository (branch: ${branch})`, cls: 'output' },
@@ -795,13 +851,35 @@ function runDeployment() {
     { text: `  Uploading assets to ${currentPlatform} CDN...`, cls: 'output' },
     { text: `  Assigning domain and SSL certificate...`, cls: 'output' },
     { text: `✓ Deployment successful! Your app is live.`, cls: 'success' },
-    { text: `  URL: https://your-app.${currentPlatform.toLowerCase()}.app`, cls: 'success' }
+    { text: `  URL: ${url}`, cls: 'success' }
   ];
   let i = 0;
-  const addLine = () => {
+  const addLine = async () => {
     if (i >= lines.length) {
       advStep(3);
       showToast(`Deployed to ${currentPlatform} successfully!`);
+      
+      if (projectId) {
+        try {
+          await supabase.from('deployments').insert({
+            project_id: projectId,
+            provider: currentPlatform,
+            status: 'success',
+            deployment_url: url,
+            metadata: { source: 'deploy-page', branch, build_command: build, output_directory: output }
+          });
+        } catch (err) {
+          console.error('Error saving deployment record:', err);
+        }
+      } else {
+        const actions = document.getElementById('modal-actions-buttons');
+        if (actions) {
+          actions.innerHTML = `
+            <button class="btn-cancel" onclick="closeDeployModal()">Close</button>
+            <button class="btn-primary-sm" style="width:auto;padding:10px 20px;background:#7c3aed;border-color:#6d28d9;" id="btn-modal-save-trigger" onclick="showModalSaveSection('${url}')">Save to AOS</button>
+          `;
+        }
+      }
       return;
     }
     const span = document.createElement('span');
@@ -813,6 +891,71 @@ function runDeployment() {
     setTimeout(addLine, 350);
   };
   addLine();
+}
+
+function showModalSaveSection(url) {
+  document.getElementById('modal-save-url').value = url;
+  document.getElementById('modal-save-proj-name').value = '';
+  document.getElementById('modal-save-error').style.display = 'none';
+  document.getElementById('modal-save-section').style.display = 'block';
+}
+
+async function confirmModalSaveDeployment() {
+  const projName = document.getElementById('modal-save-proj-name').value.trim();
+  const url = document.getElementById('modal-save-url').value;
+  const errorEl = document.getElementById('modal-save-error');
+  
+  if (!projName) {
+    errorEl.textContent = 'Please enter a project name.';
+    errorEl.style.display = 'block';
+    return;
+  }
+  
+  errorEl.style.display = 'none';
+  
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) throw new Error('No active user session. Please log in.');
+    const userId = session.user.id;
+    
+    let targetProjId;
+    const { data: existing } = await supabase.from('projects').select('id').eq('user_id', userId).eq('name', projName).limit(1);
+    if (existing && existing.length > 0) {
+      targetProjId = existing[0].id;
+    } else {
+      const { data: newProj, error: createErr } = await supabase.from('projects').insert({
+        user_id: userId,
+        name: projName,
+        description: 'Created for external deployment saving.'
+      }).select('id').single();
+      if (createErr) throw createErr;
+      targetProjId = newProj.id;
+    }
+    
+    const { error: deployErr } = await supabase.from('deployments').insert({
+      project_id: targetProjId,
+      provider: currentPlatform,
+      status: 'success',
+      deployment_url: url,
+      metadata: { source: 'deploy-page', source_type: 'external' }
+    });
+    if (deployErr) throw deployErr;
+    
+    // Success
+    document.getElementById('modal-save-section').style.display = 'none';
+    const saveBtn = document.getElementById('btn-modal-save-trigger');
+    if (saveBtn) {
+      saveBtn.textContent = '✓ Saved to AOS';
+      saveBtn.disabled = true;
+      saveBtn.style.background = '#e5e7eb';
+      saveBtn.style.color = '#9ca3af';
+      saveBtn.style.borderColor = '#d1d5db';
+    }
+    showToast('Saved to deployments successfully!');
+  } catch (err) {
+    errorEl.textContent = err.message || 'Error occurred while saving.';
+    errorEl.style.display = 'block';
+  }
 }
 
 function openPWAModal() {

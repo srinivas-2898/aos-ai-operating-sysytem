@@ -452,9 +452,32 @@ function populateUserUI(user) {
   
   document.querySelectorAll('.user-email, .useremail, [data-email]')
     .forEach(el => el.textContent = email);
+
+  const avatarUrl = localStorage.getItem('aos_avatar_' + user.id) || user.user_metadata?.avatar_url;
   
-  document.querySelectorAll('.user-avatar, .avatar-initial, [data-initial]')
-    .forEach(el => el.textContent = initial);
+  document.querySelectorAll('.user-avatar, .avatar-initial, [data-initial], #topbar-avatar')
+    .forEach(el => {
+      if (avatarUrl) {
+        el.textContent = '';
+        el.innerHTML = `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;">`;
+      } else {
+        el.textContent = '';
+        el.innerHTML = `
+          <svg viewBox="0 0 32 32" fill="none" style="width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;">
+            <defs>
+              <linearGradient id="avatarGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#3b82f6" />
+                <stop offset="50%" stop-color="#4f46e5" />
+                <stop offset="100%" stop-color="#7c3aed" />
+              </linearGradient>
+            </defs>
+            <rect width="32" height="32" rx="16" fill="url(#avatarGrad)" />
+            <circle cx="16" cy="11.5" r="4.8" fill="#ffffff" />
+            <path d="M6.5 25.5C6.5 19.8 10.7 17.5 16 17.5C21.3 17.5 25.5 19.8 25.5 25.5" fill="#ffffff" />
+          </svg>
+        `;
+      }
+    });
   
   const welcome = document.querySelector('.welcome-name, [data-welcome]');
   if (welcome) welcome.textContent = 'Welcome, ' + fullName + '!';
