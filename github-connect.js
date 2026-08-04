@@ -50,7 +50,10 @@
       if (!result.authorization_url) throw new Error('GitHub authorization URL was not returned.');
       window.location.assign(result.authorization_url);
     } catch (error) {
-      setStatus(error.message || 'GitHub connection could not start.', '#b91c1c');
+      const message = error instanceof TypeError && /fetch/i.test(error.message)
+        ? 'The AOS backend is not responding. Restart the Railway service, then try again.'
+        : (error.message || 'GitHub connection could not start.');
+      setStatus(message, '#b91c1c');
     }
   }
 
@@ -144,8 +147,13 @@
       startConnection(client);
     });
     loadProjects(client).catch(error => setStatus(error.message || 'Projects could not load.', '#b91c1c'));
-    loadConnectedProfile(client).catch(error => {
-      if (new URLSearchParams(window.location.search).get('github') === 'connected') setStatus(error.message || 'GitHub connection could not be loaded.', '#b91c1c');
+  loadConnectedProfile(client).catch(error => {
+      if (new URLSearchParams(window.location.search).get('github') === 'connected') {
+        const message = error instanceof TypeError && /fetch/i.test(error.message)
+          ? 'GitHub is connected, but the AOS backend is not responding. Restart Railway, then reload this page.'
+          : (error.message || 'GitHub connection could not be loaded.');
+        setStatus(message, '#b91c1c');
+      }
     });
   }
 

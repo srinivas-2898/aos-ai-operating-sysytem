@@ -739,10 +739,7 @@ async function connectGitHub() {
   }
 }
 
-document.getElementById('github-connect-button').addEventListener('click', (event) => {
-  event.preventDefault();
-  connectGitHub();
-});
+// The OAuth button is managed by github-connect.js so only one secure request is made.
 
 async function loadGitHubProject(projectId) {
   const status = document.getElementById('github-connect-status');
@@ -1112,7 +1109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
  </script>
 <script src="public-config.js?v=github-oauth-1"></script>
-<script src="github-connect.js?v=4"></script>
+<script src="github-connect.js?v=5"></script>
 <script src="deployment-drawer.js?v=8"></script>
 </body>
 </html>
