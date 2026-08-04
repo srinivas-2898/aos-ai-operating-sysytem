@@ -1,0 +1,16 @@
+# Nixpacks configuration to ensure Node.js, npm, and Chromium dependencies are installed alongside Python on Railway.
+
+[providers]
+python = {}
+
+[phases.setup]
+nixPkgs = ["python3", "nodejs", "chromium"]
+
+[phases.install]
+cmds = [
+  "pip install --no-cache-dir -r requirements.txt",
+  "npm install"
+]
+
+[start]
+cmd = "uvicorn main:app --host 0.0.0.0 --port $PORT"
