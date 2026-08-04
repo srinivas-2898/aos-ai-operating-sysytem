@@ -538,6 +538,11 @@ def deploy_netlify(data: dict):
                 return response
 
             last_response = response
+            if response.status_code in {401, 403}:
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail='Netlify rejected this access token. Create a new Personal Access Token in Netlify User settings → Applications → Personal access tokens, then paste it into AOS.'
+                )
             if response.status_code == 429:
                 retry_after = response.headers.get('Retry-After')
                 wait_message = f' Wait {retry_after} seconds before trying again.' if retry_after else ' Wait a few minutes before trying again.'
@@ -1019,12 +1024,9 @@ def deploy_railway(data: dict):
     if not domain:
         raise HTTPException(status_code=502, detail='Railway created the service but did not return a public domain.')
 
-    # Creating a service connects the repository; this explicitly starts a
-    # deployment of that source instead of returning a fabricated Railway URL.
-    gql(
-        'mutation serviceInstanceDeploy($serviceId: String!, $environmentId: String!) { serviceInstanceDeploy(serviceId: $serviceId, environmentId: $environmentId) }',
-        {'serviceId': service_id, 'environmentId': environment_id}
-    )
+    # Railway automatically starts the first deployment after a GitHub-backed
+    # service is created. Calling serviceInstanceDeploy immediately here can be
+    # rejected before Railway has attached the GitHub source to the service.
 
     return {
         'ssl_url': f"https://{domain}" if not domain.startswith('http') else domain,
