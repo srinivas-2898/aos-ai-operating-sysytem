@@ -21,7 +21,29 @@ const path = require('path');
     if (process.env.PUPPETEER_EXECUTABLE_PATH) {
       launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
     } else if (process.platform === 'linux') {
-      launchOptions.executablePath = 'chromium';
+      const { execSync } = require('child_process');
+      let chromiumPath = 'chromium';
+      try {
+        chromiumPath = execSync('which chromium').toString().trim();
+      } catch (e) {
+        try {
+          chromiumPath = execSync('which google-chrome').toString().trim();
+        } catch (err) {
+          const commonPaths = [
+            '/usr/bin/chromium',
+            '/usr/bin/chromium-browser',
+            '/usr/bin/google-chrome',
+            '/usr/bin/google-chrome-stable'
+          ];
+          for (const p of commonPaths) {
+            if (require('fs').existsSync(p)) {
+              chromiumPath = p;
+              break;
+            }
+          }
+        }
+      }
+      launchOptions.executablePath = chromiumPath;
     }
 
     const browser = await puppeteer.launch(launchOptions);
