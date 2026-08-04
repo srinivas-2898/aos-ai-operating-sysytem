@@ -27,7 +27,7 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY_2") or os.getenv("GEMINI_API_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
+DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/auto")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
@@ -68,9 +68,7 @@ def call_deepseek(system_prompt: str, user_prompt: str, response_format: str = "
     failures = []
 
     def openai_compatible(url: str, api_key: str, model: str, provider: str) -> str:
-        payload = {"model": model, "messages": messages, "max_tokens": 6500, "temperature": 0.7}
-        if response_format == "json":
-            payload["response_format"] = {"type": "json_object"}
+        payload = {"model": model, "messages": messages, "max_tokens": 4000, "temperature": 0.7}
         response = requests.post(
             url,
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
@@ -92,9 +90,7 @@ def call_deepseek(system_prompt: str, user_prompt: str, response_format: str = "
     # Gemini fallback
     if GEMINI_API_KEY:
         try:
-            gen_config = {"temperature": 0.7, "maxOutputTokens": 8000}
-            if response_format == "json":
-                gen_config["responseMimeType"] = "application/json"
+            gen_config = {"temperature": 0.7, "maxOutputTokens": 4000}
             response = requests.post(
                 f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent",
                 params={"key": GEMINI_API_KEY},
