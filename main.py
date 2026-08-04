@@ -68,7 +68,7 @@ def call_deepseek(system_prompt: str, user_prompt: str, response_format: str = "
     failures = []
 
     def openai_compatible(url: str, api_key: str, model: str, provider: str) -> str:
-        payload = {"model": model, "messages": messages, "max_tokens": 8000, "temperature": 0.7}
+        payload = {"model": model, "messages": messages, "max_tokens": 4000, "temperature": 0.7}
         if response_format == "json":
             payload["response_format"] = {"type": "json_object"}
         response = requests.post(
