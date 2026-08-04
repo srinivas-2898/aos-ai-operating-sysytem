@@ -80,7 +80,16 @@ def call_deepseek(system_prompt: str, user_prompt: str, response_format: str = "
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"]
 
-    # Gemini is preferred for document generation when it is configured.
+    # DeepSeek is preferred first (per user request)
+    if DEEPSEEK_API_KEY:
+        try:
+            return openai_compatible(DEEPSEEK_URL, DEEPSEEK_API_KEY, "deepseek-chat", "DeepSeek")
+        except (requests.RequestException, KeyError, IndexError, ValueError) as error:
+            if hasattr(error, 'response') and error.response is not None:
+                print("DeepSeek Error:", error.response.text)
+            failures.append(f"DeepSeek: {type(error).__name__}")
+
+    # Gemini fallback
     if GEMINI_API_KEY:
         try:
             gen_config = {"temperature": 0.7, "maxOutputTokens": 8000}
@@ -99,6 +108,8 @@ def call_deepseek(system_prompt: str, user_prompt: str, response_format: str = "
             response.raise_for_status()
             return response.json()["candidates"][0]["content"]["parts"][0]["text"]
         except (requests.RequestException, KeyError, IndexError, ValueError) as error:
+            if hasattr(error, 'response') and error.response is not None:
+                print("Gemini Error:", error.response.text)
             failures.append(f"Gemini: {type(error).__name__}")
 
     if OPENROUTER_API_KEY:
@@ -110,6 +121,8 @@ def call_deepseek(system_prompt: str, user_prompt: str, response_format: str = "
                 "OpenRouter",
             )
         except (requests.RequestException, KeyError, IndexError, ValueError) as error:
+            if hasattr(error, 'response') and error.response is not None:
+                print("OpenRouter Error:", error.response.text)
             failures.append(f"OpenRouter: {type(error).__name__}")
 
     if GROQ_API_KEY:
@@ -121,13 +134,9 @@ def call_deepseek(system_prompt: str, user_prompt: str, response_format: str = "
                 "Groq",
             )
         except (requests.RequestException, KeyError, IndexError, ValueError) as error:
+            if hasattr(error, 'response') and error.response is not None:
+                print("Groq Error:", error.response.text)
             failures.append(f"Groq: {type(error).__name__}")
-
-    if DEEPSEEK_API_KEY:
-        try:
-            return openai_compatible(DEEPSEEK_URL, DEEPSEEK_API_KEY, "deepseek-chat", "DeepSeek")
-        except (requests.RequestException, KeyError, IndexError, ValueError) as error:
-            failures.append(f"DeepSeek: {type(error).__name__}")
 
     configured = "GEMINI_API_KEY, OPENROUTER_API_KEY, GROQ_API_KEY, or DEEPSEEK_API_KEY"
     if not failures:
