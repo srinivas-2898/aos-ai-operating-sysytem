@@ -1,10 +1,8 @@
-"""Server-side Pollinations video generation for AOS Generation Studio."""
+"""Server-side Hugging Face text-to-video generation for AOS Generation Studio."""
 import os
-from urllib.parse import quote
-
-import requests
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
+from huggingface_hub import InferenceClient
 from pydantic import BaseModel, Field
 
 router = APIRouter()
@@ -22,39 +20,53 @@ class VideoRequest(BaseModel):
 
 @router.post("/api/generate/video")
 def generate_video(request: VideoRequest):
-    api_key = os.getenv("POLLINATIONS_API_KEY")
+    # Reuse the same Hugging Face token used by AOS image generation. It never
+    # reaches the browser and needs Inference Providers permission.
+    api_key = os.getenv("HF_TOKEN")
     if not api_key:
-        raise HTTPException(status_code=503, detail="Video generation is not configured. Add POLLINATIONS_API_KEY to Railway Variables.")
+        raise HTTPException(status_code=503, detail="Video generation is not configured. Add HF_TOKEN to Railway Variables.")
     if request.duration not in {5, 10, 15, 30}:
         raise HTTPException(status_code=400, detail="Choose a duration of 5, 10, 15, or 30 seconds.")
     if request.aspect_ratio not in {"16:9", "9:16", "1:1"}:
         raise HTTPException(status_code=400, detail="Unsupported aspect ratio.")
 
-    model = "wan-pro-1080p" if request.quality.lower() == "hd" else "wan-fast"
+    model = os.getenv("HF_VIDEO_MODEL", "Wan-AI/Wan2.2-TI2V-5B")
     prompt_parts = [request.prompt.strip(), f"Style: {request.style.strip()}", f"Aspect ratio: {request.aspect_ratio}"]
     if request.negative_prompt.strip():
         prompt_parts.append(f"Avoid: {request.negative_prompt.strip()}")
-    params = {"model": model, "duration": request.duration}
-    if request.seed is not None:
-        params["seed"] = request.seed
-
     try:
-        response = requests.get(
-            f"https://gen.pollinations.ai/video/{quote(', '.join(prompt_parts), safe='')}",
-            params=params,
-            headers={"Authorization": f"Bearer {api_key}"},
-            timeout=600,
+        # Hugging Face uses frame count for text-to-video. Eight FPS keeps the
+        # requested durations practical while honoring the user's selection.
+        parameters = {"num_frames": request.duration * 8}
+        if request.negative_prompt.strip():
+            parameters["negative_prompt"] = [request.negative_prompt.strip()]
+        if request.seed is not None:
+            parameters["seed"] = request.seed
+        if request.quality.lower() == "hd":
+            parameters["num_inference_steps"] = 40
+        else:
+            parameters["num_inference_steps"] = 20
+
+        client = InferenceClient(provider="fal-ai", api_key=api_key, timeout=600)
+        video = client.text_to_video(
+            ", ".join(prompt_parts),
+            model=model,
+            **parameters,
         )
-        if not response.ok:
-            detail = response.text[:500] or "Pollinations could not generate this video."
-            raise HTTPException(status_code=response.status_code, detail=f"Video generation failed: {detail}")
-        media_type = response.headers.get("content-type", "video/mp4").split(";", 1)[0]
-        if not media_type.startswith("video/"):
-            raise HTTPException(status_code=502, detail="Pollinations returned an unexpected response instead of an MP4 video.")
+        content = video.read() if hasattr(video, "read") else bytes(video)
+        if not content:
+            raise RuntimeError("Hugging Face returned an empty video.")
         return Response(
-            content=response.content,
-            media_type=media_type,
+            content=content,
+            media_type="video/mp4",
             headers={"Content-Disposition": "attachment; filename=generated-video.mp4"},
         )
-    except requests.RequestException as error:
-        raise HTTPException(status_code=502, detail="Could not reach the video provider. Please retry shortly.") from error
+    except HTTPException:
+        raise
+    except Exception as error:
+        message = str(error)
+        if "401" in message or "403" in message:
+            message = "Hugging Face rejected HF_TOKEN. Create a token with Inference Providers permission and update Railway Variables."
+        elif "402" in message or "payment" in message.lower() or "credit" in message.lower():
+            message = "Your Hugging Face Inference Providers account needs available credits for video generation."
+        raise HTTPException(status_code=502, detail=f"Video generation failed: {message[:500]}") from error

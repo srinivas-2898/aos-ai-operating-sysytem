@@ -12,4 +12,5 @@ openai
 httpx
 Pillow
 cryptography
+huggingface_hub
 playwright
