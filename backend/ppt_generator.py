@@ -87,7 +87,9 @@ def _generate_slide_content(prompt, slide_count):
         raise RuntimeError("GEMINI_API_KEY_2 is not configured in Railway Variables.")
 
     try:
-        model = os.getenv("PPT_GEMINI_MODEL", "gemini-2.5-flash")
+        # Gemini 2.5 Flash is unavailable for some newly created API projects.
+        # Gemini 3.6 Flash is the supported stable replacement for this flow.
+        model = os.getenv("PPT_GEMINI_MODEL", "gemini-3.6-flash")
         response = requests.post(
             f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
             params={"key": gemini_key},
@@ -95,7 +97,6 @@ def _generate_slide_content(prompt, slide_count):
                 "system_instruction": {"parts": [{"text": system}]},
                 "contents": [{"role": "user", "parts": [{"text": user}]}],
                 "generationConfig": {
-                    "temperature": 0.7,
                     "maxOutputTokens": 8192,
                     "responseMimeType": "application/json",
                 },
