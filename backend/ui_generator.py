@@ -355,10 +355,10 @@ def generate_html_screen(project_name: str, app_type: str, screen_name: str, fea
         clean_code = re.sub(r'^(?:```html|"""html|\'\'\'html|```|"""|\'\'\')\s*', '', clean_code, flags=re.IGNORECASE)
         clean_code = re.sub(r'\s*(?:```|"""|\'\'\')$', '', clean_code)
         
-        # Find the start of the HTML document
-        html_start_match = re.search(r'(<!DOCTYPE html|<html)', clean_code, re.IGNORECASE)
-        if html_start_match:
-            clean_code = clean_code[html_start_match.start():].strip()
+        # Find the start of the first HTML tag to clean up any leading wrapper artifacts
+        tag_start_match = re.search(r'<[a-zA-Z!]', clean_code)
+        if tag_start_match:
+            clean_code = clean_code[tag_start_match.start():].strip()
             
         # Strip trailing quotes or backticks
         clean_code = clean_code.strip('`"\' \t\n\r')

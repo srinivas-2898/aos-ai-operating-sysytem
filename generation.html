@@ -618,9 +618,12 @@ async function generateUIScreens() {
   btn.textContent = 'Generating...'
   btn.disabled = true
   
-  document.getElementById('ui-empty').style.display = 'none'
-  document.getElementById('ui-screens-grid').style.display = 'grid'
-  document.getElementById('ui-screens-grid').innerHTML = ''
+  const isDesktopLayout = document.getElementById('ui-platform').value === 'desktop';
+  const grid = document.getElementById('ui-screens-grid');
+  grid.style.display = 'grid';
+  grid.style.gridTemplateColumns = `repeat(auto-fill, minmax(${isDesktopLayout ? 350 : 230}px, 1fr))`;
+  grid.style.gap = '28px';
+  grid.innerHTML = '';
   
   showLoading('ui-screens')
   
@@ -1126,7 +1129,10 @@ document.addEventListener('aos-generation-history', (event) => {
   if (uiFiles.length > 0) {
     const emptyImg = document.getElementById('ui-empty');
     if (emptyImg) emptyImg.style.display = 'none';
+    const hasDesktopLayout = uiFiles.some(file => file.title.includes('(desktop)'));
     grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = `repeat(auto-fill, minmax(${hasDesktopLayout ? 350 : 230}px, 1fr))`;
+    grid.style.gap = '28px';
     grid.innerHTML = '';
     
     uiFiles.forEach(file => {
