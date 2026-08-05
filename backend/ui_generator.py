@@ -327,6 +327,7 @@ def generate_html_screen(project_name: str, app_type: str, screen_name: str, fea
         "Design Instructions:\n"
         "- Return ONLY the valid HTML code, containing standard HTML tags, CSS styled inline in a <style> block, and HTML layout. Do NOT wrap the output in markdown code block ticks (```html or ```) and do NOT add any markdown, comments, or explanations outside the HTML code.\n"
         "- Customize all text, fields, labels, buttons, dashboard layouts, charts, and colors to represent the target app description exactly. Prioritize the app features and branding described in the user's prompt (e.g. if they describe an e-commerce app, use e-commerce branding, terms, and products, even if the project name is different or unrelated). Do NOT use generic or unrelated placeholders.\n"
+        "- Do NOT use mock placeholders or plain boxes for images, logos, or backgrounds. Instead, whenever you need an image, avatar, app logo, or graphic banner, use an <img> tag with src formatted EXACTLY as: src=\"ai-image:<describe the exact illustration, product, avatar, or logo you want here>\". Example: <img src=\"ai-image:sleek modern business dashboard logo, vector, minimal\" />. The backend will automatically replace these placeholders with real AI generated graphics.\n"
         "- The styling must be modern, premium, using gradients, rounded cards, beautiful buttons, clean typography, and responsive structures. Make it look beautiful and fully populated with real content (no Lorem Ipsum)."
     )
     
@@ -389,6 +390,51 @@ def generate_html_screen(project_name: str, app_type: str, screen_name: str, fea
 </body>
 </html>"""
         
+        # Embed real AI-generated illustrations/logos matching the placeholder image tags
+        try:
+            import os
+            import urllib.parse
+            import requests
+            import base64
+            
+            image_pattern = r'src=["\']ai-image:(.*?)["\']'
+            matches = list(set(re.findall(image_pattern, clean_code)))
+            
+            hf_token = os.environ.get("HF_TOKEN")
+            if hf_token:
+                # Limit to 3 images per screen to guarantee fast response
+                for prompt_desc in matches[:3]:
+                    try:
+                        hf_url = 'https://router.huggingface.co/nscale/v1/images/generations'
+                        headers = {'Authorization': f'Bearer {hf_token}'}
+                        art_prompt = f"{prompt_desc.strip()}, highly detailed premium app UI asset illustration style"
+                        payload = {
+                            'model': 'black-forest-labs/FLUX.1-schnell',
+                            'prompt': art_prompt,
+                            'response_format': 'b64_json'
+                        }
+                        res = requests.post(hf_url, json=payload, headers=headers, timeout=20)
+                        if res.status_code == 200:
+                            b64_data = res.json().get('data', [{}])[0].get('b64_json')
+                            if b64_data:
+                                data_uri = f"data:image/png;base64,{b64_data}"
+                                clean_code = clean_code.replace(f"ai-image:{prompt_desc}", data_uri)
+                            else:
+                                raise ValueError("Empty b64 content")
+                        else:
+                            raise ValueError(f"HTTP {res.status_code}")
+                    except Exception as img_err:
+                        print(f"Failed to generate UI illustration '{prompt_desc}': {img_err}")
+                        fallback_svg = f"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%23eff6ff' rx='10'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='6' fill='%233b82f6'>{urllib.parse.quote(prompt_desc[:20])}</text></svg>"
+                        clean_code = clean_code.replace(f"ai-image:{prompt_desc}", fallback_svg)
+            else:
+                # Fallback for all placeholders if token is missing
+                for prompt_desc in matches:
+                    fallback_svg = f"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%23eff6ff' rx='10'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='6' fill='%233b82f6'>{urllib.parse.quote(prompt_desc[:20])}</text></svg>"
+                    clean_code = clean_code.replace(f"ai-image:{prompt_desc}", fallback_svg)
+        except Exception as parse_err:
+            print("Failed parsing and embedding UI illustrations:", parse_err)
+            
         return clean_code
     except Exception as e:
         print("Dynamic UI Generation failed, falling back to static templates:", e)
