@@ -145,16 +145,39 @@ def chat(data: dict):
         raise HTTPException(status_code=500, detail='An internal server error occurred.')
 
 @app.post('/api/generate/image')
-def generate_image(data: dict):
+async def generate_image(data: dict):
     """Generate an image through Hugging Face; the token never reaches the browser."""
     prompt = (data.get('prompt') or '').strip()
     model = data.get('model') or 'black-forest-labs/FLUX.1-schnell'
+    layout_mode = data.get('layout_mode') or False
+    
     if not prompt:
         raise HTTPException(status_code=400, detail='An image prompt is required.')
     if model not in HF_IMAGE_MODELS:
         raise HTTPException(status_code=400, detail='Unsupported Hugging Face image model.')
     if not HF_TOKEN:
         raise HTTPException(status_code=503, detail='Hugging Face image API is not configured on the server.')
+
+    if layout_mode:
+        gemini_api_key = os.getenv("GEMINI_API_KEY_2") or os.getenv("GEMINI_API_KEY")
+        if not gemini_api_key:
+            raise HTTPException(status_code=503, detail='Gemini API key is not configured on the server.')
+        try:
+            import sys
+            backend_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backend")
+            if backend_dir not in sys.path:
+                sys.path.append(backend_dir)
+            from poster_generator import create_layout_aware_poster
+            img_b64 = await create_layout_aware_poster(prompt, gemini_api_key, model)
+            return {
+                'image_url': img_b64,
+                'provider': 'huggingface_layout_composite',
+                'model': model
+            }
+        except Exception as error:
+            import traceback
+            traceback.print_exc()
+            raise HTTPException(status_code=502, detail=f'Layout-aware image composition failed: {str(error)}')
 
     try:
         response = httpx.post(

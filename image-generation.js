@@ -89,11 +89,11 @@
     });
   });
 
-  const generateSingleImage = async (prompt, model, rawPrompt, gallery, loadingSkeleton) => {
+  const generateSingleImage = async (prompt, model, rawPrompt, gallery, loadingSkeleton, layoutMode) => {
     try {
       const response = await fetch(imageEndpoint(), {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, model })
+        body: JSON.stringify({ prompt, model, layout_mode: layoutMode })
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.image_url) throw new Error(result.error || 'The image provider did not return an image.');
@@ -175,13 +175,16 @@
     const button = document.getElementById('img-gen-btn');
     const gallery = document.getElementById('img-gallery');
     
+    const layoutMode = document.getElementById('img-layout-mode')?.value === 'true';
+    const count = layoutMode ? 1 : 3;
+    
     button.disabled = true;
-    button.textContent = 'Creating 3 images…';
+    button.textContent = `Creating ${count} image${count > 1 ? 's' : ''}...`;
     document.getElementById('img-gallery-empty')?.remove();
 
-    // Create 3 skeletons
+    // Create skeletons
     const skeletons = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < count; i++) {
       const loading = document.createElement('div');
       loading.className = 'skeleton skeleton-img';
       loading.setAttribute('aria-label', `Generating image ${i + 1}`);
@@ -190,9 +193,9 @@
     }
 
     try {
-      // Run 3 requests in parallel
+      // Run requests in parallel
       await Promise.allSettled(skeletons.map(skeleton => 
-        generateSingleImage(prompt, model, rawPrompt, gallery, skeleton)
+        generateSingleImage(prompt, model, rawPrompt, gallery, skeleton, layoutMode)
       ));
       showToast('Finished generating images.');
     } catch (err) {
