@@ -47,7 +47,14 @@ class SingleScreenRequest(BaseModel):
 # Function call_deepseek_for_ui:
 def call_deepseek_for_ui(project_name: str, app_type: str, screen_name: str, features: list, description: str, theme: dict) -> dict:
     DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY_2") or os.getenv("GEMINI_API_KEY")
+    OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+    
     DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/auto")
+    GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
     
     system_prompt = f"""You are an expert mobile UI designer. Generate content for a {screen_name} screen.
     Return ONLY valid JSON with this exact structure based on the screen type:
@@ -125,30 +132,104 @@ def call_deepseek_for_ui(project_name: str, app_type: str, screen_name: str, fea
     
     user_prompt = f"Generate UI content for {screen_name} screen of {project_name} app ({app_type}). Description: {description}"
     
-    headers = {
-        "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": "deepseek-chat",
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
-        "max_tokens": 1500,
-        "temperature": 0.8
-    }
-    
-    response = requests.post(DEEPSEEK_URL, headers=headers, json=payload)
-    result = response.json()
-    content = result["choices"][0]["message"]["content"]
-    
-    # Try to parse JSON:
-    start = content.find('{')
-    end = content.rfind('}') + 1
-    if start >= 0 and end > start:
-        return json.loads(content[start:end])
-    return {}
+    # Try DeepSeek:
+    if DEEPSEEK_API_KEY:
+        try:
+            headers = {
+                "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": "deepseek-chat",
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "max_tokens": 1500,
+                "temperature": 0.8
+            }
+            response = requests.post(DEEPSEEK_URL, headers=headers, json=payload, timeout=45)
+            response.raise_for_status()
+            content = response.json()["choices"][0]["message"]["content"]
+            start = content.find('{')
+            end = content.rfind('}') + 1
+            if start >= 0 and end > start:
+                return json.loads(content[start:end])
+        except Exception as e:
+            print(f"UI Gen - DeepSeek failed: {e}")
+            
+    # Try Gemini:
+    if GEMINI_API_KEY:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
+            payload = {
+                "system_instruction": {"parts": [{"text": system_prompt}]},
+                "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
+                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2000}
+            }
+            response = requests.post(url, params={"key": GEMINI_API_KEY}, json=payload, timeout=45)
+            response.raise_for_status()
+            content = response.json()["candidates"][0]["content"]["parts"][0]["text"]
+            start = content.find('{')
+            end = content.rfind('}') + 1
+            if start >= 0 and end > start:
+                return json.loads(content[start:end])
+        except Exception as e:
+            print(f"UI Gen - Gemini failed: {e}")
+            
+    # Try OpenRouter:
+    if OPENROUTER_API_KEY:
+        try:
+            headers = {
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": OPENROUTER_MODEL,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "max_tokens": 1500,
+                "temperature": 0.8
+            }
+            response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload, timeout=45)
+            response.raise_for_status()
+            content = response.json()["choices"][0]["message"]["content"]
+            start = content.find('{')
+            end = content.rfind('}') + 1
+            if start >= 0 and end > start:
+                return json.loads(content[start:end])
+        except Exception as e:
+            print(f"UI Gen - OpenRouter failed: {e}")
+            
+    # Try Groq:
+    if GROQ_API_KEY:
+        try:
+            headers = {
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": GROQ_MODEL,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "max_tokens": 1500,
+                "temperature": 0.8
+            }
+            response = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=45)
+            response.raise_for_status()
+            content = response.json()["choices"][0]["message"]["content"]
+            start = content.find('{')
+            end = content.rfind('}') + 1
+            if start >= 0 and end > start:
+                return json.loads(content[start:end])
+        except Exception as e:
+            print(f"UI Gen - Groq failed: {e}")
+            
+    raise Exception("No configured AI providers succeeded for UI screen generation.")
 
 # Function render_template:
 def render_template(template: str, data: dict, theme: dict) -> str:

@@ -637,49 +637,51 @@ async function generateUIScreens() {
       })
     })
     
-    const data = await response.json()
+    const data = await response.json().catch(() => ({}));
     
     hideLoading('ui-screens')
     
-    if (data.success && data.screens) {
-      for (const screen of data.screens) {
-        let savedId = null;
-        try {
-          const fetchUrl = apiEndpoint(screen.type === 'image' ? screen.url : screen.preview_url);
-          const res = await fetch(fetchUrl);
-          const blob = await res.blob();
-          
-          const ext = screen.type === 'image' ? 'png' : 'html';
-          const filename = `ui-screen-${screen.screen_name}-${Date.now()}.${ext}`;
-          
-          if (window.AOSGenerationStorage) {
-            const savedFile = await window.AOSGenerationStorage.saveBlob({
-              blob: blob,
-              filename: filename,
-              title: `UI Screen - ${screen.screen_name}`,
-              type: screen.type === 'image' ? 'Image' : 'HTML',
-              prompt: description
-            });
-            if (savedFile && savedFile.id) {
-              savedId = savedFile.id;
-            }
-          }
-        } catch (saveErr) {
-          console.error("Failed to save screen to Supabase:", saveErr);
-        }
+    if (!response.ok || !data.success || !data.screens) {
+      throw new Error(data.error || data.detail || `Server returned status ${response.status}`);
+    }
+    
+    for (const screen of data.screens) {
+      let savedId = null;
+      try {
+        const fetchUrl = apiEndpoint(screen.type === 'image' ? screen.url : screen.preview_url);
+        const res = await fetch(fetchUrl);
+        const blob = await res.blob();
         
-        const phoneFrame = renderUIPhoneFrame({
-          screen_name: screen.screen_name,
-          type: screen.type,
-          url: screen.url,
-          preview_url: screen.preview_url,
-          id: savedId
-        });
-        document.getElementById('ui-screens-grid').appendChild(phoneFrame)
+        const ext = screen.type === 'image' ? 'png' : 'html';
+        const filename = `ui-screen-${screen.screen_name}-${Date.now()}.${ext}`;
+        
+        if (window.AOSGenerationStorage) {
+          const savedFile = await window.AOSGenerationStorage.saveBlob({
+            blob: blob,
+            filename: filename,
+            title: `UI Screen - ${screen.screen_name}`,
+            type: screen.type === 'image' ? 'Image' : 'HTML',
+            prompt: description
+          });
+          if (savedFile && savedFile.id) {
+            savedId = savedFile.id;
+          }
+        }
+      } catch (saveErr) {
+        console.error("Failed to save screen to Supabase:", saveErr);
       }
       
-      showSuccess(data.count + ' UI screens generated successfully!')
+      const phoneFrame = renderUIPhoneFrame({
+        screen_name: screen.screen_name,
+        type: screen.type,
+        url: screen.url,
+        preview_url: screen.preview_url,
+        id: savedId
+      });
+      document.getElementById('ui-screens-grid').appendChild(phoneFrame)
     }
+    
+    showSuccess(data.count + ' UI screens generated successfully!')
     
   } catch(e) {
     hideLoading('ui-screens')
