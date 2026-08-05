@@ -124,7 +124,18 @@
       const projectId = new URLSearchParams(location.search).get('project_id');
       if (projectId) {
         try {
-          const imageBlob = await (await fetch(result.image_url)).blob();
+          const dataURItoBlob = (dataURI) => {
+            const parts = dataURI.split(',');
+            const byteString = atob(parts[1]);
+            const mimeString = parts[0].split(':')[1].split(';')[0];
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) {
+              ia[i] = byteString.charCodeAt(i);
+            }
+            return new Blob([ab], { type: mimeString });
+          };
+          const imageBlob = dataURItoBlob(result.image_url);
           const filename = `generated-image-${Date.now()}-${Math.random().toString(36).substring(2, 7)}.png`;
           if (!window.AOSGenerationStorage) throw new Error('Generation storage is not ready. Refresh and try again.');
           const savedFile = await window.AOSGenerationStorage.saveBlob({

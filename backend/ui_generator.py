@@ -264,7 +264,11 @@ def generate_html_screen(project_name: str, app_type: str, screen_name: str, fea
 async def html_to_image_playwright(html_content: str, output_path: str) -> bool:
     try:
         async with async_playwright() as p:
-            browser = await p.chromium.launch()
+            try:
+                browser = await p.chromium.launch(executable_path='chromium')
+            except Exception as e1:
+                print(f"Failed launch with system chromium: {e1}. Trying default launch...")
+                browser = await p.chromium.launch()
             page = await browser.new_page()
             await page.set_viewport_size({"width": 390, "height": 844})
             await page.set_content(html_content, wait_until="networkidle")
@@ -272,6 +276,8 @@ async def html_to_image_playwright(html_content: str, output_path: str) -> bool:
             await browser.close()
             return True
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Playwright error: {e}")
         return False
 
