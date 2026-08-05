@@ -311,13 +311,47 @@ def render_template(template: str, data: dict, theme: dict) -> str:
     return rendered
 
 # Function generate_html_screen:
-def generate_html_screen(project_name: str, app_type: str, screen_name: str, features: list, description: str) -> str:
-    theme = get_theme(app_type)
-    template = get_screen_template(screen_name)
+def generate_html_screen(project_name: str, app_type: str, screen_name: str, features: list, description: str, platform: str = "mobile") -> str:
+    from main import call_deepseek
     
-    data = call_deepseek_for_ui(project_name, app_type, screen_name, features, description, theme)
+    is_mobile = platform == "mobile"
+    system_prompt = (
+        "You are an expert front-end developer and UI/UX designer. Generate complete, single-file HTML & CSS code for a premium, highly responsive UI screen.\n\n"
+        "Requirements:\n"
+        f"- Target Screen Name: {screen_name}\n"
+        f"- Layout Style: {'Mobile layout (390px width by 844px height, vertically centered card)' if is_mobile else 'Desktop / Laptop Browser layout (full screen 16:9 view, responsive panels, widescreen grid)'}\n"
+        f"- Project Name: {project_name}\n"
+        f"- App Type/Category: {app_type}\n"
+        f"- Specific Requirements & Prompt: {description}\n"
+        f"- Core Features list: {', '.join(features) if features else 'Standard features'}\n\n"
+        "Design Instructions:\n"
+        "- Return ONLY the valid HTML code, containing standard HTML tags, CSS styled inline in a <style> block, and HTML layout. Do NOT wrap the output in markdown code block ticks (```html or ```) and do NOT add any markdown, comments, or explanations outside the HTML code.\n"
+        "- Customize all text, fields, buttons, dashboard layouts, charts, and colors to represent the target prompt exactly. Do NOT use mock placeholder names like 'vit nav guide' or 'CampusConnect' unless explicitly requested. Use actual app-related text and branding.\n"
+        "- The styling must be modern, premium, using gradients, rounded cards, beautiful buttons, clean typography, and responsive structures. Make it look beautiful and fully populated with real content (no Lorem Ipsum)."
+    )
     
-    html_content = f"""<!DOCTYPE html>
+    user_prompt = f"Create full HTML code for the {screen_name} screen of the project: {project_name}. Specific requirements: {description}"
+    
+    try:
+        html_code = call_deepseek(system_prompt, user_prompt)
+        clean_code = html_code.strip()
+        if clean_code.startswith("```"):
+            lines = clean_code.split("\n")
+            if lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            clean_code = "\n".join(lines).strip()
+        return clean_code
+    except Exception as e:
+        print("Dynamic UI Generation failed, falling back to static templates:", e)
+        theme = get_theme(app_type)
+        template = get_screen_template(screen_name)
+        try:
+            data = call_deepseek_for_ui(project_name, app_type, screen_name, features, description, theme)
+        except Exception:
+            data = {}
+        return f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -338,11 +372,10 @@ def generate_html_screen(project_name: str, app_type: str, screen_name: str, fea
 {render_template(template, data, theme)}
 </body>
 </html>"""
-    
-    return html_content
+
 
 # Async function html_to_image using playwright:
-async def html_to_image_playwright(html_content: str, output_path: str) -> bool:
+async def html_to_image_playwright(html_content: str, output_path: str, platform: str = "mobile") -> bool:
     try:
         async with async_playwright() as p:
             try:
@@ -356,7 +389,9 @@ async def html_to_image_playwright(html_content: str, output_path: str) -> bool:
                     args=['--no-sandbox', '--disable-setuid-sandbox']
                 )
             page = await browser.new_page()
-            await page.set_viewport_size({"width": 390, "height": 844})
+            width = 390 if platform == "mobile" else 1280
+            height = 844 if platform == "mobile" else 720
+            await page.set_viewport_size({"width": width, "height": height})
             await page.set_content(html_content, wait_until="networkidle")
             await page.screenshot(path=output_path, full_page=False)
             await browser.close()
@@ -366,6 +401,7 @@ async def html_to_image_playwright(html_content: str, output_path: str) -> bool:
         traceback.print_exc()
         print(f"Playwright error: {e}")
         return False
+
 
 # Function html_to_image_fallback saves HTML file:
 def save_html_screen(html_content: str, output_path: str) -> bool:
@@ -378,12 +414,14 @@ def save_html_screen(html_content: str, output_path: str) -> bool:
         print(f"HTML save error: {e}")
         return False
 
+
 # API Routes:
 
 @router.post("/api/generate-ui-screens")
 async def generate_ui_screens(request: UIGenerationRequest):
     try:
         results = []
+        platform_layout = request.platform or "mobile"
         
         for screen_name in request.screens:
             html_content = generate_html_screen(
@@ -391,7 +429,8 @@ async def generate_ui_screens(request: UIGenerationRequest):
                 request.app_type,
                 screen_name,
                 request.features,
-                request.description
+                request.description,
+                platform_layout
             )
             
             filename = f"screen_{uuid.uuid4().hex[:8]}"
@@ -401,7 +440,7 @@ async def generate_ui_screens(request: UIGenerationRequest):
             image_generated = False
             
             if PLAYWRIGHT_AVAILABLE:
-                image_generated = await html_to_image_playwright(html_content, png_path)
+                image_generated = await html_to_image_playwright(html_content, png_path, platform_layout)
             
             if not image_generated:
                 with open(html_path, 'w', encoding='utf-8') as f:
@@ -412,14 +451,16 @@ async def generate_ui_screens(request: UIGenerationRequest):
                     "path": html_path,
                     "url": f"/api/ui-screen-html/{filename}",
                     "preview_url": f"/api/ui-screen-preview/{filename}",
-                    "code": html_content
+                    "code": html_content,
+                    "platform": platform_layout
                 })
             else:
                 results.append({
                     "screen_name": screen_name,
                     "type": "image",
                     "path": png_path,
-                    "url": f"/api/ui-screen-image/{filename}"
+                    "url": f"/api/ui-screen-image/{filename}",
+                    "platform": platform_layout
                 })
         
         return JSONResponse({"success": True, "screens": results, "count": len(results)})
@@ -455,12 +496,14 @@ async def get_ui_screen_preview(filename: str):
 @router.post("/api/generate-single-screen")
 async def generate_single_screen(request: SingleScreenRequest):
     try:
+        platform_layout = request.platform or "mobile"
         html_content = generate_html_screen(
             request.project_name,
             request.app_type,
             request.screen_name,
             request.features,
-            request.description
+            request.description,
+            platform_layout
         )
         
         filename = f"screen_{uuid.uuid4().hex[:8]}"
@@ -469,7 +512,7 @@ async def generate_single_screen(request: SingleScreenRequest):
         
         image_generated = False
         if PLAYWRIGHT_AVAILABLE:
-            image_generated = await html_to_image_playwright(html_content, png_path)
+            image_generated = await html_to_image_playwright(html_content, png_path, platform_layout)
         
         if image_generated:
             return FileResponse(png_path, media_type="image/png", filename=f"{request.screen_name}.png")
@@ -479,7 +522,8 @@ async def generate_single_screen(request: SingleScreenRequest):
             return JSONResponse({
                 "success": True,
                 "preview_url": f"/api/ui-screen-preview/{filename}",
-                "screen_name": request.screen_name
+                "screen_name": request.screen_name,
+                "platform": platform_layout
             })
     
     except Exception as e:

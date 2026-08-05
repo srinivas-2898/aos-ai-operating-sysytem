@@ -339,23 +339,23 @@ body{background:radial-gradient(circle at 86% 0,#e0f2fe 0,transparent 28%),#f6f9
     <div class="left-panel">
       <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:20px;color:#111827;margin-bottom:16px;">Generate UI Screens</h2>
       
-      <div class="form-group">
+      <div class="form-group" style="display: none;">
         <label class="form-label" style="font-family:Inter,sans-serif;font-weight:500;font-size:13px;color:#374151;margin-bottom:6px;display:block;">Project Name</label>
         <input class="form-input" id="ui-project-name" placeholder="e.g. Smart Campus Navigation" style="width:100%;height:48px;background:white;border:1.5px solid #e5e7eb;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;color:#111827;padding:0 16px;outline:none;" />
       </div>
       
-      <div class="form-group">
+      <div class="form-group" style="display: none;">
         <label class="form-label" style="font-family:Inter,sans-serif;font-weight:500;font-size:13px;color:#374151;margin-bottom:6px;display:block;">App Type</label>
         <select class="form-select" id="ui-app-type" style="width:100%;height:48px;background:white;border:1.5px solid #e5e7eb;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;color:#111827;padding:0 16px;outline:none;">
-          <option value="Navigation">Navigation</option>
-          <option value="E-Commerce">E-Commerce</option>
-          <option value="Social">Social</option>
-          <option value="Health">Health & Fitness</option>
-          <option value="Finance">Finance</option>
-          <option value="Education">Education</option>
-          <option value="Food">Food & Restaurant</option>
-          <option value="Travel">Travel</option>
-          <option value="General">General</option>
+          <option value="General" selected>General</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="font-family:Inter,sans-serif;font-weight:500;font-size:13px;color:#374151;margin-bottom:6px;display:block;">Platform Layout</label>
+        <select class="form-select" id="ui-platform" style="width:100%;height:48px;background:white;border:1.5px solid #e5e7eb;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;color:#111827;padding:0 16px;outline:none;">
+          <option value="mobile" selected>Mobile (9:16 Viewport)</option>
+          <option value="desktop">Desktop / Laptop (16:9 Viewport)</option>
         </select>
       </div>
       
@@ -634,7 +634,7 @@ async function generateUIScreens() {
         description: description,
         screens: selectedScreens,
         features: project.features || [],
-        platform: 'mobile'
+        platform: document.getElementById('ui-platform').value
       })
     })
     
@@ -662,12 +662,13 @@ async function generateUIScreens() {
         
         const ext = screen.type === 'image' ? 'png' : 'html';
         const filename = `ui-screen-${screen.screen_name}-${Date.now()}.${ext}`;
+        const platformLayout = document.getElementById('ui-platform').value;
         
         if (window.AOSGenerationStorage && blob) {
           const savedFile = await window.AOSGenerationStorage.saveBlob({
             blob: blob,
             filename: filename,
-            title: `UI Screen - ${screen.screen_name}`,
+            title: `UI Screen - ${screen.screen_name}${platformLayout === 'desktop' ? ' (desktop)' : ''}`,
             type: screen.type === 'image' ? 'Image' : 'HTML',
             prompt: description
           });
@@ -679,12 +680,14 @@ async function generateUIScreens() {
         console.error("Failed to save screen to Supabase:", saveErr);
       }
       
+      const platformLayout = document.getElementById('ui-platform').value;
       const phoneFrame = renderUIPhoneFrame({
         screen_name: screen.screen_name,
         type: screen.type,
         url: screen.url,
         preview_url: screen.preview_url,
         code: screen.code,
+        platform: platformLayout,
         id: savedId
       });
       document.getElementById('ui-screens-grid').appendChild(phoneFrame)
@@ -699,39 +702,67 @@ async function generateUIScreens() {
     btn.textContent = 'Generate UI Screens'
     btn.disabled = false
     document.dispatchEvent(new CustomEvent('aos-generation-finished'));
-  }
-}
-
 function renderUIPhoneFrame(screen) {
   const phoneFrame = document.createElement('div')
   phoneFrame.className = 'ui-screen-card'
   phoneFrame.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:10px;position:relative;'
   
+  const isDesktop = screen.platform === 'desktop';
+  
   const frameOuter = document.createElement('div')
-  frameOuter.style.cssText = `
-    width: 195px; height: 422px;
-    background: #1a1a2e;
-    border-radius: 32px;
-    padding: 8px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3), inset 0 0 0 2px #333;
-    position: relative;
-  `
+  if (isDesktop) {
+    frameOuter.style.cssText = `
+      width: 344px; height: 216px;
+      background: #1e1e2f;
+      border-radius: 12px;
+      padding: 6px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.25), inset 0 0 0 2px #3c3c4e;
+      position: relative;
+    `
+  } else {
+    frameOuter.style.cssText = `
+      width: 195px; height: 422px;
+      background: #1a1a2e;
+      border-radius: 32px;
+      padding: 8px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3), inset 0 0 0 2px #333;
+      position: relative;
+    `
+  }
   
   const notch = document.createElement('div')
-  notch.style.cssText = `
-    position: absolute; top: 8px; left: 50%;
-    transform: translateX(-50%);
-    width: 60px; height: 6px;
-    background: #000; border-radius: 3px; z-index: 10;
-  `
+  if (isDesktop) {
+    notch.style.cssText = `
+      position: absolute; top: 6px; left: 50%;
+      transform: translateX(-50%);
+      width: 6px; height: 6px;
+      background: #000; border-radius: 50%; z-index: 10;
+    `
+  } else {
+    notch.style.cssText = `
+      position: absolute; top: 8px; left: 50%;
+      transform: translateX(-50%);
+      width: 60px; height: 6px;
+      background: #000; border-radius: 3px; z-index: 10;
+    `
+  }
   
   const frameInner = document.createElement('div')
-  frameInner.style.cssText = `
-    width: 100%; height: 100%;
-    border-radius: 26px;
-    overflow: hidden;
-    background: white;
-  `
+  if (isDesktop) {
+    frameInner.style.cssText = `
+      width: 100%; height: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      background: white;
+    `
+  } else {
+    frameInner.style.cssText = `
+      width: 100%; height: 100%;
+      border-radius: 26px;
+      overflow: hidden;
+      background: white;
+    `
+  }
   
   const url = screen.resolved_url || apiEndpoint(screen.type === 'image' ? screen.url : screen.preview_url);
   
@@ -743,7 +774,11 @@ function renderUIPhoneFrame(screen) {
     frameInner.appendChild(img)
   } else {
     const iframe = document.createElement('iframe')
-    iframe.style.cssText = 'width:390px;height:844px;border:none;transform:scale(0.5);transform-origin:top left;pointer-events:none;'
+    if (isDesktop) {
+      iframe.style.cssText = 'width:1280px;height:720px;border:none;transform:scale(0.259);transform-origin:top left;pointer-events:none;'
+    } else {
+      iframe.style.cssText = 'width:390px;height:844px;border:none;transform:scale(0.5);transform-origin:top left;pointer-events:none;'
+    }
     frameInner.style.overflow = 'hidden'
     frameInner.appendChild(iframe)
     
@@ -1111,11 +1146,13 @@ document.addEventListener('aos-generation-history', (event) => {
     grid.innerHTML = '';
     
     uiFiles.forEach(file => {
-      const screenName = file.title.replace('UI Screen - ', '');
+      const isDesktop = file.title.includes('(desktop)');
+      const screenName = file.title.replace('UI Screen - ', '').replace(' (desktop)', '');
       const phoneFrame = renderUIPhoneFrame({
         screen_name: screenName,
         type: file.generation_type === 'image' ? 'image' : 'html',
         resolved_url: file.resolved_url,
+        platform: isDesktop ? 'desktop' : 'mobile',
         id: file.id
       });
       grid.appendChild(phoneFrame);
@@ -1201,6 +1238,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Explicitly switch to the active tab to align visuals and content panels
         if (typeof switchTab === 'function') {
           switchTab(hash);
+        }
+        
+        // Auto-detect mobile vs desktop platform layout based on project description and prompt context
+        const isDesktopProject = (window.AOS_PROJECT?.platform === 'web') || 
+                                 (window.AOS_PROJECT?.description?.toLowerCase().includes('desktop')) || 
+                                 (window.AOS_PROJECT?.description?.toLowerCase().includes('web')) || 
+                                 (window.AOS_PROJECT?.description?.toLowerCase().includes('website')) ||
+                                 (autoPrompt.toLowerCase().includes('desktop')) || 
+                                 (autoPrompt.toLowerCase().includes('web')) ||
+                                 (autoPrompt.toLowerCase().includes('website'));
+        const platformSelect = document.getElementById('ui-platform');
+        if (platformSelect) {
+          platformSelect.value = isDesktopProject ? 'desktop' : 'mobile';
         }
         
         if (hash === 'ui-screens') {
