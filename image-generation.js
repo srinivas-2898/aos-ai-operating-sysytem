@@ -175,8 +175,8 @@
     const button = document.getElementById('img-gen-btn');
     const gallery = document.getElementById('img-gallery');
     
-    const layoutMode = document.getElementById('img-layout-mode')?.value === 'true';
-    const count = layoutMode ? 1 : 3;
+    const layoutMode = true;
+    const count = 3;
     
     button.disabled = true;
     button.textContent = `Creating ${count} image${count > 1 ? 's' : ''}...`;
