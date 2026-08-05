@@ -80,11 +80,30 @@ def _generate_slide_content(prompt, slide_count):
     )
     user = f"Create a {slide_count}-slide presentation about: {prompt}"
 
-    # The central AOS generator tries DeepSeek first, then configured fallbacks.
-    # Keeping it here avoids exposing any provider key to the browser.
+    # Presentations use the dedicated Gemini key. This stays server-side and is
+    # never exposed to the Firebase frontend.
+    gemini_key = os.getenv("GEMINI_API_KEY_2")
+    if not gemini_key:
+        raise RuntimeError("GEMINI_API_KEY_2 is not configured in Railway Variables.")
+
     try:
-        from main import call_deepseek
-        reply = call_deepseek(system, user, response_format="json")
+        model = os.getenv("PPT_GEMINI_MODEL", "gemini-2.5-flash")
+        response = requests.post(
+            f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+            params={"key": gemini_key},
+            json={
+                "system_instruction": {"parts": [{"text": system}]},
+                "contents": [{"role": "user", "parts": [{"text": user}]}],
+                "generationConfig": {
+                    "temperature": 0.7,
+                    "maxOutputTokens": 8192,
+                    "responseMimeType": "application/json",
+                },
+            },
+            timeout=90,
+        )
+        response.raise_for_status()
+        reply = response.json()["candidates"][0]["content"]["parts"][0]["text"]
         match = re.search(r'(\{.*\})', reply.strip(), re.DOTALL)
         if match:
             generated = json.loads(match.group(1))
@@ -92,21 +111,8 @@ def _generate_slide_content(prompt, slide_count):
                 return generated
         raise ValueError("The AI response did not contain a slides array.")
     except Exception as error:
-        # A presentation remains available even during a provider outage, but no
-        # raw model response is ever inserted into a slide.
-        print(f"DeepSeek PPT content generation failed; using presentation fallback: {error}")
-
-    # Fallback: basic structure
-    slides = [{"title": prompt[:60], "subtitle": "AI-Generated Presentation", "bullet_points": [], "image_prompt": f"professional illustration about {prompt}", "speaker_notes": ""}]
-    for i in range(1, slide_count):
-        slides.append({
-            "title": f"Section {i}",
-            "subtitle": "",
-            "bullet_points": [f"Key point about {prompt}"],
-            "image_prompt": f"business illustration related to {prompt}",
-            "speaker_notes": ""
-        })
-    return {"title": prompt[:60], "slides": slides}
+        detail = response.text[:300] if 'response' in locals() else str(error)
+        raise RuntimeError(f"Gemini PPT generation failed: {detail}") from error
 
 
 def _generate_image(prompt, width=400, height=300):
