@@ -337,20 +337,32 @@ def generate_html_screen(project_name: str, app_type: str, screen_name: str, fea
         html_code = call_deepseek(system_prompt, user_prompt)
         clean_code = html_code.strip()
         
-        # Strip markdown ```html or ``` block tags
-        code_block_match = re.search(r'```html\s*(.*?)\s*```', clean_code, re.DOTALL | re.IGNORECASE)
-        if code_block_match:
-            clean_code = code_block_match.group(1).strip()
-        else:
-            generic_block_match = re.search(r'```\s*(.*?)\s*```', clean_code, re.DOTALL | re.IGNORECASE)
-            if generic_block_match:
-                clean_code = generic_block_match.group(1).strip()
+        # Strip code blocks wrapped in backticks or python triple quotes
+        for pattern in [
+            r'```html\s*(.*?)\s*```',
+            r'"""html\s*(.*?)\s*"""',
+            r"'''html\s*(.*?)\s*'''",
+            r'```\s*(.*?)\s*```',
+            r'"""\s*(.*?)\s*"""',
+            r"'''\s*(.*?)\s*'''"
+        ]:
+            match = re.search(pattern, clean_code, re.DOTALL | re.IGNORECASE)
+            if match:
+                clean_code = match.group(1).strip()
+                break
                 
-        # Find exact html substring to drop conversational text headers or footers
-        html_tag_match = re.search(r'(<!DOCTYPE html>.*?</html>|<html.*?</html>)', clean_code, re.DOTALL | re.IGNORECASE)
-        if html_tag_match:
-            clean_code = html_tag_match.group(1).strip()
+        # Clean up any remaining block wrappers from the start/end
+        clean_code = re.sub(r'^(?:```html|"""html|\'\'\'html|```|"""|\'\'\')\s*', '', clean_code, flags=re.IGNORECASE)
+        clean_code = re.sub(r'\s*(?:```|"""|\'\'\')$', '', clean_code)
+        
+        # Find the start of the HTML document
+        html_start_match = re.search(r'(<!DOCTYPE html|<html)', clean_code, re.IGNORECASE)
+        if html_start_match:
+            clean_code = clean_code[html_start_match.start():].strip()
             
+        # Strip trailing quotes or backticks
+        clean_code = clean_code.strip('`"\' \t\n\r')
+        
         return clean_code
     except Exception as e:
         print("Dynamic UI Generation failed, falling back to static templates:", e)
