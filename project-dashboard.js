@@ -61,7 +61,7 @@ function projectCard(project) {
 async function loadProjects() {
   const { data, error } = await aosSupabase.from('projects').select('*').order('last_opened_at', { ascending: false });
   if (error) throw error;
-  projects = data || [];
+  projects = (data || []).filter(p => !p.description?.startsWith('[DELETED]'));
   renderDashboard();
 }
 
@@ -197,7 +197,9 @@ async function deleteProject(projectId, event) {
     return;
   }
   try {
-    const { error } = await aosSupabase.from('projects').delete().eq('id', projectId);
+    const project = projects.find(p => p.id === projectId);
+    const desc = project ? project.description || '' : '';
+    const { error } = await aosSupabase.from('projects').update({ description: '[DELETED] ' + desc }).eq('id', projectId);
     if (error) throw error;
     projects = projects.filter(p => p.id !== projectId);
     renderDashboard();

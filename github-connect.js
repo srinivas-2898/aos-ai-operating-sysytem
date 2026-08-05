@@ -13,13 +13,14 @@
   async function loadProjects(client) {
     const select = document.getElementById('github-proj-select');
     const list = document.getElementById('sidebar-proj-list');
-    const { data: projects, error } = await client.from('projects').select('id,name').order('created_at', { ascending: false });
+    const { data: rawProjects, error } = await client.from('projects').select('id,name,description').order('created_at', { ascending: false });
     if (error) {
       if (select) select.innerHTML = '<option value="">Could not load projects</option>';
       if (list) list.textContent = 'Could not load projects.';
       setStatus(`Projects could not load: ${error.message}`, '#b91c1c');
       return;
     }
+    const projects = (rawProjects || []).filter(p => !p.description?.startsWith('[DELETED]'));
     if (!projects?.length) {
       if (select) select.innerHTML = '<option value="">No AOS projects yet</option>';
       if (list) list.textContent = 'No projects saved yet';

@@ -685,8 +685,9 @@ function toggleSidebar() {
 async function loadProjects() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return;
-  const { data: projects, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+  const { data: rawProjects, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
   if (error) { console.error('Error loading projects:', error); return; }
+  const projects = (rawProjects || []).filter(p => !p.description?.startsWith('[DELETED]'));
   const listEl = document.getElementById('sidebar-proj-list');
   const selectEl = document.getElementById('deploy-proj-select');
   const githubSelect = document.getElementById('github-proj-select');

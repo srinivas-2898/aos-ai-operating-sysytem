@@ -228,7 +228,7 @@
       supabase.from('deployments').select('project_id,provider,status,deployment_url,metadata,created_at,projects(name)').order('created_at', { ascending: false }).limit(50)
     ]);
 
-    const projects = projectsResult.data || [];
+    const projects = (projectsResult.data || []).filter(p => !p.description?.startsWith('[DELETED]'));
     const files = filesResult.data || [];
     const deployments = deploymentsResult.data || [];
 
