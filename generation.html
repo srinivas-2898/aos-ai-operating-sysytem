@@ -1125,9 +1125,9 @@ document.addEventListener('DOMContentLoaded', () => {
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if (session) {
       populateUserUI(session.user);
-      // Keep search params intact for project identification and auto-run
-      if (window.location.hash && !window.location.search.includes('auto=true')) {
-        history.replaceState(null, '', window.location.pathname);
+      // Only clear OAuth hash credentials, never clear tab hashes or project query parameters
+      if (window.location.hash && (window.location.hash.includes('access_token') || window.location.hash.includes('error='))) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
       }
     } else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
       if (!session) window.location.href = 'index.html';
@@ -1148,6 +1148,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Find which tab is active based on the URL hash
         const hash = window.location.hash.slice(1) || 'ui-screens';
+        
+        // Explicitly switch to the active tab to align visuals and content panels
+        if (typeof switchTab === 'function') {
+          switchTab(hash);
+        }
         
         if (hash === 'ui-screens') {
           const nameInput = document.getElementById('ui-project-name');
