@@ -16,7 +16,6 @@ import requests
 from datetime import date
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from main import call_deepseek
 
 router = APIRouter()
 
@@ -39,6 +38,7 @@ class PDFRequest(BaseModel):
 
 
 def generate_pdf_content(prompt: str, document_type: str, template: dict) -> dict:
+    from main import call_deepseek
     system_prompt = f"""You are an expert document designer and writer.
 Generate professional beautiful document content AND choose the perfect design theme.
 

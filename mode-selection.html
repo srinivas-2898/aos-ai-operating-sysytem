@@ -2588,6 +2588,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.classList.add('dark-mode');
   }
   updateThemeIcon();
+
+  // Custom switch view on query parameter (for mobile bottom nav routing)
+  const params = new URLSearchParams(window.location.search);
+  const view = params.get('view');
+  if (view) {
+    switchView(view);
+    const mobileNavs = document.querySelectorAll('.mobile-nav-item');
+    mobileNavs.forEach(item => {
+      const clickAttr = item.getAttribute('onclick') || '';
+      if (clickAttr.includes(`switchView('${view}')`)) {
+        updateMobileNav(item);
+      }
+    });
+  }
 });
  </script>
 <script src="project-dashboard.js?v=project-r9"></script>

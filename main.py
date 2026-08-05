@@ -161,16 +161,19 @@ def root():
 # WORD GENERATION ROUTE IMPORTED FROM word_generator.py
 # EXCEL GENERATION ROUTE IMPORTED FROM excel_generator.py
 
-from pdf_generator import router as pdf_router, call_deepseek as pdf_deepseek
+from pdf_generator import router as pdf_router
 from ppt_generator import router as ppt_router
 from word_generator import router as word_router
 from excel_generator import router as excel_router
 from github_oauth import router as github_router
+from ui_generator import router as ui_router
+
 app.include_router(pdf_router)
 app.include_router(ppt_router)
 app.include_router(word_router)
 app.include_router(excel_router)
 app.include_router(github_router)
+app.include_router(ui_router)
 
 # Preserve the existing AOS chat, image, document, and presentation API routes.
 from app import app as aos_api

@@ -14,7 +14,6 @@ import requests
 from datetime import date
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from main import call_deepseek
 
 router = APIRouter()
 OUTPUT_DIRECTORY = "output"
@@ -34,6 +33,7 @@ def _extract_json(response: str) -> dict:
 
 
 def generate_word_content(prompt: str, document_type: str) -> dict:
+    from main import call_deepseek
     system_prompt = """You are an expert document writer and Microsoft Word designer.
 Return ONLY valid JSON with title, subtitle, author, date, primary_color, accent_color, sections, and footer_text.
 Each section must contain heading, content (at least four useful sentences), bullet_points, subsections,

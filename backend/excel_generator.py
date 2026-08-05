@@ -12,7 +12,6 @@ import json
 import requests
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from main import call_deepseek
 
 router = APIRouter()
 OUTPUT_DIRECTORY = "output"
@@ -34,6 +33,7 @@ def _fallback_content(prompt: str) -> dict:
 
 
 def generate_excel_content(prompt: str, sheet_type: str) -> dict:
+    from main import call_deepseek
     system_prompt = """You are an expert data analyst and Excel designer. Return ONLY valid JSON containing title, description,
 primary_color, accent_color, and sheets. Every sheet must include sheet_name (max 30 chars), description, headers,
 rows, has_chart, chart_type (bar, line, or pie), chart_title, has_totals, and summary_stats.

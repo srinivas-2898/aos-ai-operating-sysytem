@@ -268,54 +268,81 @@ body{background:radial-gradient(circle at 86% 0,#e0f2fe 0,transparent 28%),#f6f9
 <div id="main-area">
 
   <!-- IMAGES TAB -->
+  <!-- IMAGES TAB -->
   <div class="tab-content active" id="tab-images">
     <div class="left-panel">
-      <h2>Generate Image</h2>
+      <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:20px;color:#111827;margin-bottom:16px;">Generate UI Screens</h2>
+      
       <div class="form-group">
-        <label class="form-label">Prompt</label>
-        <textarea class="form-textarea" id="img-prompt" placeholder="Describe the image you want to generate..."></textarea>
+        <label class="form-label" style="font-family:Inter,sans-serif;font-weight:500;font-size:13px;color:#374151;margin-bottom:6px;display:block;">Project Name</label>
+        <input class="form-input" id="ui-project-name" placeholder="e.g. Smart Campus Navigation" style="width:100%;height:48px;background:white;border:1.5px solid #e5e7eb;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;color:#111827;padding:0 16px;outline:none;" />
       </div>
+      
       <div class="form-group">
-        <label class="form-label">Style</label>
-        <select class="form-select" id="img-style">
-          <option value="realistic">Realistic</option>
-          <option value="artistic">Artistic</option>
-          <option value="anime">Anime</option>
-          <option value="watercolor">Watercolor</option>
-          <option value="oilpainting">Oil Painting</option>
-          <option value="digitalart">Digital Art</option>
-          <option value="sketch">Sketch</option>
+        <label class="form-label" style="font-family:Inter,sans-serif;font-weight:500;font-size:13px;color:#374151;margin-bottom:6px;display:block;">App Type</label>
+        <select class="form-select" id="ui-app-type" style="width:100%;height:48px;background:white;border:1.5px solid #e5e7eb;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;color:#111827;padding:0 16px;outline:none;">
+          <option value="Navigation">Navigation</option>
+          <option value="E-Commerce">E-Commerce</option>
+          <option value="Social">Social</option>
+          <option value="Health">Health & Fitness</option>
+          <option value="Finance">Finance</option>
+          <option value="Education">Education</option>
+          <option value="Food">Food & Restaurant</option>
+          <option value="Travel">Travel</option>
+          <option value="General">General</option>
         </select>
       </div>
+      
       <div class="form-group">
-        <label class="form-label">Image Model</label>
-        <select class="form-select" id="img-provider">
-          <option value="black-forest-labs/FLUX.1-schnell" selected>Hugging Face · FLUX.1 Schnell</option>
-        </select>
+        <label class="form-label" style="font-family:Inter,sans-serif;font-weight:500;font-size:13px;color:#374151;margin-bottom:6px;display:block;">Describe your app</label>
+        <textarea class="form-textarea" id="ui-description" placeholder="Describe your app features and purpose..." style="width:100%;height:80px;background:white;border:1.5px solid #e5e7eb;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;color:#111827;padding:12px 16px;outline:none;resize:none;"></textarea>
       </div>
+      
       <div class="form-group">
-        <label class="form-label">Aspect Ratio</label>
-        <select class="form-select" id="img-ratio">
-          <option value="1:1">1:1 Square</option>
-          <option value="16:9">16:9 Landscape</option>
-          <option value="9:16">9:16 Portrait</option>
-          <option value="4:3">4:3 Standard</option>
-          <option value="3:2">3:2 Photo</option>
-        </select>
+        <label class="form-label" style="font-family:Inter,sans-serif;font-weight:500;font-size:13px;color:#374151;margin-bottom:8px;display:block;">Select Screens</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <label style="display:flex;align-items:center;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#374151;">
+            <input type="checkbox" id="screen-login" checked style="accent-color:#7c3aed;margin-right:6px;" /> Login/Signup
+          </label>
+          <label style="display:flex;align-items:center;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#374151;">
+            <input type="checkbox" id="screen-home" checked style="accent-color:#7c3aed;margin-right:6px;" /> Home Screen
+          </label>
+          <label style="display:flex;align-items:center;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#374151;">
+            <input type="checkbox" id="screen-dashboard" checked style="accent-color:#7c3aed;margin-right:6px;" /> Dashboard
+          </label>
+          <label style="display:flex;align-items:center;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#374151;">
+            <input type="checkbox" id="screen-list" checked style="accent-color:#7c3aed;margin-right:6px;" /> Browse/List
+          </label>
+          <label style="display:flex;align-items:center;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#374151;">
+            <input type="checkbox" id="screen-detail" style="accent-color:#7c3aed;margin-right:6px;" /> Detail View
+          </label>
+          <label style="display:flex;align-items:center;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#374151;">
+            <input type="checkbox" id="screen-profile" style="accent-color:#7c3aed;margin-right:6px;" /> Profile
+          </label>
+          <label style="display:flex;align-items:center;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#374151;">
+            <input type="checkbox" id="screen-map" style="accent-color:#7c3aed;margin-right:6px;" /> Map Screen
+          </label>
+          <label style="display:flex;align-items:center;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#374151;">
+            <input type="checkbox" id="screen-settings" style="accent-color:#7c3aed;margin-right:6px;" /> Settings
+          </label>
+          <label style="display:flex;align-items:center;cursor:pointer;font-family:Inter,sans-serif;font-size:13px;color:#374151;grid-column: span 2;">
+            <input type="checkbox" id="screen-onboarding" style="accent-color:#7c3aed;margin-right:6px;" /> Onboarding
+          </label>
+        </div>
       </div>
-      <button class="gen-btn" id="img-gen-btn" onclick="generateImage()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        Generate Image
+      
+      <button class="gen-btn" id="ui-generate-btn" onclick="generateUIScreens()" style="width:100%;height:48px;background:linear-gradient(135deg, #7c3aed, #4f46e5);border:none;border-radius:10px;color:white;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
+        Generate UI Screens
       </button>
     </div>
     <div class="right-panel">
-      <h2>Gallery</h2>
-      <div id="img-gallery">
-        <div class="gallery-empty" id="img-gallery-empty">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          <p>Your preview is available here.</p>
-        </div>
+      <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:20px;color:#111827;margin-bottom:16px;">Screen Preview</h2>
+      <div class="gallery-empty" id="ui-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:#9ca3af;text-align:center;height:100%;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <p style="font-family:Inter,sans-serif;font-size:14px;font-weight:500;color:#6b7280;">Your generated UI screens will appear here</p>
+        <p style="font-family:Inter,sans-serif;font-size:12px;color:#9ca3af;margin-top:4px;">Each screen shows in a beautiful phone frame</p>
       </div>
+      <div id="ui-screens-grid" style="display:none;grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));gap:20px;padding:10px 0;overflow-y:auto;max-height:600px;"></div>
     </div>
   </div>
 
@@ -461,6 +488,213 @@ body{background:radial-gradient(circle at 86% 0,#e0f2fe 0,transparent 28%),#f6f9
 const SUPABASE_URL = 'https://gdqapoopqijohrtovjza.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcWFwb29wcWlqb2hydG92anphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MjcyNzAsImV4cCI6MjEwMDUwMzI3MH0.mQsxKSmGBC3EfGLbuG2c5zAAzJKKIkq8wzsKzoO8oyI';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const IDEOGRAM_API_KEY = 'usdL1mzLs-hdM4aeOzSVXDErAyQ3LEHCXdl23Yw_FvpJxr8qsWywKDhAV5t448EvzNQmXEUEF8UiCgMRMeMxqQ';
+const IDEOGRAM_URL = 'https://api.ideogram.ai/generate';
+
+// On page load check URL params and auto generate:
+document.addEventListener('DOMContentLoaded', async () => {
+  // Override the function loaded from image-generation.js
+  window.generateImage = generateUIScreens;
+
+  const params = new URLSearchParams(window.location.search)
+  const tab = params.get('tab')
+  const autoGenerate = params.get('auto') === 'true'
+  
+  if (tab) switchTab(tab)
+  
+  if (autoGenerate) {
+    const projectData = localStorage.getItem('aos_current_project')
+    if (projectData) {
+      const project = JSON.parse(projectData)
+      await autoGenerateFromProject(project, tab)
+    }
+  }
+})
+
+async function autoGenerateFromProject(project, tab) {
+  if (tab === 'images') {
+    await autoGenerateUIScreens(project)
+  } else if (tab === 'presentations') {
+    await autoGeneratePPT(project)
+  }
+}
+
+async function autoGenerateUIScreens(project) {
+  if (project.project_name) {
+    document.getElementById('ui-project-name').value = project.project_name
+    document.getElementById('ui-description').value = project.description || ''
+    setTimeout(() => generateUIScreens(), 500)
+  }
+}
+
+async function generateUIScreens() {
+  const projectName = document.getElementById('ui-project-name').value.trim()
+  const appType = document.getElementById('ui-app-type').value
+  const description = document.getElementById('ui-description').value.trim()
+  
+  if (!projectName) { showError('Please enter project name'); return }
+  if (!description) { showError('Please describe your app'); return }
+  
+  const selectedScreens = []
+  document.querySelectorAll('[id^="screen-"]:checked').forEach(cb => {
+    selectedScreens.push(cb.id.replace('screen-', ''))
+  })
+  
+  if (selectedScreens.length === 0) { showError('Please select at least one screen'); return }
+  
+  const btn = document.getElementById('ui-generate-btn')
+  btn.textContent = 'Generating...'
+  btn.disabled = true
+  
+  document.getElementById('ui-empty').style.display = 'none'
+  document.getElementById('ui-screens-grid').style.display = 'grid'
+  document.getElementById('ui-screens-grid').innerHTML = ''
+  
+  showLoading('images')
+  
+  try {
+    const project = JSON.parse(localStorage.getItem('aos_current_project') || '{}')
+    
+    const response = await fetch('http://localhost:8000/api/generate-ui-screens', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_name: projectName,
+        app_type: appType,
+        description: description,
+        screens: selectedScreens,
+        features: project.features || [],
+        platform: 'mobile'
+      })
+    })
+    
+    const data = await response.json()
+    
+    hideLoading('images')
+    
+    if (data.success && data.screens) {
+      data.screens.forEach(screen => {
+        const phoneFrame = document.createElement('div')
+        phoneFrame.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:10px;'
+        
+        const frameOuter = document.createElement('div')
+        frameOuter.style.cssText = `
+          width: 195px; height: 422px;
+          background: #1a1a2e;
+          border-radius: 32px;
+          padding: 8px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.3), inset 0 0 0 2px #333;
+          position: relative;
+        `
+        
+        const notch = document.createElement('div')
+        notch.style.cssText = `
+          position: absolute; top: 8px; left: 50%;
+          transform: translateX(-50%);
+          width: 60px; height: 6px;
+          background: #000; border-radius: 3px; z-index: 10;
+        `
+        
+        const frameInner = document.createElement('div')
+        frameInner.style.cssText = `
+          width: 100%; height: 100%;
+          border-radius: 26px;
+          overflow: hidden;
+          background: white;
+        `
+        
+        if (screen.type === 'image' && screen.url) {
+          const img = document.createElement('img')
+          img.src = 'http://localhost:8000' + screen.url
+          img.style.cssText = 'width:100%;height:100%;object-fit:cover;'
+          img.alt = screen.screen_name
+          frameInner.appendChild(img)
+        } else if (screen.preview_url) {
+          const iframe = document.createElement('iframe')
+          iframe.src = 'http://localhost:8000' + screen.preview_url
+          iframe.style.cssText = 'width:390px;height:844px;border:none;transform:scale(0.5);transform-origin:top left;pointer-events:none;'
+          frameInner.style.overflow = 'hidden'
+          frameInner.appendChild(iframe)
+        }
+        
+        frameOuter.appendChild(notch)
+        frameOuter.appendChild(frameInner)
+        
+        const screenLabel = document.createElement('div')
+        screenLabel.style.cssText = 'font-family:Inter,sans-serif;font-size:12px;font-weight:600;color:#374151;text-align:center;'
+        screenLabel.textContent = screen.screen_name.charAt(0).toUpperCase() + screen.screen_name.slice(1) + ' Screen'
+        
+        const openBtn = document.createElement('button')
+        openBtn.style.cssText = 'background:#7c3aed;color:white;border:none;border-radius:8px;padding:6px 16px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;'
+        openBtn.textContent = 'Full Screen'
+        if (screen.preview_url) {
+          openBtn.onclick = () => window.open('http://localhost:8000' + screen.preview_url, '_blank')
+        }
+        
+        phoneFrame.appendChild(frameOuter)
+        phoneFrame.appendChild(screenLabel)
+        phoneFrame.appendChild(openBtn)
+        
+        document.getElementById('ui-screens-grid').appendChild(phoneFrame)
+      })
+      
+      showSuccess(data.count + ' UI screens generated successfully!')
+    }
+    
+  } catch(e) {
+    hideLoading('images')
+    showError('Generation failed: ' + e.message + '. Make sure backend is running on port 8000')
+  } finally {
+    btn.textContent = 'Generate UI Screens'
+    btn.disabled = false
+  }
+}
+
+async function autoGeneratePPT(project) {
+  const pptPrompt = document.getElementById('pres-prompt')
+  if (pptPrompt) {
+    pptPrompt.value = project.description || project.project_name
+  }
+  
+  showSuccess('Project loaded! Click Generate Presentation to create your PPT.')
+}
+
+// UI skeleton and toast wrappers
+function showLoading(tab) {
+  if (tab === 'images') {
+    const gallery = document.getElementById('ui-screens-grid');
+    if (gallery) {
+      const emptyImg = document.getElementById('ui-empty');
+      if (emptyImg) emptyImg.style.display = 'none';
+      
+      const loadingEl = document.createElement('div');
+      loadingEl.id = 'img-loading-skeleton';
+      loadingEl.className = 'skeleton';
+      loadingEl.style.cssText = 'aspect-ratio:1/2;width:100%;height:auto;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#6b7280;font-family:Inter,sans-serif;font-size:14px;background:#f3f4f6;grid-column: span 1;';
+      loadingEl.textContent = 'Generating...';
+      gallery.appendChild(loadingEl);
+      gallery.style.display = 'grid';
+    }
+  }
+}
+
+function hideLoading(tab) {
+  if (tab === 'images') {
+    const skeleton = document.getElementById('img-loading-skeleton');
+    if (skeleton) skeleton.remove();
+  }
+}
+
+function showError(msg) {
+  if (window.showToast) window.showToast(msg);
+  else alert(msg);
+}
+
+function showSuccess(msg) {
+  if (window.showToast) window.showToast(msg);
+  else alert(msg);
+}
 
 var selectedDocType = 'PDF';
 

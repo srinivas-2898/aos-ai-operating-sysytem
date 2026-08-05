@@ -13,7 +13,6 @@ import json
 import requests
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from main import call_deepseek
 
 router = APIRouter()
 
@@ -44,6 +43,7 @@ class PPTRequest(BaseModel):
 
 
 def generate_ppt_content(prompt: str, num_slides: int, theme: str, template: str) -> dict:
+    from main import call_deepseek
     system_prompt = f"""You are an expert presentation designer. Generate professional slide content.
 Return ONLY valid JSON with this exact structure:
 {{"title":"Presentation main title","subtitle":"Presentation subtitle","author":"AOS AI Operating System","slides":[{{"slide_number":1,"type":"title","title":"Slide title","subtitle":"Slide subtitle","content":"Main content text","bullet_points":["Point 1","Point 2","Point 3","Point 4"],"speaker_notes":"Notes for this slide"}}]}}
