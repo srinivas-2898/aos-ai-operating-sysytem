@@ -68,7 +68,7 @@ def call_deepseek(system_prompt: str, user_prompt: str, response_format: str = "
     failures = []
 
     def openai_compatible(url: str, api_key: str, model: str, provider: str) -> str:
-        payload = {"model": model, "messages": messages, "max_tokens": 4000, "temperature": 0.7}
+        payload = {"model": model, "messages": messages, "max_tokens": 8192, "temperature": 0.7}
         response = requests.post(
             url,
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
@@ -90,7 +90,7 @@ def call_deepseek(system_prompt: str, user_prompt: str, response_format: str = "
     # Gemini fallback
     if GEMINI_API_KEY:
         try:
-            gen_config = {"temperature": 0.7, "maxOutputTokens": 4000}
+            gen_config = {"temperature": 0.7, "maxOutputTokens": 8192}
             response = requests.post(
                 f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent",
                 params={"key": GEMINI_API_KEY},
