@@ -189,7 +189,8 @@ body{background:radial-gradient(circle at 86% 0,#e0f2fe 0,transparent 28%),#f6f9
   line-height: 1;
 }
 .file-output-card:hover .delete-file-btn,
-.gallery-img:hover .delete-file-btn {
+.gallery-img:hover .delete-file-btn,
+.ui-screen-card:hover .delete-file-btn {
   opacity: 1;
 }
 .delete-file-btn:hover {
@@ -696,6 +697,7 @@ async function generateUIScreens() {
 
 function renderUIPhoneFrame(screen) {
   const phoneFrame = document.createElement('div')
+  phoneFrame.className = 'ui-screen-card'
   phoneFrame.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:10px;position:relative;'
   
   const frameOuter = document.createElement('div')
@@ -760,7 +762,22 @@ function renderUIPhoneFrame(screen) {
   const openBtn = document.createElement('button')
   openBtn.style.cssText = 'background:#7c3aed;color:white;border:none;border-radius:8px;padding:6px 16px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;'
   openBtn.textContent = 'Full Screen'
-  openBtn.onclick = () => window.open(url, '_blank')
+  openBtn.onclick = async () => {
+    if (screen.type === 'image') {
+      window.open(url, '_blank');
+    } else {
+      try {
+        const res = await fetch(url);
+        const text = await res.text();
+        const blob = new Blob([text], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+      } catch (err) {
+        console.error("Failed to open full screen:", err);
+        window.open(url, '_blank');
+      }
+    }
+  }
   
   phoneFrame.appendChild(frameOuter)
   phoneFrame.appendChild(screenLabel)
