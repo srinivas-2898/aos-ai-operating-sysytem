@@ -5,6 +5,10 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // When AOS is deployed on Railway, Flask and the frontend share one domain.
 // A separate API URL can still be supplied for split Hosting/API deployments.
 const AI_API_URL = window.AOS_AI_API_URL || '/api/chat';
+const getBackendUrl = (path) => {
+  const base = AI_API_URL.replace(/\/api\/chat(?:\?.*)?$/, '');
+  return `${base}${path}`;
+};
 
 let currentUser = null;
 let currentProject = null;
@@ -617,7 +621,7 @@ async function triggerAutomaticGeneration(genType, event) {
   }
   
   try {
-    const res = await fetch('/api/extract-prompt', {
+    const res = await fetch(getBackendUrl('/api/extract-prompt'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages, gen_type: genType })
