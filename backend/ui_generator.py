@@ -411,7 +411,8 @@ async def generate_ui_screens(request: UIGenerationRequest):
                     "type": "html",
                     "path": html_path,
                     "url": f"/api/ui-screen-html/{filename}",
-                    "preview_url": f"/api/ui-screen-preview/{filename}"
+                    "preview_url": f"/api/ui-screen-preview/{filename}",
+                    "code": html_content
                 })
             else:
                 results.append({

@@ -649,16 +649,21 @@ async function generateUIScreens() {
     for (const screen of data.screens) {
       let savedId = null;
       try {
-        const fetchUrl = apiEndpoint(screen.type === 'image' ? screen.url : screen.preview_url);
-        const res = await fetch(fetchUrl);
-        const rawBlob = await res.blob();
-        const mimeType = screen.type === 'image' ? 'image/png' : 'text/html';
-        const blob = new Blob([rawBlob], { type: mimeType });
+        let blob;
+        if (screen.type === 'html' && screen.code) {
+          blob = new Blob([screen.code], { type: 'text/html' });
+        } else {
+          const fetchUrl = apiEndpoint(screen.type === 'image' ? screen.url : screen.preview_url);
+          const res = await fetch(fetchUrl);
+          const rawBlob = await res.blob();
+          const mimeType = screen.type === 'image' ? 'image/png' : 'text/html';
+          blob = new Blob([rawBlob], { type: mimeType });
+        }
         
         const ext = screen.type === 'image' ? 'png' : 'html';
         const filename = `ui-screen-${screen.screen_name}-${Date.now()}.${ext}`;
         
-        if (window.AOSGenerationStorage) {
+        if (window.AOSGenerationStorage && blob) {
           const savedFile = await window.AOSGenerationStorage.saveBlob({
             blob: blob,
             filename: filename,
@@ -679,6 +684,7 @@ async function generateUIScreens() {
         type: screen.type,
         url: screen.url,
         preview_url: screen.preview_url,
+        code: screen.code,
         id: savedId
       });
       document.getElementById('ui-screens-grid').appendChild(phoneFrame)
@@ -740,16 +746,20 @@ function renderUIPhoneFrame(screen) {
     frameInner.style.overflow = 'hidden'
     frameInner.appendChild(iframe)
     
-    // Fetch and assign content via srcdoc to avoid raw-text display of html files with text/plain type
-    fetch(url)
-      .then(res => res.text())
-      .then(html => {
-        iframe.srcdoc = html;
-      })
-      .catch(err => {
-        console.error("Failed to load iframe content:", err);
-        iframe.src = url;
-      });
+    if (screen.code) {
+      iframe.srcdoc = screen.code;
+    } else {
+      // Fetch and assign content via srcdoc to avoid raw-text display of html files with text/plain type
+      fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          iframe.srcdoc = html;
+        })
+        .catch(err => {
+          console.error("Failed to load iframe content:", err);
+          iframe.src = url;
+        });
+    }
   }
   
   frameOuter.appendChild(notch)
