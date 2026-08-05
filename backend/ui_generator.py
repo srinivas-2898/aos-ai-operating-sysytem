@@ -333,15 +333,24 @@ def generate_html_screen(project_name: str, app_type: str, screen_name: str, fea
     user_prompt = f"Create full HTML code for the {screen_name} screen of the project: {project_name}. Specific requirements: {description}"
     
     try:
+        import re
         html_code = call_deepseek(system_prompt, user_prompt)
         clean_code = html_code.strip()
-        if clean_code.startswith("```"):
-            lines = clean_code.split("\n")
-            if lines[0].startswith("```"):
-                lines = lines[1:]
-            if lines and lines[-1].strip() == "```":
-                lines = lines[:-1]
-            clean_code = "\n".join(lines).strip()
+        
+        # Strip markdown ```html or ``` block tags
+        code_block_match = re.search(r'```html\s*(.*?)\s*```', clean_code, re.DOTALL | re.IGNORECASE)
+        if code_block_match:
+            clean_code = code_block_match.group(1).strip()
+        else:
+            generic_block_match = re.search(r'```\s*(.*?)\s*```', clean_code, re.DOTALL | re.IGNORECASE)
+            if generic_block_match:
+                clean_code = generic_block_match.group(1).strip()
+                
+        # Find exact html substring to drop conversational text headers or footers
+        html_tag_match = re.search(r'(<!DOCTYPE html>.*?</html>|<html.*?</html>)', clean_code, re.DOTALL | re.IGNORECASE)
+        if html_tag_match:
+            clean_code = html_tag_match.group(1).strip()
+            
         return clean_code
     except Exception as e:
         print("Dynamic UI Generation failed, falling back to static templates:", e)

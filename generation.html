@@ -710,62 +710,28 @@ async function generateUIScreens() {
 function renderUIPhoneFrame(screen) {
   const phoneFrame = document.createElement('div')
   phoneFrame.className = 'ui-screen-card'
-  phoneFrame.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:10px;position:relative;'
+  phoneFrame.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:12px;position:relative;background:#ffffff;border:1.5px solid #e2e8f0;border-radius:16px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,0.04);'
   
   const isDesktop = screen.platform === 'desktop';
   
   const frameOuter = document.createElement('div')
   if (isDesktop) {
     frameOuter.style.cssText = `
-      width: 344px; height: 216px;
-      background: #1e1e2f;
-      border-radius: 12px;
-      padding: 6px;
-      box-shadow: 0 16px 48px rgba(0,0,0,0.25), inset 0 0 0 2px #3c3c4e;
+      width: 320px; height: 180px;
+      background: #f8fafc;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
       position: relative;
     `
   } else {
     frameOuter.style.cssText = `
       width: 195px; height: 422px;
-      background: #1a1a2e;
-      border-radius: 32px;
-      padding: 8px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3), inset 0 0 0 2px #333;
-      position: relative;
-    `
-  }
-  
-  const notch = document.createElement('div')
-  if (isDesktop) {
-    notch.style.cssText = `
-      position: absolute; top: 6px; left: 50%;
-      transform: translateX(-50%);
-      width: 6px; height: 6px;
-      background: #000; border-radius: 50%; z-index: 10;
-    `
-  } else {
-    notch.style.cssText = `
-      position: absolute; top: 8px; left: 50%;
-      transform: translateX(-50%);
-      width: 60px; height: 6px;
-      background: #000; border-radius: 3px; z-index: 10;
-    `
-  }
-  
-  const frameInner = document.createElement('div')
-  if (isDesktop) {
-    frameInner.style.cssText = `
-      width: 100%; height: 100%;
+      background: #f8fafc;
       border-radius: 8px;
       overflow: hidden;
-      background: white;
-    `
-  } else {
-    frameInner.style.cssText = `
-      width: 100%; height: 100%;
-      border-radius: 26px;
-      overflow: hidden;
-      background: white;
+      border: 1px solid #e2e8f0;
+      position: relative;
     `
   }
   
@@ -776,16 +742,16 @@ function renderUIPhoneFrame(screen) {
     img.src = url
     img.style.cssText = 'width:100%;height:100%;object-fit:cover;'
     img.alt = screen.screen_name
-    frameInner.appendChild(img)
+    frameOuter.appendChild(img)
   } else {
     const iframe = document.createElement('iframe')
     if (isDesktop) {
-      iframe.style.cssText = 'width:1280px;height:720px;border:none;transform:scale(0.259);transform-origin:top left;pointer-events:none;'
+      iframe.style.cssText = 'width:1280px;height:720px;border:none;transform:scale(0.25);transform-origin:top left;pointer-events:none;'
     } else {
       iframe.style.cssText = 'width:390px;height:844px;border:none;transform:scale(0.5);transform-origin:top left;pointer-events:none;'
     }
-    frameInner.style.overflow = 'hidden'
-    frameInner.appendChild(iframe)
+    frameOuter.style.overflow = 'hidden'
+    frameOuter.appendChild(iframe)
     
     if (screen.code) {
       iframe.srcdoc = screen.code;
@@ -803,15 +769,12 @@ function renderUIPhoneFrame(screen) {
     }
   }
   
-  frameOuter.appendChild(notch)
-  frameOuter.appendChild(frameInner)
-  
   const screenLabel = document.createElement('div')
-  screenLabel.style.cssText = 'font-family:Inter,sans-serif;font-size:12px;font-weight:600;color:#374151;text-align:center;'
+  screenLabel.style.cssText = "font-family:'Plus Jakarta Sans',sans-serif;font-size:13.5px;font-weight:700;color:#1e293b;text-align:center;margin-top:4px;"
   screenLabel.textContent = screen.screen_name.charAt(0).toUpperCase() + screen.screen_name.slice(1) + ' Screen'
   
   const openBtn = document.createElement('button')
-  openBtn.style.cssText = 'background:#7c3aed;color:white;border:none;border-radius:8px;padding:6px 16px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;'
+  openBtn.style.cssText = 'background:#2563eb;color:white;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;box-shadow:0 4px 12px rgba(37,99,235,0.2);transition:all 0.2s;'
   openBtn.textContent = 'Full Screen'
   openBtn.onclick = async () => {
     if (screen.type === 'image') {
@@ -839,7 +802,7 @@ function renderUIPhoneFrame(screen) {
     delBtn.className = 'delete-file-btn';
     delBtn.title = 'Delete screen';
     delBtn.innerHTML = '×';
-    delBtn.style.cssText = 'position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;background:#ef4444;color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;z-index:20;line-height:1;font-weight:bold;';
+    delBtn.style.cssText = 'position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;background:#ef4444;color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;z-index:20;line-height:1;font-weight:bold;box-shadow:0 4px 10px rgba(239,68,68,0.3);';
     delBtn.addEventListener('click', async (event) => {
       event.stopPropagation();
       event.preventDefault();
