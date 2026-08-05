@@ -159,9 +159,59 @@ function professionalProjectCard(project) {
     logoBg = 'linear-gradient(135deg,#eff6ff,#e0e7ff)'; logoColor = '#3b82f6';
   }
 
-  return `<button class="project-card project-card-pro" onclick="openProject('${project.id}')"><div class="project-card-top"><span class="project-card-logo" style="background:${logoBg};color:${logoColor}">${iconSvg}</span><span class="project-card-open">Open <b>›</b></span></div><h3>${esc(project.name)}</h3><p class="pc-desc">${esc(project.description)}</p><span class="pc-tech"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>${esc(stack)}</span><div class="project-card-footer"><span>Last opened</span><strong>${esc(opened)}</strong><span class="project-created">Created ${esc(created)}</span></div></button>`;
+  return `
+    <div class="project-card project-card-pro" style="position:relative;text-align:left;cursor:pointer" onclick="openProject('${project.id}')">
+      <button class="delete-project-btn" title="Delete Project" onclick="deleteProject('${project.id}', event)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          <line x1="10" y1="11" x2="10" y2="17"></line>
+          <line x1="14" y1="11" x2="14" y2="17"></line>
+        </svg>
+      </button>
+      <div class="project-card-top">
+        <span class="project-card-logo" style="background:${logoBg};color:${logoColor}">${iconSvg}</span>
+        <span class="project-card-open">Open <b>›</b></span>
+      </div>
+      <h3>${esc(project.name)}</h3>
+      <p class="pc-desc">${esc(project.description)}</p>
+      <span class="pc-tech">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        ${esc(stack)}
+      </span>
+      <div class="project-card-footer">
+        <span>Last opened</span>
+        <strong>${esc(opened)}</strong>
+        <span class="project-created">Created ${esc(created)}</span>
+      </div>
+    </div>
+  `;
 }
 
+async function deleteProject(projectId, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  if (!confirm('Are you sure you want to delete this project? This will permanently delete all files and conversations linked to it.')) {
+    return;
+  }
+  try {
+    const { error } = await aosSupabase.from('projects').delete().eq('id', projectId);
+    if (error) throw error;
+    projects = projects.filter(p => p.id !== projectId);
+    renderDashboard();
+    
+    const viewProjects = document.getElementById('view-projects');
+    if (viewProjects && viewProjects.classList.contains('active')) {
+      document.getElementById('projects-grid').innerHTML = projects.length ? projects.map(professionalProjectCard).join('') : '<div class="empty-state" style="grid-column:1/-1;padding:40px"><p>No projects yet.</p></div>';
+    }
+    toast('Project deleted successfully.');
+  } catch (error) {
+    console.error(error);
+    toast(`Could not delete project: ${error.message}`);
+  }
+}
 
 function switchView(name) {
   if (name === 'dashboard') {
@@ -179,6 +229,47 @@ function switchView(name) {
 async function performLogout() { await aosSupabase.auth.signOut(); window.location.href = 'index.html'; }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Inject delete-project-btn CSS styles
+  const deleteBtnStyle = `
+    .project-card-pro {
+      position: relative;
+    }
+    .project-card-pro .delete-project-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.08);
+      color: #ef4444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+      z-index: 10;
+      opacity: 0.6;
+      transition: all 0.2s ease;
+      padding: 0;
+    }
+    .project-card-pro:hover .delete-project-btn {
+      opacity: 1;
+      background: rgba(239, 68, 68, 0.15);
+    }
+    .project-card-pro .delete-project-btn:hover {
+      background: #ef4444;
+      color: #fff;
+      transform: scale(1.08);
+    }
+  `;
+  if (!document.getElementById('delete-project-btn-styles')) {
+    const styleEl = document.createElement('style');
+    styleEl.id = 'delete-project-btn-styles';
+    styleEl.textContent = deleteBtnStyle;
+    document.head.appendChild(styleEl);
+  }
+
   document.getElementById('create-modal').addEventListener('click', (event) => { if (event.target.id === 'create-modal') closeCreateProject(); });
   aosSupabase.auth.onAuthStateChange(async (_event, session) => {
     if (!session) { window.location.href = 'index.html'; return; }
