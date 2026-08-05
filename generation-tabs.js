@@ -1,6 +1,6 @@
 /* Reliable, accessible navigation for Generation Studio. */
 (() => {
-  const tabNames = ['images', 'videos', 'documents', 'presentations'];
+  const tabNames = ['images', 'ui-screens', 'videos', 'documents', 'presentations'];
 
   function activateGenerationTab(name) {
     if (!tabNames.includes(name)) return;

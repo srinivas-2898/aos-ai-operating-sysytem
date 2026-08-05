@@ -140,7 +140,11 @@ body{background:radial-gradient(circle at 86% 0,#e0f2fe 0,transparent 28%),#f6f9
 #tabs-bar{height:72px;gap:10px;padding:12px 22px;background:#fff}
 .tab-btn{min-width:164px;height:46px;border-radius:8px;border:1px solid #dbe5f3;box-shadow:none;background:#fff;font-weight:650}
 .tab-btn svg{width:29px;height:29px;padding:6px;border-radius:8px;background:#eef5ff;stroke:#2563eb}
-.tab-btn:nth-child(2) svg{background:#f0fdf4;stroke:#16a34a}.tab-btn:nth-child(3) svg{background:#fff7ed;stroke:#ea580c}.tab-btn:nth-child(4) svg{background:#faf5ff;stroke:#9333ea}
+.tab-btn:nth-child(1) svg{background:#eef5ff;stroke:#2563eb}
+.tab-btn:nth-child(2) svg{background:#e0f2fe;stroke:#0284c7}
+.tab-btn:nth-child(3) svg{background:#f0fdf4;stroke:#16a34a}
+.tab-btn:nth-child(4) svg{background:#fff7ed;stroke:#ea580c}
+.tab-btn:nth-child(5) svg{background:#faf5ff;stroke:#9333ea}
 .tab-btn:hover{transform:translateY(-2px);box-shadow:0 8px 16px rgba(15,23,42,.08)}
 .tab-btn.active{border-color:#2563eb;background:#f7fbff;box-shadow:inset 0 -2px #2563eb}
 #main-area{gap:26px;padding:26px;background:linear-gradient(135deg,#f7faff 0%,#edf6ff 100%)}
@@ -250,6 +254,10 @@ body{background:radial-gradient(circle at 86% 0,#e0f2fe 0,transparent 28%),#f6f9
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
     Images
   </button>
+  <button class="tab-btn" id="tab-btn-ui-screens" onclick="switchTab('ui-screens')">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+    UI Screens
+  </button>
   <button class="tab-btn" id="tab-btn-videos" onclick="switchTab('videos')">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
     Videos
@@ -269,7 +277,64 @@ body{background:radial-gradient(circle at 86% 0,#e0f2fe 0,transparent 28%),#f6f9
 
   <!-- IMAGES TAB -->
   <!-- IMAGES TAB -->
+  <!-- IMAGES TAB -->
   <div class="tab-content active" id="tab-images">
+    <div class="left-panel">
+      <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:20px;color:#111827;margin-bottom:16px;">Generate AI Images</h2>
+      
+      <div class="form-group">
+        <label class="form-label" style="font-family:Inter,sans-serif;font-weight:500;font-size:13px;color:#374151;margin-bottom:6px;display:block;">Prompt</label>
+        <textarea class="form-textarea" id="img-prompt" placeholder="Describe the image you want to generate..." style="width:100%;height:80px;background:white;border:1.5px solid #e5e7eb;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;color:#111827;padding:12px 16px;outline:none;resize:none;"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="font-family:Inter,sans-serif;font-weight:500;font-size:13px;color:#374151;margin-bottom:6px;display:block;">Style</label>
+        <select class="form-select" id="img-style" style="width:100%;height:48px;background:white;border:1.5px solid #e5e7eb;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;color:#111827;padding:0 16px;outline:none;">
+          <option value="realistic">Realistic</option>
+          <option value="artistic" selected>Artistic</option>
+          <option value="anime">Anime</option>
+          <option value="watercolor">Watercolor</option>
+          <option value="oilpainting">Oil Painting</option>
+          <option value="digitalart">Digital Art</option>
+          <option value="sketch">Sketch</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="font-family:Inter,sans-serif;font-weight:500;font-size:13px;color:#374151;margin-bottom:6px;display:block;">Image Model</label>
+        <select class="form-select" id="img-provider" style="width:100%;height:48px;background:white;border:1.5px solid #e5e7eb;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;color:#111827;padding:0 16px;outline:none;">
+          <option value="black-forest-labs/FLUX.1-schnell" selected>Hugging Face · FLUX.1 Schnell</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="font-family:Inter,sans-serif;font-weight:500;font-size:13px;color:#374151;margin-bottom:6px;display:block;">Aspect Ratio</label>
+        <select class="form-select" id="img-ratio" style="width:100%;height:48px;background:white;border:1.5px solid #e5e7eb;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;color:#111827;padding:0 16px;outline:none;">
+          <option value="1:1" selected>1:1 Square</option>
+          <option value="16:9">16:9 Landscape</option>
+          <option value="9:16">9:16 Portrait</option>
+          <option value="4:3">4:3 Standard</option>
+          <option value="3:2">3:2 Photo</option>
+        </select>
+      </div>
+
+      <button class="gen-btn" id="img-gen-btn" onclick="generateImage()" style="width:100%;height:48px;background:linear-gradient(135deg,#2563eb,#3b82f6);border:none;border-radius:10px;color:white;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Generate Images
+      </button>
+    </div>
+    <div class="right-panel">
+      <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:20px;color:#111827;margin-bottom:16px;">Gallery</h2>
+      <div class="gallery-empty" id="img-gallery-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:#9ca3af;text-align:center;height:100%;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <p style="font-family:Inter,sans-serif;font-size:14px;font-weight:500;color:#6b7280;">Your preview is available here.</p>
+      </div>
+      <div id="img-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:18px;"></div>
+    </div>
+  </div>
+
+  <!-- UI SCREENS TAB -->
+  <div class="tab-content" id="tab-ui-screens">
     <div class="left-panel">
       <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:20px;color:#111827;margin-bottom:16px;">Generate UI Screens</h2>
       
@@ -494,9 +559,6 @@ const IDEOGRAM_URL = 'https://api.ideogram.ai/generate';
 
 // On page load check URL params and auto generate:
 document.addEventListener('DOMContentLoaded', async () => {
-  // Override the function loaded from image-generation.js
-  window.generateImage = generateUIScreens;
-
   const params = new URLSearchParams(window.location.search)
   const tab = params.get('tab')
   const autoGenerate = params.get('auto') === 'true'
@@ -513,7 +575,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 })
 
 async function autoGenerateFromProject(project, tab) {
-  if (tab === 'images') {
+  if (tab === 'ui-screens') {
     await autoGenerateUIScreens(project)
   } else if (tab === 'presentations') {
     await autoGeneratePPT(project)
@@ -551,12 +613,12 @@ async function generateUIScreens() {
   document.getElementById('ui-screens-grid').style.display = 'grid'
   document.getElementById('ui-screens-grid').innerHTML = ''
   
-  showLoading('images')
+  showLoading('ui-screens')
   
   try {
     const project = JSON.parse(localStorage.getItem('aos_current_project') || '{}')
     
-    const response = await fetch('http://localhost:8000/api/generate-ui-screens', {
+    const response = await fetch('/api/generate-ui-screens', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -571,7 +633,7 @@ async function generateUIScreens() {
     
     const data = await response.json()
     
-    hideLoading('images')
+    hideLoading('ui-screens')
     
     if (data.success && data.screens) {
       data.screens.forEach(screen => {
@@ -606,13 +668,13 @@ async function generateUIScreens() {
         
         if (screen.type === 'image' && screen.url) {
           const img = document.createElement('img')
-          img.src = 'http://localhost:8000' + screen.url
+          img.src = screen.url
           img.style.cssText = 'width:100%;height:100%;object-fit:cover;'
           img.alt = screen.screen_name
           frameInner.appendChild(img)
         } else if (screen.preview_url) {
           const iframe = document.createElement('iframe')
-          iframe.src = 'http://localhost:8000' + screen.preview_url
+          iframe.src = screen.preview_url
           iframe.style.cssText = 'width:390px;height:844px;border:none;transform:scale(0.5);transform-origin:top left;pointer-events:none;'
           frameInner.style.overflow = 'hidden'
           frameInner.appendChild(iframe)
@@ -629,7 +691,7 @@ async function generateUIScreens() {
         openBtn.style.cssText = 'background:#7c3aed;color:white;border:none;border-radius:8px;padding:6px 16px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;'
         openBtn.textContent = 'Full Screen'
         if (screen.preview_url) {
-          openBtn.onclick = () => window.open('http://localhost:8000' + screen.preview_url, '_blank')
+          openBtn.onclick = () => window.open(screen.preview_url, '_blank')
         }
         
         phoneFrame.appendChild(frameOuter)
@@ -643,8 +705,8 @@ async function generateUIScreens() {
     }
     
   } catch(e) {
-    hideLoading('images')
-    showError('Generation failed: ' + e.message + '. Make sure backend is running on port 8000')
+    hideLoading('ui-screens')
+    showError('Generation failed: ' + e.message)
   } finally {
     btn.textContent = 'Generate UI Screens'
     btn.disabled = false
@@ -662,7 +724,7 @@ async function autoGeneratePPT(project) {
 
 // UI skeleton and toast wrappers
 function showLoading(tab) {
-  if (tab === 'images') {
+  if (tab === 'ui-screens') {
     const gallery = document.getElementById('ui-screens-grid');
     if (gallery) {
       const emptyImg = document.getElementById('ui-empty');
@@ -680,7 +742,7 @@ function showLoading(tab) {
 }
 
 function hideLoading(tab) {
-  if (tab === 'images') {
+  if (tab === 'ui-screens') {
     const skeleton = document.getElementById('img-loading-skeleton');
     if (skeleton) skeleton.remove();
   }

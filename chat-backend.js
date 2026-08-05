@@ -601,7 +601,7 @@ function showGenerateButton() {
 
 function goToUIGeneration() {
   localStorage.setItem('aos_current_project', JSON.stringify(projectContext))
-  window.location.href = 'generation.html?tab=images&auto=true'
+  window.location.href = 'generation.html?tab=ui-screens&auto=true'
 }
 
 function goToPresentationStudio() {

@@ -89,26 +89,7 @@
     });
   });
 
-  window.generateImage = async () => {
-    const promptField = document.getElementById('img-prompt');
-    const rawPrompt = promptField.value.trim();
-    if (!rawPrompt) { showToast('Describe the image you want to create.'); promptField.focus(); return; }
-
-    const style = document.getElementById('img-style').value;
-    const ratio = document.getElementById('img-ratio').value;
-    const model = document.getElementById('img-provider').value;
-    const prompt = [rawPrompt, stylePrompts[style], `aspect ratio ${ratio}`].filter(Boolean).join(', ');
-    const button = document.getElementById('img-gen-btn');
-    const gallery = document.getElementById('img-gallery');
-    button.disabled = true;
-    button.textContent = 'Creating your image…';
-    document.getElementById('img-gallery-empty')?.remove();
-
-    const loading = document.createElement('div');
-    loading.className = 'skeleton skeleton-img';
-    loading.setAttribute('aria-label', 'Generating image');
-    gallery.appendChild(loading);
-
+  const generateSingleImage = async (prompt, model, rawPrompt, gallery, loadingSkeleton) => {
     try {
       const response = await fetch(imageEndpoint(), {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -132,12 +113,19 @@
       item.append(preview, caption);
       item.addEventListener('click', () => openViewer(result.image_url, rawPrompt));
       item.setAttribute('title', 'Click to view full screen');
-      gallery.prepend(item);
+      
+      // Replace loading skeleton with the item
+      if (loadingSkeleton && loadingSkeleton.parentNode) {
+        loadingSkeleton.replaceWith(item);
+      } else {
+        gallery.prepend(item);
+      }
+
       const projectId = new URLSearchParams(location.search).get('project_id');
       if (projectId) {
         try {
           const imageBlob = await (await fetch(result.image_url)).blob();
-          const filename = `generated-image-${Date.now()}.png`;
+          const filename = `generated-image-${Date.now()}-${Math.random().toString(36).substring(2, 7)}.png`;
           if (!window.AOSGenerationStorage) throw new Error('Generation storage is not ready. Refresh and try again.');
           const savedFile = await window.AOSGenerationStorage.saveBlob({
             blob: imageBlob,
@@ -154,13 +142,57 @@
           showToast(`Image created, but its project history was not saved: ${storageError.message}`);
         }
       }
-      showToast('Image generated successfully.');
+      return true;
     } catch (error) {
+      if (loadingSkeleton && loadingSkeleton.parentNode) {
+        loadingSkeleton.remove();
+      }
       showToast(error.message || 'Image generation failed.');
+      return false;
+    }
+  };
+
+  window.generateImage = async () => {
+    const promptField = document.getElementById('img-prompt');
+    const rawPrompt = promptField.value.trim();
+    if (!rawPrompt) { showToast('Describe the image you want to create.'); promptField.focus(); return; }
+
+    const style = document.getElementById('img-style').value;
+    const ratio = document.getElementById('img-ratio').value;
+    const model = document.getElementById('img-provider').value;
+    const prompt = [rawPrompt, stylePrompts[style], `aspect ratio ${ratio}`].filter(Boolean).join(', ');
+    const button = document.getElementById('img-gen-btn');
+    const gallery = document.getElementById('img-gallery');
+    
+    button.disabled = true;
+    button.textContent = 'Creating 3 images…';
+    document.getElementById('img-gallery-empty')?.remove();
+
+    // Create 3 skeletons
+    const skeletons = [];
+    for (let i = 0; i < 3; i++) {
+      const loading = document.createElement('div');
+      loading.className = 'skeleton skeleton-img';
+      loading.setAttribute('aria-label', `Generating image ${i + 1}`);
+      gallery.prepend(loading);
+      skeletons.push(loading);
+    }
+
+    try {
+      // Run 3 requests in parallel
+      await Promise.allSettled(skeletons.map(skeleton => 
+        generateSingleImage(prompt, model, rawPrompt, gallery, skeleton)
+      ));
+      showToast('Finished generating images.');
+    } catch (err) {
+      showToast('Image generation failed.');
     } finally {
-      loading.remove();
+      // Clean up any remaining skeletons
+      skeletons.forEach(skel => {
+        if (skel && skel.parentNode) skel.remove();
+      });
       button.disabled = false;
-      button.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate Image';
+      button.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate Images';
     }
   };
 })();

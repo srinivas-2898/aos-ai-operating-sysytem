@@ -332,6 +332,8 @@ async def generate_ui_screens(request: UIGenerationRequest):
         return JSONResponse({"success": True, "screens": results, "count": len(results)})
     
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/ui-screen-image/{filename}")
