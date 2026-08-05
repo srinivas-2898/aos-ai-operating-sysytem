@@ -37,7 +37,14 @@
     }
     viewer.querySelector('#image-viewer-preview').src = source;
     viewer.querySelector('#image-viewer-preview').alt = caption;
-    viewer.querySelector('#image-viewer-caption').textContent = caption;
+    // A generation prompt can be several paragraphs long. It belongs in the
+    // image alt text, not across the fullscreen preview.
+    const compactCaption = String(caption || 'Generated image')
+      .replace(/\s+/g, ' ')
+      .trim();
+    viewer.querySelector('#image-viewer-caption').textContent = compactCaption.length > 96
+      ? `${compactCaption.slice(0, 93)}…`
+      : compactCaption;
     viewer.classList.add('open');
   };
 
