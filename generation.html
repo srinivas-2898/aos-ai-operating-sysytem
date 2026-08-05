@@ -1125,11 +1125,61 @@ document.addEventListener('DOMContentLoaded', () => {
   supabaseClient.auth.onAuthStateChange((event, session) => {
     if (session) {
       populateUserUI(session.user);
-      if (window.location.hash) history.replaceState(null, '', window.location.pathname);
+      // Keep search params intact for project identification and auto-run
+      if (window.location.hash && !window.location.search.includes('auto=true')) {
+        history.replaceState(null, '', window.location.pathname);
+      }
     } else if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
       if (!session) window.location.href = 'index.html';
     }
   });
+
+  // Auto-run trigger based on query parameters
+  const autoInterval = setInterval(() => {
+    if (window.AOS_PROJECT) {
+      clearInterval(autoInterval);
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const isAuto = urlParams.get('auto') === 'true';
+      const autoPrompt = localStorage.getItem('aos_auto_prompt');
+      
+      if (isAuto && autoPrompt) {
+        localStorage.removeItem('aos_auto_prompt');
+        
+        // Find which tab is active based on the URL hash
+        const hash = window.location.hash.slice(1) || 'ui-screens';
+        
+        if (hash === 'ui-screens') {
+          const nameInput = document.getElementById('ui-project-name');
+          const descInput = document.getElementById('ui-description');
+          if (nameInput) nameInput.value = window.AOS_PROJECT.name || '';
+          if (descInput) descInput.value = autoPrompt;
+          
+          setTimeout(() => {
+            if (typeof generateUIScreens === 'function') generateUIScreens();
+          }, 800);
+        } else if (hash === 'videos') {
+          const promptInput = document.getElementById('vid-prompt');
+          if (promptInput) promptInput.value = autoPrompt;
+          setTimeout(() => {
+            if (typeof generateVideo === 'function') generateVideo();
+          }, 800);
+        } else if (hash === 'documents') {
+          const promptInput = document.getElementById('doc-prompt');
+          if (promptInput) promptInput.value = autoPrompt;
+          setTimeout(() => {
+            if (typeof generateDocument === 'function') generateDocument();
+          }, 800);
+        } else if (hash === 'presentations') {
+          const promptInput = document.getElementById('pres-prompt');
+          if (promptInput) promptInput.value = autoPrompt;
+          setTimeout(() => {
+            if (typeof generatePresentation === 'function') generatePresentation();
+          }, 800);
+        }
+      }
+    }
+  }, 100);
 });
  </script>
 <script src="public-config.js"></script>

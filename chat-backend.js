@@ -495,6 +495,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       await supabaseClient.from('projects').update({ last_opened_at: new Date().toISOString() }).eq('id', currentProject.id);
+      
+      const genBtn = document.getElementById('floating-generate-btn');
+      if (genBtn) genBtn.style.display = 'flex';
+      
       await loadChatSessions();
     } catch (error) {
       console.error(error);
@@ -571,53 +575,85 @@ function getAllChatMessages() {
   return Array.from(messages).map(m => m.textContent).join('\n')
 }
 
+function openGenerationModal() {
+  const modal = document.getElementById('generate-options-modal');
+  if (modal) modal.classList.add('open');
+}
+
+function closeGenerationModal() {
+  const modal = document.getElementById('generate-options-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+async function triggerAutomaticGeneration(genType, event) {
+  const messages = [];
+  document.querySelectorAll('.msg').forEach(el => {
+    const role = el.classList.contains('user') ? 'user' : 'ai';
+    const contentEl = el.querySelector('.msg-bubble');
+    if (contentEl) {
+      messages.push({ role, content: contentEl.innerText.trim() });
+    }
+  });
+  
+  if (messages.length === 0) {
+    showToast('Please type some instructions in the chat before generating.');
+    return;
+  }
+  
+  const btn = event ? event.currentTarget : null;
+  let origText = '';
+  if (btn) {
+    origText = btn.innerHTML;
+    btn.innerHTML = '<span style="display:flex;align-items:center;gap:8px;"><span class="opt-icon">⚡</span><strong>Extracting requirements...</strong></span>';
+    btn.disabled = true;
+  }
+  
+  try {
+    const res = await fetch('/api/extract-prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages, gen_type: genType })
+    });
+    if (!res.ok) throw new Error('API request failed');
+    const data = await res.json();
+    if (!data.success || !data.prompt) throw new Error('Failed to parse response prompt');
+    
+    localStorage.setItem('aos_auto_prompt', data.prompt);
+    
+    let tabName = 'ui-screens';
+    if (genType === 'video') tabName = 'videos';
+    if (genType === 'pdf') tabName = 'documents';
+    if (genType === 'presentation') tabName = 'presentations';
+    
+    closeGenerationModal();
+    window.location.href = `generation.html?project_id=${currentProject.id}&auto=true#${tabName}`;
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to extract prompt automatically. Navigating to custom studio...');
+    let tabName = 'ui-screens';
+    if (genType === 'video') tabName = 'videos';
+    if (genType === 'pdf') tabName = 'documents';
+    if (genType === 'presentation') tabName = 'presentations';
+    closeGenerationModal();
+    window.location.href = `generation.html?project_id=${currentProject.id}#${tabName}`;
+  } finally {
+    if (btn) {
+      btn.innerHTML = origText;
+      btn.disabled = false;
+    }
+  }
+}
+
+// Bind globally for inline HTML references
+window.openGenerationModal = openGenerationModal;
+window.closeGenerationModal = closeGenerationModal;
+window.triggerAutomaticGeneration = triggerAutomaticGeneration;
+
 function showGenerateButton() {
-  const existing = document.getElementById('generate-btn-container')
-  if (existing) return
-  
-  const container = document.createElement('div')
-  container.id = 'generate-btn-container'
-  container.style.cssText = 'position:fixed;bottom:100px;right:24px;z-index:999;display:flex;flex-direction:column;gap:10px;'
-  
-  container.innerHTML = `
-    <div style="background:white;border-radius:16px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,0.15);border:1px solid #e5e7eb;">
-      <p style="font-family:Plus Jakarta Sans,sans-serif;font-size:13px;font-weight:600;color:#111827;margin-bottom:12px;text-align:center;">Generate from your idea</p>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <button onclick="goToUIGeneration()" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;border-radius:10px;padding:10px 16px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-align:left;">
-          UI Generation Studio
-        </button>
-        <button onclick="goToPresentationStudio()" style="background:linear-gradient(135deg,#f5a623,#f59e0b);color:white;border:none;border-radius:10px;padding:10px 16px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-align:left;">
-          Presentation Studio
-        </button>
-        <button onclick="goToDevelopmentStudio()" style="background:linear-gradient(135deg,#16a34a,#15803d);color:white;border:none;border-radius:10px;padding:10px 16px;font-family:Inter,sans-serif;font-size:13px;font-weight:600;cursor:pointer;text-align:left;">
-          Development Studio
-        </button>
-      </div>
-    </div>
-  `
-  
-  document.body.appendChild(container)
+  const genBtn = document.getElementById('floating-generate-btn');
+  if (genBtn) genBtn.style.display = 'flex';
 }
-
-function goToUIGeneration() {
-  localStorage.setItem('aos_current_project', JSON.stringify(projectContext))
-  window.location.href = 'generation.html?tab=ui-screens&auto=true'
-}
-
-function goToPresentationStudio() {
-  localStorage.setItem('aos_current_project', JSON.stringify(projectContext))
-  window.location.href = 'generation.html?tab=presentations&auto=true'
-}
-
-function goToDevelopmentStudio() {
-  localStorage.setItem('aos_current_project', JSON.stringify(projectContext))
-  window.location.href = 'ide.html'
-}
-
-// Bind to window to guarantee inline onclick context accessibility
-window.goToUIGeneration = goToUIGeneration;
-window.goToPresentationStudio = goToPresentationStudio;
-window.goToDevelopmentStudio = goToDevelopmentStudio;
+window.showGenerateButton = showGenerateButton;
 
 async function startProject() {
   const name = document.getElementById('project-name-input').value.trim()

@@ -156,6 +156,33 @@ def root():
     })
 
 
+class ExtractPromptRequest(BaseModel):
+    messages: list
+    gen_type: str
+
+
+@app.post("/api/extract-prompt")
+def extract_prompt(request: ExtractPromptRequest):
+    conversation_text = "\n".join([f"{msg.get('role', 'user')}: {msg.get('content', '')}" for msg in request.messages])
+    
+    system_prompt = (
+        "You are an expert AI prompt engineer. Your task is to extract project requirements from the given chat conversation "
+        "and generate a single, highly detailed, optimized prompt for another AI generator.\n\n"
+        f"The user wants to generate a: {request.gen_type.upper()}\n\n"
+        "Instructions:\n"
+        "- Synthesize all project features, goals, styling choices (e.g. dark mode, colors), tech stack, and content mentioned in the conversation.\n"
+        "- Return ONLY the optimized prompt text. Do not add explanations, quotes, or markdown wrappers.\n"
+        "- The prompt must be in English, professional, descriptive, and cover all functional/visual requirements."
+    )
+    
+    try:
+        prompt_extracted = call_deepseek(system_prompt, f"Conversation:\n{conversation_text}")
+        return {"success": True, "prompt": prompt_extracted.strip()}
+    except Exception as e:
+        print("Prompt extraction error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # PDF GENERATION ROUTE IMPORTED FROM pdf_generator.py
 # PPT GENERATION ROUTE IMPORTED FROM ppt_generator.py
 # WORD GENERATION ROUTE IMPORTED FROM word_generator.py
