@@ -51,6 +51,9 @@ def generate_video(request: VideoRequest):
         video = client.text_to_video(
             ", ".join(prompt_parts),
             model=model,
+            # Fal's Wan video route requires an explicit aspect ratio rather
+            # than inferring it from natural-language prompt text.
+            extra_body={"aspect_ratio": request.aspect_ratio},
             **parameters,
         )
         content = video.read() if hasattr(video, "read") else bytes(video)
