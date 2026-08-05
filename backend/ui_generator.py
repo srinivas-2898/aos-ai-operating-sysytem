@@ -326,7 +326,7 @@ def generate_html_screen(project_name: str, app_type: str, screen_name: str, fea
         f"- Core Features list: {', '.join(features) if features else 'Standard features'}\n\n"
         "Design Instructions:\n"
         "- Return ONLY the valid HTML code, containing standard HTML tags, CSS styled inline in a <style> block, and HTML layout. Do NOT wrap the output in markdown code block ticks (```html or ```) and do NOT add any markdown, comments, or explanations outside the HTML code.\n"
-        "- Customize all text, fields, buttons, dashboard layouts, charts, and colors to represent the target prompt exactly. Do NOT use mock placeholder names like 'vit nav guide' or 'CampusConnect' unless explicitly requested. Use actual app-related text and branding.\n"
+        "- Customize all text, fields, labels, buttons, dashboard layouts, charts, and colors to represent the target app description exactly. Prioritize the app features and branding described in the user's prompt (e.g. if they describe an e-commerce app, use e-commerce branding, terms, and products, even if the project name is different or unrelated). Do NOT use generic or unrelated placeholders.\n"
         "- The styling must be modern, premium, using gradients, rounded cards, beautiful buttons, clean typography, and responsive structures. Make it look beautiful and fully populated with real content (no Lorem Ipsum)."
     )
     
