@@ -478,7 +478,8 @@ def generate_document(data: dict):
         elif document_type in {'PDF', 'Invoice'}:
             content, mimetype, extension = create_pdf(plan, document_type, data)
         elif document_type == 'PowerPoint':
-            content, mimetype, extension = create_pptx(plan, 6, 'modern')
+            from backend.ppt_generator import create_premium_pptx
+            content, mimetype, extension = create_premium_pptx(prompt, 6, 'modern')
         else:
             content, mimetype, extension = create_docx(plan, document_type)
         filename = f'{safe_filename(plan["title"], "document")}.{extension}'
@@ -501,7 +502,8 @@ def generate_presentation(data: dict):
         raise HTTPException(status_code=400, detail='Choose between 1 and 20 slides.')
     plan = document_plan(prompt, 'Presentation')
     try:
-        content, mimetype, extension = create_pptx(plan, slide_count, theme)
+        from backend.ppt_generator import create_premium_pptx
+        content, mimetype, extension = create_premium_pptx(prompt, slide_count, theme)
         filename = f'{safe_filename(plan["title"], "presentation")}.{extension}'
         return Response(content=content, media_type=mimetype, headers={'Content-Disposition': f'attachment; filename="{filename}"'})
     except Exception as error:

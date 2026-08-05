@@ -1,147 +1,291 @@
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
+"""
+Premium PowerPoint Generator with AI-generated slide illustrations.
+Uses LLM for rich slide content + Hugging Face for context-aware images.
+"""
+import os
+import re
+import json
+import base64
+import requests
+from io import BytesIO
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
 from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN
-from pptx.util import Inches, Pt
-from pydantic import BaseModel
-import os
-import sys
-import uuid
-import json
-import requests
+from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.enum.shapes import MSO_SHAPE
+from PIL import Image
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+HF_TOKEN = os.environ.get("HF_TOKEN")
 
-router = APIRouter()
-
+# ── Theme palettes ──────────────────────────────────────────────────────
 THEMES = {
-    "professional": {"background": "1a1a2e", "title_color": "ffffff", "subtitle_color": "667eea", "text_color": "cccccc", "accent_color": "667eea", "secondary_bg": "16213e"},
-    "modern": {"background": "7c3aed", "title_color": "ffffff", "subtitle_color": "f093fb", "text_color": "e9d5ff", "accent_color": "f093fb", "secondary_bg": "6d28d9"},
-    "minimal": {"background": "ffffff", "title_color": "111827", "subtitle_color": "6b7280", "text_color": "374151", "accent_color": "111827", "secondary_bg": "f9fafb"},
-    "corporate": {"background": "1e40af", "title_color": "ffffff", "subtitle_color": "bfdbfe", "text_color": "dbeafe", "accent_color": "3b82f6", "secondary_bg": "1d4ed8"},
-    "creative": {"background": "fff1f2", "title_color": "be185d", "subtitle_color": "9d174d", "text_color": "1f2937", "accent_color": "f43f5e", "secondary_bg": "ffe4e6"},
+    'modern': {
+        'bg': (15, 23, 42), 'fg': (255, 255, 255), 'accent': (59, 130, 246),
+        'card': (30, 41, 59), 'muted': (148, 163, 184), 'gradient_end': (30, 64, 175)
+    },
+    'minimal': {
+        'bg': (255, 255, 255), 'fg': (15, 23, 42), 'accent': (59, 130, 246),
+        'card': (241, 245, 249), 'muted': (100, 116, 139), 'gradient_end': (226, 232, 240)
+    },
+    'bold': {
+        'bg': (9, 9, 11), 'fg': (255, 255, 255), 'accent': (168, 85, 247),
+        'card': (24, 24, 27), 'muted': (161, 161, 170), 'gradient_end': (88, 28, 135)
+    },
+    'corporate': {
+        'bg': (15, 23, 42), 'fg': (255, 255, 255), 'accent': (14, 165, 233),
+        'card': (30, 41, 59), 'muted': (148, 163, 184), 'gradient_end': (3, 105, 161)
+    },
+    'creative': {
+        'bg': (30, 10, 60), 'fg': (255, 255, 255), 'accent': (244, 63, 94),
+        'card': (50, 20, 80), 'muted': (196, 181, 253), 'gradient_end': (109, 40, 217)
+    },
 }
 
-TEMPLATES = {
-    "business": {"slide_types": ["title", "agenda", "content", "content", "content", "content", "summary", "end"], "has_agenda": True, "has_numbers": True},
-    "pitch_deck": {"slide_types": ["title", "problem", "solution", "market", "product", "traction", "team", "financials", "ask", "end"], "has_agenda": False, "has_numbers": True},
-    "educational": {"slide_types": ["title", "overview", "content", "content", "content", "activity", "summary", "quiz", "end"], "has_agenda": True, "has_numbers": True},
-    "portfolio": {"slide_types": ["title", "about", "work", "work", "work", "skills", "contact", "end"], "has_agenda": False, "has_numbers": False},
-}
 
-OUTPUT_DIRECTORY = "output"
-os.makedirs(OUTPUT_DIRECTORY, exist_ok=True)
+def _rgb(t):
+    return RGBColor(*t)
 
 
-class PPTRequest(BaseModel):
-    prompt: str
-    num_slides: int = 8
-    theme: str = "professional"
-    template: str = "business"
+def _generate_slide_content(prompt, slide_count, gemini_key):
+    """Use LLM to generate rich, structured slide content as JSON."""
+    system = (
+        "You are a professional presentation designer. Generate structured slide content as JSON.\n"
+        "Return ONLY valid JSON (no markdown, no ```json wrapper). Structure:\n"
+        "{\n"
+        '  "title": "Presentation Title",\n'
+        '  "slides": [\n'
+        '    {\n'
+        '      "title": "Slide Title",\n'
+        '      "subtitle": "Optional subtitle",\n'
+        '      "bullet_points": ["Point 1", "Point 2", "Point 3"],\n'
+        '      "image_prompt": "Detailed description of a relevant illustration for this slide",\n'
+        '      "speaker_notes": "Brief notes for the presenter"\n'
+        '    }\n'
+        "  ]\n"
+        "}\n"
+        f"Generate exactly {slide_count} slides. Make content detailed, professional, and directly relevant to the topic.\n"
+        "The first slide should be the title/cover slide. The last slide should be a summary or Q&A slide.\n"
+        "For image_prompt, describe a specific, high-quality illustration that matches the slide content."
+    )
+    user = f"Create a {slide_count}-slide presentation about: {prompt}"
+
+    # Try Gemini
+    if gemini_key:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={gemini_key}"
+            res = requests.post(url, json={
+                'contents': [{'parts': [{'text': f"{system}\n\nUser request: {user}"}]}],
+                'generationConfig': {'temperature': 0.7, 'maxOutputTokens': 8192}
+            }, timeout=45)
+            res.raise_for_status()
+            reply = res.json().get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+            # Extract JSON
+            match = re.search(r'(\{.*\})', reply.strip(), re.DOTALL)
+            if match:
+                return json.loads(match.group(1))
+        except Exception as e:
+            print(f"LLM slide content generation failed: {e}")
+
+    # Fallback: basic structure
+    slides = [{"title": prompt[:60], "subtitle": "AI-Generated Presentation", "bullet_points": [], "image_prompt": f"professional illustration about {prompt}", "speaker_notes": ""}]
+    for i in range(1, slide_count):
+        slides.append({
+            "title": f"Section {i}",
+            "subtitle": "",
+            "bullet_points": [f"Key point about {prompt}"],
+            "image_prompt": f"business illustration related to {prompt}",
+            "speaker_notes": ""
+        })
+    return {"title": prompt[:60], "slides": slides}
 
 
-def generate_ppt_content(prompt: str, num_slides: int, theme: str, template: str) -> dict:
-    from main import call_deepseek
-    system_prompt = f"""You are an expert presentation designer. Generate professional slide content.
-Return ONLY valid JSON with this exact structure:
-{{"title":"Presentation main title","subtitle":"Presentation subtitle","author":"AOS AI Operating System","slides":[{{"slide_number":1,"type":"title","title":"Slide title","subtitle":"Slide subtitle","content":"Main content text","bullet_points":["Point 1","Point 2","Point 3","Point 4"],"speaker_notes":"Notes for this slide"}}]}}
-Generate exactly {num_slides} slides. Make each slide focused with a maximum of 4-5 bullet points. Keep every bullet concise and impactful (maximum 10 words). Give every slide a distinct purpose and provide useful speaker notes. Do not use filler slides, fake statistics, or placeholder text. Make the deck clear, persuasive, and ready for a college, company, or hackathon presentation."""
-    response = call_deepseek(system_prompt, f"Create a {template} presentation about: {prompt}")
-    clean_response = response.strip()
-    if clean_response.startswith("```"):
-        clean_response = clean_response.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+def _generate_image(prompt, width=400, height=300):
+    """Generate an image via Hugging Face and return as BytesIO."""
+    if not HF_TOKEN:
+        return None
     try:
-        content = json.loads(clean_response)
-        if not isinstance(content.get("slides"), list):
-            raise ValueError("slides is missing")
-        return content
-    except (json.JSONDecodeError, ValueError, AttributeError):
-        return {"title": "AOS Presentation", "subtitle": prompt[:160], "author": "AOS AI Operating System", "slides": [{"slide_number": 1, "type": "title", "title": "AOS Presentation", "subtitle": prompt, "content": response, "bullet_points": [], "speaker_notes": ""}]}
+        res = requests.post(
+            'https://router.huggingface.co/nscale/v1/images/generations',
+            headers={'Authorization': f'Bearer {HF_TOKEN}'},
+            json={
+                'model': 'black-forest-labs/FLUX.1-schnell',
+                'prompt': f"{prompt}, clean professional illustration, high quality, no text",
+                'response_format': 'b64_json'
+            },
+            timeout=25,
+        )
+        if res.status_code == 200:
+            b64 = res.json().get('data', [{}])[0].get('b64_json')
+            if b64:
+                img_data = base64.b64decode(b64)
+                img = Image.open(BytesIO(img_data))
+                img = img.resize((width, height), Image.LANCZOS)
+                buf = BytesIO()
+                img.save(buf, format='PNG')
+                buf.seek(0)
+                return buf
+    except Exception as e:
+        print(f"HF image generation failed for PPT slide: {e}")
+    return None
 
 
-def hex_to_rgb(hex_color: str) -> RGBColor:
-    value = hex_color.lstrip('#')
-    return RGBColor(int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16))
+def _add_rounded_rect(slide, left, top, width, height, fill_rgb, alpha=None):
+    """Add a rounded rectangle shape as a card background."""
+    shape = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, left, top, width, height)
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = _rgb(fill_rgb)
+    shape.line.fill.background()  # no border
+    shape.shadow.inherit = False
+    # Bring to back so text overlays it
+    return shape
 
 
-def set_slide_background(slide, color_hex: str):
-    fill = slide.background.fill
-    fill.solid()
-    fill.fore_color.rgb = hex_to_rgb(color_hex)
+def _add_text(slide, left, top, width, height, text, font_size, color, bold=False, alignment=PP_ALIGN.LEFT):
+    """Add a text box with styled text."""
+    txBox = slide.shapes.add_textbox(left, top, width, height)
+    tf = txBox.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
+    p.text = text
+    p.font.size = Pt(font_size)
+    p.font.color.rgb = _rgb(color)
+    p.font.bold = bold
+    p.alignment = alignment
+    return txBox
 
 
-def add_text_box(slide, text, left, top, width, height, font_size, color_hex, bold=False, alignment=PP_ALIGN.LEFT):
-    box = slide.shapes.add_textbox(left, top, width, height)
-    frame = box.text_frame
-    frame.word_wrap = True
-    paragraph = frame.paragraphs[0]
-    paragraph.text = str(text or '')
-    paragraph.alignment = alignment
-    paragraph.font.name = 'Calibri'
-    paragraph.font.size = Pt(font_size)
-    paragraph.font.bold = bold
-    paragraph.font.color.rgb = hex_to_rgb(color_hex)
-    return box
+def create_premium_pptx(prompt, slide_count=8, theme='modern'):
+    """Generate a premium PowerPoint presentation with AI images."""
+    gemini_key = os.getenv("GEMINI_API_KEY_2") or os.getenv("GEMINI_API_KEY")
+    palette = THEMES.get(theme, THEMES['modern'])
 
+    # 1. Generate structured slide content via LLM
+    content = _generate_slide_content(prompt, slide_count, gemini_key)
+    slides_data = content.get('slides', [])
+    pres_title = content.get('title', prompt[:60])
 
-def create_ppt_file(content: dict, theme_name: str, template_name: str, filename: str) -> str:
-    theme = THEMES.get(theme_name, THEMES["professional"])
-    filepath = os.path.join(OUTPUT_DIRECTORY, f"{filename}.pptx")
-    presentation = Presentation()
-    presentation.slide_width = Inches(13.33)
-    presentation.slide_height = Inches(7.5)
-    slides = content.get("slides") or []
-    for index, slide_content in enumerate(slides):
-        slide = presentation.slides.add_slide(presentation.slide_layouts[6])
-        set_slide_background(slide, theme["background"])
-        slide_type = str(slide_content.get("type", "content")).lower()
-        is_title = index == 0 or slide_type == "title"
-        is_end = index == len(slides) - 1 or slide_type == "end"
-        if is_title:
-            add_text_box(slide, slide_content.get("title") or content.get("title"), Inches(1.0), Inches(1.65), Inches(11.3), Inches(1.15), 44, theme["title_color"], True, PP_ALIGN.CENTER)
-            add_text_box(slide, slide_content.get("subtitle") or content.get("subtitle", ""), Inches(1.4), Inches(3.0), Inches(10.5), Inches(.7), 24, theme["subtitle_color"], False, PP_ALIGN.CENTER)
-            line = slide.shapes.add_shape(1, Inches(3.95), Inches(3.33), Inches(6.7), Inches(.05))
-            line.fill.solid(); line.fill.fore_color.rgb = hex_to_rgb(theme["accent_color"]); line.line.fill.background()
-        elif is_end:
-            add_text_box(slide, "Thank You", Inches(1.0), Inches(2.1), Inches(11.3), Inches(1.05), 54, theme["title_color"], True, PP_ALIGN.CENTER)
-            add_text_box(slide, slide_content.get("subtitle") or "Questions and discussion", Inches(1.2), Inches(3.35), Inches(10.9), Inches(.6), 20, theme["subtitle_color"], False, PP_ALIGN.CENTER)
-        else:
-            add_text_box(slide, slide_content.get("title", "Key Point"), Inches(.75), Inches(.55), Inches(11.8), Inches(.65), 32, theme["title_color"], True)
-            line = slide.shapes.add_shape(1, Inches(.75), Inches(1.35), Inches(3.2), Inches(.04))
-            line.fill.solid(); line.fill.fore_color.rgb = hex_to_rgb(theme["accent_color"]); line.line.fill.background()
-            if slide_content.get("content"):
-                add_text_box(slide, slide_content["content"], Inches(.9), Inches(1.7), Inches(11.3), Inches(1.25), 18, theme["text_color"])
-            bullets = slide_content.get("bullet_points") or []
+    # Pad or trim to requested count
+    while len(slides_data) < slide_count:
+        slides_data.append({"title": "Additional Points", "subtitle": "", "bullet_points": [f"More details about {prompt}"], "image_prompt": f"illustration about {prompt}", "speaker_notes": ""})
+    slides_data = slides_data[:slide_count]
+
+    prs = Presentation()
+    prs.slide_width = Inches(13.333)
+    prs.slide_height = Inches(7.5)
+    W = prs.slide_width
+    H = prs.slide_height
+
+    for idx, sd in enumerate(slides_data):
+        slide = prs.slides.add_slide(prs.slide_layouts[6])  # Blank layout
+
+        # ── Background ──
+        bg = slide.background.fill
+        bg.solid()
+        bg.fore_color.rgb = _rgb(palette['bg'])
+
+        # ── Accent bar (thin strip at top) ──
+        bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, 0, 0, W, Inches(0.08))
+        bar.fill.solid()
+        bar.fill.fore_color.rgb = _rgb(palette['accent'])
+        bar.line.fill.background()
+
+        is_cover = idx == 0
+        is_last = idx == slide_count - 1
+
+        if is_cover:
+            # ══════════ COVER SLIDE ══════════
+            # Large centered title
+            _add_text(slide, Inches(1), Inches(2.0), Inches(11.3), Inches(1.5),
+                      pres_title, 44, palette['fg'], bold=True, alignment=PP_ALIGN.CENTER)
+
+            subtitle = sd.get('subtitle', '')
+            if subtitle:
+                _add_text(slide, Inches(2), Inches(3.6), Inches(9.3), Inches(0.8),
+                          subtitle, 22, palette['muted'], alignment=PP_ALIGN.CENTER)
+
+            # Accent divider line
+            divider = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(5.5), Inches(3.3), Inches(2.3), Inches(0.06))
+            divider.fill.solid()
+            divider.fill.fore_color.rgb = _rgb(palette['accent'])
+            divider.line.fill.background()
+
+            # Generate cover image
+            img_buf = _generate_image(sd.get('image_prompt', prompt), 500, 350)
+            if img_buf:
+                slide.shapes.add_picture(img_buf, Inches(4.4), Inches(4.2), Inches(4.5), Inches(3.0))
+
+        elif is_last:
+            # ══════════ CLOSING SLIDE ══════════
+            _add_text(slide, Inches(1), Inches(2.4), Inches(11.3), Inches(1.2),
+                      sd.get('title', 'Thank You'), 40, palette['fg'], bold=True, alignment=PP_ALIGN.CENTER)
+
+            bullets = sd.get('bullet_points', [])
             if bullets:
-                bullet_text = '\n'.join(f'• {point}' for point in bullets[:5])
-                add_text_box(slide, bullet_text, Inches(1.05), Inches(3.05), Inches(10.9), Inches(2.7), 18, theme["text_color"])
-        if template_name in TEMPLATES and TEMPLATES[template_name].get("has_numbers"):
-            add_text_box(slide, str(index + 1), Inches(12.15), Inches(7.0), Inches(.45), Inches(.25), 10, theme["subtitle_color"], False, PP_ALIGN.RIGHT)
-        add_text_box(slide, "AOS", Inches(.5), Inches(7.0), Inches(.5), Inches(.25), 10, theme["subtitle_color"])
-        notes = slide_content.get("speaker_notes")
-        if notes:
-            try:
-                slide.notes_slide.notes_text_frame.text = str(notes)
-            except AttributeError:
-                pass
-    presentation.save(filepath)
-    return filepath
+                for bi, bp in enumerate(bullets[:4]):
+                    _add_text(slide, Inches(3), Inches(3.6 + bi * 0.6), Inches(7.3), Inches(0.5),
+                              f"→  {bp}", 18, palette['muted'], alignment=PP_ALIGN.CENTER)
 
+        else:
+            # ══════════ CONTENT SLIDES ══════════
+            # Slide number badge
+            badge = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(0.5), Inches(0.35), Inches(0.55), Inches(0.55))
+            badge.fill.solid()
+            badge.fill.fore_color.rgb = _rgb(palette['accent'])
+            badge.line.fill.background()
+            badge_tf = badge.text_frame
+            badge_tf.paragraphs[0].text = str(idx + 1)
+            badge_tf.paragraphs[0].font.size = Pt(16)
+            badge_tf.paragraphs[0].font.color.rgb = RGBColor(255, 255, 255)
+            badge_tf.paragraphs[0].font.bold = True
+            badge_tf.paragraphs[0].alignment = PP_ALIGN.CENTER
+            badge_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
 
-@router.post("/api/generate-ppt")
-async def generate_ppt(request: PPTRequest):
-    try:
-        theme = request.theme or "professional"
-        template = request.template or "business"
-        num_slides = min(max(request.num_slides, 3), 20)
-        content = generate_ppt_content(request.prompt, num_slides, theme, template)
-        filename = f"aos_presentation_{uuid.uuid4().hex[:8]}"
-        filepath = create_ppt_file(content, theme, template, filename)
-        safe_name = ''.join(char if char.isalnum() or char in (' ', '-', '_') else '' for char in str(content.get('title', 'presentation'))).strip() or 'presentation'
-        return FileResponse(filepath, media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", filename=f"{safe_name}.pptx")
-    except HTTPException:
-        raise
-    except Exception as error:
-        raise HTTPException(status_code=500, detail=str(error)) from error
+            # Slide title
+            _add_text(slide, Inches(1.3), Inches(0.3), Inches(7), Inches(0.7),
+                      sd.get('title', ''), 28, palette['fg'], bold=True)
+
+            # Subtitle
+            subtitle = sd.get('subtitle', '')
+            if subtitle:
+                _add_text(slide, Inches(1.3), Inches(1.0), Inches(7), Inches(0.5),
+                          subtitle, 16, palette['muted'])
+
+            # Content card background
+            card_top = Inches(1.6)
+            card_height = Inches(5.2)
+            _add_rounded_rect(slide, Inches(0.5), card_top, Inches(7.5), card_height, palette['card'])
+
+            # Bullet points inside card
+            bullets = sd.get('bullet_points', [])
+            for bi, bp in enumerate(bullets[:6]):
+                y_pos = card_top + Inches(0.4 + bi * 0.7)
+                # Bullet icon
+                dot = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(1.0), y_pos + Inches(0.12), Inches(0.18), Inches(0.18))
+                dot.fill.solid()
+                dot.fill.fore_color.rgb = _rgb(palette['accent'])
+                dot.line.fill.background()
+                # Bullet text
+                _add_text(slide, Inches(1.4), y_pos, Inches(6.2), Inches(0.6),
+                          bp, 16, palette['fg'])
+
+            # Right side: AI-generated illustration
+            img_prompt = sd.get('image_prompt', f'illustration about {prompt}')
+            img_buf = _generate_image(img_prompt, 480, 400)
+            if img_buf:
+                # Image card background
+                _add_rounded_rect(slide, Inches(8.3), card_top, Inches(4.5), card_height, palette['card'])
+                slide.shapes.add_picture(img_buf, Inches(8.5), Inches(1.9), Inches(4.1), Inches(3.4))
+
+                # Image caption
+                _add_text(slide, Inches(8.5), Inches(5.5), Inches(4.1), Inches(0.5),
+                          img_prompt[:50], 11, palette['muted'], alignment=PP_ALIGN.CENTER)
+
+        # ── Footer ──
+        _add_text(slide, Inches(0.5), Inches(7.0), Inches(4), Inches(0.4),
+                  pres_title, 10, palette['muted'])
+        _add_text(slide, Inches(10), Inches(7.0), Inches(3), Inches(0.4),
+                  f"Slide {idx + 1} of {slide_count}", 10, palette['muted'], alignment=PP_ALIGN.RIGHT)
+
+    buf = BytesIO()
+    prs.save(buf)
+    return buf.getvalue(), 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'pptx'
