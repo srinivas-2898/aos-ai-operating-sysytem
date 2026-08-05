@@ -598,11 +598,13 @@ async function autoGenerateUIScreens(project) {
 }
 
 async function generateUIScreens() {
-  const projectName = document.getElementById('ui-project-name').value.trim()
+  let projectName = document.getElementById('ui-project-name').value.trim()
+  if (!projectName) {
+    projectName = (window.AOS_PROJECT && window.AOS_PROJECT.name) || 'My Project';
+  }
   const appType = document.getElementById('ui-app-type').value
   const description = document.getElementById('ui-description').value.trim()
   
-  if (!projectName) { showError('Please enter project name'); return }
   if (!description) { showError('Please describe your app'); return }
   
   const selectedScreens = []
