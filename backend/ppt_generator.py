@@ -8,6 +8,9 @@ import json
 import base64
 import requests
 from io import BytesIO
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
+from pydantic import BaseModel
 from pptx import Presentation
 from pptx.util import Inches, Pt, Emu
 from pptx.dml.color import RGBColor
@@ -16,6 +19,14 @@ from pptx.enum.shapes import MSO_SHAPE
 from PIL import Image
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
+router = APIRouter()
+
+
+class PPTRequest(BaseModel):
+    prompt: str
+    num_slides: int = 8
+    theme: str = "professional"
+    template: str = "business"
 
 # ── Theme palettes ──────────────────────────────────────────────────────
 THEMES = {
@@ -46,7 +57,7 @@ def _rgb(t):
     return RGBColor(*t)
 
 
-def _generate_slide_content(prompt, slide_count, gemini_key):
+def _generate_slide_content(prompt, slide_count):
     """Use LLM to generate rich, structured slide content as JSON."""
     system = (
         "You are a professional presentation designer. Generate structured slide content as JSON.\n"
@@ -69,22 +80,21 @@ def _generate_slide_content(prompt, slide_count, gemini_key):
     )
     user = f"Create a {slide_count}-slide presentation about: {prompt}"
 
-    # Try Gemini
-    if gemini_key:
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={gemini_key}"
-            res = requests.post(url, json={
-                'contents': [{'parts': [{'text': f"{system}\n\nUser request: {user}"}]}],
-                'generationConfig': {'temperature': 0.7, 'maxOutputTokens': 8192}
-            }, timeout=45)
-            res.raise_for_status()
-            reply = res.json().get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '')
-            # Extract JSON
-            match = re.search(r'(\{.*\})', reply.strip(), re.DOTALL)
-            if match:
-                return json.loads(match.group(1))
-        except Exception as e:
-            print(f"LLM slide content generation failed: {e}")
+    # The central AOS generator tries DeepSeek first, then configured fallbacks.
+    # Keeping it here avoids exposing any provider key to the browser.
+    try:
+        from main import call_deepseek
+        reply = call_deepseek(system, user, response_format="json")
+        match = re.search(r'(\{.*\})', reply.strip(), re.DOTALL)
+        if match:
+            generated = json.loads(match.group(1))
+            if isinstance(generated.get("slides"), list):
+                return generated
+        raise ValueError("The AI response did not contain a slides array.")
+    except Exception as error:
+        # A presentation remains available even during a provider outage, but no
+        # raw model response is ever inserted into a slide.
+        print(f"DeepSeek PPT content generation failed; using presentation fallback: {error}")
 
     # Fallback: basic structure
     slides = [{"title": prompt[:60], "subtitle": "AI-Generated Presentation", "bullet_points": [], "image_prompt": f"professional illustration about {prompt}", "speaker_notes": ""}]
@@ -156,11 +166,10 @@ def _add_text(slide, left, top, width, height, text, font_size, color, bold=Fals
 
 def create_premium_pptx(prompt, slide_count=8, theme='modern'):
     """Generate a premium PowerPoint presentation with AI images."""
-    gemini_key = os.getenv("GEMINI_API_KEY_2") or os.getenv("GEMINI_API_KEY")
     palette = THEMES.get(theme, THEMES['modern'])
 
     # 1. Generate structured slide content via LLM
-    content = _generate_slide_content(prompt, slide_count, gemini_key)
+    content = _generate_slide_content(prompt, slide_count)
     slides_data = content.get('slides', [])
     pres_title = content.get('title', prompt[:60])
 
@@ -289,3 +298,27 @@ def create_premium_pptx(prompt, slide_count=8, theme='modern'):
     buf = BytesIO()
     prs.save(buf)
     return buf.getvalue(), 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'pptx'
+
+
+@router.post("/api/generate-ppt")
+async def generate_ppt(request: PPTRequest):
+    prompt = request.prompt.strip()
+    if not prompt:
+        raise HTTPException(status_code=400, detail="Please enter a presentation topic.")
+
+    slide_count = max(3, min(request.num_slides, 20))
+    theme_aliases = {"professional": "corporate", "business": "corporate"}
+    theme = theme_aliases.get(request.theme.lower(), request.theme.lower())
+    if theme not in THEMES:
+        theme = "corporate"
+
+    try:
+        content, media_type, extension = create_premium_pptx(prompt, slide_count, theme)
+        filename = re.sub(r"[^a-zA-Z0-9_-]+", "-", prompt[:60]).strip("-") or "aos-presentation"
+        return Response(
+            content=content,
+            media_type=media_type,
+            headers={"Content-Disposition": f'attachment; filename="{filename}.{extension}"'},
+        )
+    except Exception as error:
+        raise HTTPException(status_code=500, detail=f"PowerPoint generation failed: {error}") from error

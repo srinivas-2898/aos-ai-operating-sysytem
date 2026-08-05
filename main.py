@@ -27,7 +27,7 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY_2") or os.getenv("GEMINI_API_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-DEEPSEEK_URL = "https://api.deepseek.com/chat/completions"
+DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/auto")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
@@ -69,6 +69,8 @@ def call_deepseek(system_prompt: str, user_prompt: str, response_format: str = "
 
     def openai_compatible(url: str, api_key: str, model: str, provider: str) -> str:
         payload = {"model": model, "messages": messages, "max_tokens": 8192, "temperature": 0.7}
+        if response_format == "json":
+            payload["response_format"] = {"type": "json_object"}
         response = requests.post(
             url,
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
