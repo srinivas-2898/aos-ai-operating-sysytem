@@ -482,6 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const { data, error } = await supabaseClient.from('projects').select('*').eq('id', projectId).single();
       if (error) throw error;
       currentProject = data;
+      localStorage.setItem('aos_current_project', JSON.stringify(currentProject));
       const crumb = document.querySelector('.tb-breadcrumb');
       if (crumb) crumb.lastChild.textContent = ` ${currentProject.name}`;
 

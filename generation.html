@@ -698,6 +698,7 @@ async function generateUIScreens() {
   } finally {
     btn.textContent = 'Generate UI Screens'
     btn.disabled = false
+    document.dispatchEvent(new CustomEvent('aos-generation-finished'));
   }
 }
 
@@ -982,6 +983,7 @@ function generateVideo() {
     btn.disabled = false;
     btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate Video';
     showToast('Video generated!');
+    document.dispatchEvent(new CustomEvent('aos-generation-finished'));
   }, 2000);
 }
 
@@ -1149,6 +1151,53 @@ document.addEventListener('DOMContentLoaded', () => {
         // Find which tab is active based on the URL hash
         const hash = window.location.hash.slice(1) || 'ui-screens';
         
+        // Create a premium full-page glassmorphic loading overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'auto-gen-overlay';
+        overlay.style.cssText = `
+          position: fixed; inset: 0;
+          background: rgba(248, 250, 252, 0.85);
+          backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+          z-index: 99999; display: flex; flex-direction: column;
+          align-items: center; justify-content: center; gap: 24px;
+          font-family: 'Plus Jakarta Sans', sans-serif; color: #0f172a;
+          opacity: 1; transition: opacity 0.5s ease;
+        `;
+        
+        let genName = 'UI Screens';
+        if (hash === 'videos') genName = 'Videos';
+        if (hash === 'documents') genName = 'Documents';
+        if (hash === 'presentations') genName = 'Presentations';
+        
+        overlay.innerHTML = `
+          <div style="width: 56px; height: 56px; border: 4.5px solid #e2e8f0; border-top-color: #2563eb; border-radius: 50%; animation: overlaySpin 1s linear infinite;"></div>
+          <style>
+            @keyframes overlaySpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+          </style>
+          <div style="text-align: center;">
+            <h3 style="font-size: 22px; font-weight: 800; margin: 0 0 8px; letter-spacing: -0.5px;">Generating ${genName}...</h3>
+            <p style="font-size: 14.5px; color: #64748b; margin: 0; max-width: 420px; line-height: 1.5;">We are automatically analyzing your chat context and triggering the generator.</p>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+        
+        // Dismiss overlay when generation ends
+        const dismissOverlay = () => {
+          overlay.style.opacity = '0';
+          setTimeout(() => {
+            overlay.remove();
+          }, 500);
+          document.removeEventListener('aos-generation-finished', dismissOverlay);
+        };
+        document.addEventListener('aos-generation-finished', dismissOverlay);
+        
+        // Safe fallback timeout (25 seconds)
+        setTimeout(() => {
+          if (overlay.parentNode) {
+            dismissOverlay();
+          }
+        }, 25000);
+
         // Explicitly switch to the active tab to align visuals and content panels
         if (typeof switchTab === 'function') {
           switchTab(hash);

@@ -118,6 +118,7 @@
     } finally {
       loading.remove();
       setBusy(button, false, button.dataset.idleLabel);
+      document.dispatchEvent(new CustomEvent('aos-generation-finished'));
     }
   };
 
