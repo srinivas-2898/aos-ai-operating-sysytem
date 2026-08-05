@@ -51,6 +51,27 @@
       window.showToast?.(`Could not load saved files: ${error.message}`);
     }
   }
-  window.AOSGenerationStorage = { saveBlob, saveExternal, loadHistory, deleteFile };
+  async function clearAllByType(generationType) {
+    const session = await activeSession();
+    // Get all files of this type for the project
+    const { data: files, error: fetchErr } = await client.from('generation_files')
+      .select('id, storage_path')
+      .eq('project_id', projectId)
+      .eq('generation_type', generationType);
+    if (fetchErr) throw fetchErr;
+    // Delete storage objects
+    const storagePaths = (files || []).filter(f => f.storage_path).map(f => f.storage_path);
+    if (storagePaths.length > 0) {
+      await client.storage.from('generation-files').remove(storagePaths);
+    }
+    // Delete database records
+    const { error: delErr } = await client.from('generation_files')
+      .delete()
+      .eq('project_id', projectId)
+      .eq('generation_type', generationType);
+    if (delErr) throw delErr;
+    return (files || []).length;
+  }
+  window.AOSGenerationStorage = { saveBlob, saveExternal, loadHistory, deleteFile, clearAllByType };
   document.addEventListener('DOMContentLoaded', loadHistory);
 })();

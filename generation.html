@@ -327,7 +327,10 @@ body{background:radial-gradient(circle at 86% 0,#e0f2fe 0,transparent 28%),#f6f9
       </button>
     </div>
     <div class="right-panel">
-      <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:20px;color:#111827;margin-bottom:16px;">Gallery</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:20px;color:#111827;margin:0;">Gallery</h2>
+        <button onclick="clearImageHistory()" style="padding:6px 14px;border:1px solid #fee2e2;border-radius:8px;background:#fff;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">Clear Old Images</button>
+      </div>
       <div class="gallery-empty" id="img-gallery-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:#9ca3af;text-align:center;height:100%;">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         <p style="font-family:Inter,sans-serif;font-size:14px;font-weight:500;color:#6b7280;">Your preview is available here.</p>
@@ -404,7 +407,10 @@ body{background:radial-gradient(circle at 86% 0,#e0f2fe 0,transparent 28%),#f6f9
       </button>
     </div>
     <div class="right-panel">
-      <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:20px;color:#111827;margin-bottom:16px;">Screen Preview</h2>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <h2 style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:20px;color:#111827;margin:0;">Screen Preview</h2>
+        <button onclick="clearUIScreenHistory()" style="padding:6px 14px;border:1px solid #fee2e2;border-radius:8px;background:#fff;color:#ef4444;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">Clear Old Screens</button>
+      </div>
       <div class="gallery-empty" id="ui-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:#9ca3af;text-align:center;height:100%;">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:12px;opacity:0.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         <p style="font-family:Inter,sans-serif;font-size:14px;font-weight:500;color:#6b7280;">Your generated UI screens will appear here</p>
@@ -596,6 +602,37 @@ async function autoGenerateUIScreens(project) {
     document.getElementById('ui-project-name').value = project.project_name
     document.getElementById('ui-description').value = project.description || ''
     setTimeout(() => generateUIScreens(), 500)
+  }
+}
+
+async function clearUIScreenHistory() {
+  if (!confirm('Delete all old UI screen history for this project?')) return;
+  try {
+    const htmlCount = await window.AOSGenerationStorage.clearAllByType('html');
+    const imgCount = await window.AOSGenerationStorage.clearAllByType('image');
+    document.getElementById('ui-screens-grid').innerHTML = '';
+    document.getElementById('ui-screens-grid').style.display = 'none';
+    document.getElementById('ui-empty').style.display = 'flex';
+    window.showToast(`Cleared ${htmlCount + imgCount} old screen(s).`);
+  } catch (err) {
+    window.showToast(`Could not clear history: ${err.message}`);
+  }
+}
+
+async function clearImageHistory() {
+  if (!confirm('Delete all old image history for this project?')) return;
+  try {
+    const count = await window.AOSGenerationStorage.clearAllByType('image');
+    const gallery = document.getElementById('img-gallery');
+    if (gallery) gallery.innerHTML = '';
+    const empty = document.createElement('div');
+    empty.id = 'img-gallery-empty';
+    empty.className = 'gallery-empty';
+    empty.innerHTML = `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><p>Your preview is available here.</p>`;
+    if (gallery) gallery.parentNode.insertBefore(empty, gallery);
+    window.showToast(`Cleared ${count} old image(s).`);
+  } catch (err) {
+    window.showToast(`Could not clear history: ${err.message}`);
   }
 }
 
