@@ -438,9 +438,18 @@ async def get_ui_screen_image(filename: str):
 @router.get("/api/ui-screen-preview/{filename}")
 async def get_ui_screen_preview(filename: str):
     html_path = f"output/ui_screens/{filename}.html"
+    print(f"DEBUG: Preview requested for {filename}. html_path={html_path}, exists={os.path.exists(html_path)}, cwd={os.getcwd()}")
     if os.path.exists(html_path):
         return FileResponse(html_path, media_type="text/html")
-    raise HTTPException(status_code=404, detail="Screen not found")
+    try:
+        if os.path.exists("output/ui_screens"):
+            files = os.listdir("output/ui_screens")
+            print(f"DEBUG: Files in output/ui_screens: {files}")
+        else:
+            print("DEBUG: output/ui_screens directory does not exist!")
+    except Exception as e:
+        print(f"DEBUG: Failed to list dir: {e}")
+    raise HTTPException(status_code=404, detail=f"Screen not found. Path: {html_path}")
 
 @router.post("/api/generate-single-screen")
 async def generate_single_screen(request: SingleScreenRequest):
