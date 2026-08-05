@@ -2,19 +2,19 @@
 (() => {
   const projectId = new URLSearchParams(location.search).get('project_id');
   const client = window.supabase.createClient('https://gdqapoopqijohrtovjza.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdkcWFwb29wcWlqb2hydG92anphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5MjcyNzAsImV4cCI6MjEwMDUwMzI3MH0.mQsxKSmGBC3EfGLbuG2c5zAAzJKKIkq8wzsKzoO8oyI');
-  const typeFor = (label) => ({ PDF: 'pdf', Resume: 'pdf', Invoice: 'pdf', 'Business Plan': 'pdf', 'Research Paper': 'pdf', Word: 'word', Excel: 'excel', PowerPoint: 'powerpoint', Presentation: 'powerpoint', Image: 'image', HTML: 'html' })[label] || 'other';
+  const typeFor = (label) => ({ PDF: 'pdf', Resume: 'pdf', Invoice: 'pdf', 'Business Plan': 'pdf', 'Research Paper': 'pdf', Word: 'word', Excel: 'excel', PowerPoint: 'powerpoint', Presentation: 'powerpoint', Image: 'image', Video: 'video', HTML: 'html' })[label] || 'other';
   async function activeSession() {
     const { data: { session } } = await client.auth.getSession();
     if (!session || !projectId) throw new Error('Open a project before generating files.');
     return session;
   }
-  async function saveBlob({ blob, filename, title, type, prompt }) {
+  async function saveBlob({ blob, filename, title, type, prompt, metadata = {} }) {
     const session = await activeSession();
     const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
     const path = `${session.user.id}/${projectId}/${crypto.randomUUID()}-${safeName}`;
     const { error: uploadError } = await client.storage.from('generation-files').upload(path, blob, { contentType: blob.type || 'application/octet-stream', upsert: false });
     if (uploadError) throw uploadError;
-    const { data, error } = await client.from('generation_files').insert({ project_id: projectId, title, generation_type: typeFor(type), prompt, storage_path: path, status: 'ready' }).select();
+    const { data, error } = await client.from('generation_files').insert({ project_id: projectId, title, generation_type: typeFor(type), prompt, storage_path: path, status: 'ready', ...metadata }).select();
     if (error) { await client.storage.from('generation-files').remove([path]); throw error; }
     return data?.[0];
   }
@@ -34,6 +34,12 @@
     }
     const { error: dbError } = await client.from('generation_files').delete().eq('id', fileId);
     if (dbError) throw dbError;
+  }
+  async function getSignedUrl(storagePath, expiresIn = 3600) {
+    await activeSession();
+    const { data, error } = await client.storage.from('generation-files').createSignedUrl(storagePath, expiresIn);
+    if (error) throw error;
+    return data.signedUrl;
   }
   async function loadHistory() {
     try {
@@ -72,6 +78,6 @@
     if (delErr) throw delErr;
     return (files || []).length;
   }
-  window.AOSGenerationStorage = { saveBlob, saveExternal, loadHistory, deleteFile, clearAllByType };
+  window.AOSGenerationStorage = { saveBlob, saveExternal, loadHistory, deleteFile, getSignedUrl, clearAllByType };
   document.addEventListener('DOMContentLoaded', loadHistory);
 })();

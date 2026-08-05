@@ -40,6 +40,15 @@ CREATE INDEX IF NOT EXISTS idx_generation_files_project_updated ON public.genera
 CREATE INDEX IF NOT EXISTS idx_generation_files_owner_type ON public.generation_files(user_id, generation_type, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_project_activity_project_created ON public.project_activity(project_id, created_at DESC);
 
+-- Metadata used by real Pollinations video outputs. These fields remain NULL
+-- for other generation types.
+ALTER TABLE public.generation_files ADD COLUMN IF NOT EXISTS negative_prompt TEXT;
+ALTER TABLE public.generation_files ADD COLUMN IF NOT EXISTS duration_seconds INTEGER;
+ALTER TABLE public.generation_files ADD COLUMN IF NOT EXISTS aspect_ratio TEXT;
+ALTER TABLE public.generation_files ADD COLUMN IF NOT EXISTS generation_style TEXT;
+ALTER TABLE public.generation_files ADD COLUMN IF NOT EXISTS generation_quality TEXT;
+ALTER TABLE public.generation_files ADD COLUMN IF NOT EXISTS generation_seed BIGINT;
+
 DROP TRIGGER IF EXISTS generation_files_set_updated_at ON public.generation_files;
 CREATE TRIGGER generation_files_set_updated_at BEFORE UPDATE ON public.generation_files
 FOR EACH ROW EXECUTE FUNCTION public.aos_set_updated_at();
