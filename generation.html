@@ -1209,10 +1209,10 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const urlParams = new URLSearchParams(window.location.search);
       const isAuto = urlParams.get('auto') === 'true';
-      const autoPrompt = localStorage.getItem('aos_auto_prompt');
+      const autoPrompt = sessionStorage.getItem('aos_auto_prompt');
       
       if (isAuto && autoPrompt) {
-        localStorage.removeItem('aos_auto_prompt');
+        sessionStorage.removeItem('aos_auto_prompt');
         
         // Find which tab is active based on the URL hash
         const hash = window.location.hash.slice(1) || 'ui-screens';

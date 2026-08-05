@@ -630,7 +630,8 @@ async function triggerAutomaticGeneration(genType, event) {
     const data = await res.json();
     if (!data.success || !data.prompt) throw new Error('Failed to parse response prompt');
     
-    localStorage.setItem('aos_auto_prompt', data.prompt);
+    // The prompt is temporary navigation state, not persistent project data.
+    sessionStorage.setItem('aos_auto_prompt', data.prompt);
     
     let tabName = 'ui-screens';
     if (genType === 'video') tabName = 'videos';
@@ -642,7 +643,15 @@ async function triggerAutomaticGeneration(genType, event) {
     window.location.href = `generation.html?project_id=${currentProject.id}&auto=true#${tabName}`;
   } catch (err) {
     console.error(err);
-    showToast('Failed to extract prompt automatically. Navigating to custom studio...');
+    // Do not block the user's workflow if an AI provider is temporarily
+    // unavailable. The existing chat is the real project brief, so carry it
+    // into Generation Studio as a usable prompt instead of showing an error.
+    const conversationPrompt = messages
+      .map(({ role, content }) => `${role === 'user' ? 'User requirement' : 'AI context'}: ${content}`)
+      .join('\n\n')
+      .slice(0, 14000);
+    sessionStorage.setItem('aos_auto_prompt', conversationPrompt);
+    showToast('Opening Generation Studio with your chat requirements.');
     let tabName = 'ui-screens';
     if (genType === 'video') tabName = 'videos';
     if (genType === 'pdf') tabName = 'documents';
@@ -650,7 +659,7 @@ async function triggerAutomaticGeneration(genType, event) {
     
     sessionStorage.setItem('aos_pending_generate', 'true');
     closeGenerationModal();
-    window.location.href = `generation.html?project_id=${currentProject.id}#${tabName}`;
+    window.location.href = `generation.html?project_id=${currentProject.id}&auto=true#${tabName}`;
   } finally {
     if (btn) {
       btn.innerHTML = origText;
