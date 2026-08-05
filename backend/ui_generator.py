@@ -52,7 +52,7 @@ def call_deepseek_for_ui(project_name: str, app_type: str, screen_name: str, fea
     GROQ_API_KEY = os.getenv("GROQ_API_KEY")
     
     DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
-    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
     OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "openrouter/auto")
     GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
     
