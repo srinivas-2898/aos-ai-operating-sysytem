@@ -754,13 +754,29 @@ function renderUIPhoneFrame(screen) {
     frameOuter.appendChild(iframe)
     
     if (screen.code) {
-      iframe.srcdoc = screen.code;
+      let clean = screen.code.trim();
+      clean = clean.replace(/^\s*(?:```html|"""html|'''html|```|"""|''')\s*/i, '');
+      clean = clean.replace(/\s*(?:```|"""|''')\s*$/, '');
+      const startMatch = clean.match(/(<!DOCTYPE html|<html)/i);
+      if (startMatch) {
+        clean = clean.substring(startMatch.index);
+      }
+      clean = clean.replace(/["']$/g, '');
+      iframe.srcdoc = clean;
     } else {
       // Fetch and assign content via srcdoc to avoid raw-text display of html files with text/plain type
       fetch(url)
         .then(res => res.text())
         .then(html => {
-          iframe.srcdoc = html;
+          let clean = html.trim();
+          clean = clean.replace(/^\s*(?:```html|"""html|'''html|```|"""|''')\s*/i, '');
+          clean = clean.replace(/\s*(?:```|"""|''')\s*$/, '');
+          const startMatch = clean.match(/(<!DOCTYPE html|<html)/i);
+          if (startMatch) {
+            clean = clean.substring(startMatch.index);
+          }
+          clean = clean.replace(/["']$/g, '');
+          iframe.srcdoc = clean;
         })
         .catch(err => {
           console.error("Failed to load iframe content:", err);
