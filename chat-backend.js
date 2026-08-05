@@ -500,6 +500,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (genBtn) genBtn.style.display = 'flex';
       
       await loadChatSessions();
+      
+      if (sessionStorage.getItem('aos_pending_generate') === 'true') {
+        sessionStorage.removeItem('aos_pending_generate');
+        setTimeout(() => {
+          if (typeof openGenerationModal === 'function') openGenerationModal();
+        }, 800);
+      }
     } catch (error) {
       console.error(error);
       showToast(`Could not open project: ${error.message}`);
@@ -625,6 +632,7 @@ async function triggerAutomaticGeneration(genType, event) {
     if (genType === 'pdf') tabName = 'documents';
     if (genType === 'presentation') tabName = 'presentations';
     
+    sessionStorage.setItem('aos_pending_generate', 'true');
     closeGenerationModal();
     window.location.href = `generation.html?project_id=${currentProject.id}&auto=true#${tabName}`;
   } catch (err) {
@@ -634,6 +642,8 @@ async function triggerAutomaticGeneration(genType, event) {
     if (genType === 'video') tabName = 'videos';
     if (genType === 'pdf') tabName = 'documents';
     if (genType === 'presentation') tabName = 'presentations';
+    
+    sessionStorage.setItem('aos_pending_generate', 'true');
     closeGenerationModal();
     window.location.href = `generation.html?project_id=${currentProject.id}#${tabName}`;
   } finally {
