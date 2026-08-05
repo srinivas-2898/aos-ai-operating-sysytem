@@ -363,6 +363,32 @@ def generate_html_screen(project_name: str, app_type: str, screen_name: str, fea
         # Strip trailing quotes or backticks
         clean_code = clean_code.strip('`"\' \t\n\r')
         
+        # Guardrail: Verify clean_code is not empty or plain text
+        if len(clean_code) < 150 or not re.search(r'<[a-zA-Z]+', clean_code):
+            raise ValueError("LLM response is too short or lacks valid HTML tags.")
+            
+        # Auto-wrap partial fragment in standard HTML layout if it misses <html> tags
+        if not re.search(r'<html', clean_code, re.IGNORECASE):
+            clean_code = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {{
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }}
+  </style>
+</head>
+<body>
+  {clean_code}
+</body>
+</html>"""
+        
         return clean_code
     except Exception as e:
         print("Dynamic UI Generation failed, falling back to static templates:", e)
