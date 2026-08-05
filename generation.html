@@ -702,6 +702,9 @@ async function generateUIScreens() {
     btn.textContent = 'Generate UI Screens'
     btn.disabled = false
     document.dispatchEvent(new CustomEvent('aos-generation-finished'));
+  }
+}
+
 function renderUIPhoneFrame(screen) {
   const phoneFrame = document.createElement('div')
   phoneFrame.className = 'ui-screen-card'
