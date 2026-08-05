@@ -650,7 +650,9 @@ async function generateUIScreens() {
       try {
         const fetchUrl = apiEndpoint(screen.type === 'image' ? screen.url : screen.preview_url);
         const res = await fetch(fetchUrl);
-        const blob = await res.blob();
+        const rawBlob = await res.blob();
+        const mimeType = screen.type === 'image' ? 'image/png' : 'text/html';
+        const blob = new Blob([rawBlob], { type: mimeType });
         
         const ext = screen.type === 'image' ? 'png' : 'html';
         const filename = `ui-screen-${screen.screen_name}-${Date.now()}.${ext}`;
@@ -732,10 +734,20 @@ function renderUIPhoneFrame(screen) {
     frameInner.appendChild(img)
   } else {
     const iframe = document.createElement('iframe')
-    iframe.src = url
     iframe.style.cssText = 'width:390px;height:844px;border:none;transform:scale(0.5);transform-origin:top left;pointer-events:none;'
     frameInner.style.overflow = 'hidden'
     frameInner.appendChild(iframe)
+    
+    // Fetch and assign content via srcdoc to avoid raw-text display of html files with text/plain type
+    fetch(url)
+      .then(res => res.text())
+      .then(html => {
+        iframe.srcdoc = html;
+      })
+      .catch(err => {
+        console.error("Failed to load iframe content:", err);
+        iframe.src = url;
+      });
   }
   
   frameOuter.appendChild(notch)
