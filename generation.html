@@ -642,70 +642,41 @@ async function generateUIScreens() {
     hideLoading('ui-screens')
     
     if (data.success && data.screens) {
-      data.screens.forEach(screen => {
-        const phoneFrame = document.createElement('div')
-        phoneFrame.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:10px;'
-        
-        const frameOuter = document.createElement('div')
-        frameOuter.style.cssText = `
-          width: 195px; height: 422px;
-          background: #1a1a2e;
-          border-radius: 32px;
-          padding: 8px;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.3), inset 0 0 0 2px #333;
-          position: relative;
-        `
-        
-        const notch = document.createElement('div')
-        notch.style.cssText = `
-          position: absolute; top: 8px; left: 50%;
-          transform: translateX(-50%);
-          width: 60px; height: 6px;
-          background: #000; border-radius: 3px; z-index: 10;
-        `
-        
-        const frameInner = document.createElement('div')
-        frameInner.style.cssText = `
-          width: 100%; height: 100%;
-          border-radius: 26px;
-          overflow: hidden;
-          background: white;
-        `
-        
-        if (screen.type === 'image' && screen.url) {
-          const img = document.createElement('img')
-          img.src = apiEndpoint(screen.url)
-          img.style.cssText = 'width:100%;height:100%;object-fit:cover;'
-          img.alt = screen.screen_name
-          frameInner.appendChild(img)
-        } else if (screen.preview_url) {
-          const iframe = document.createElement('iframe')
-          iframe.src = apiEndpoint(screen.preview_url)
-          iframe.style.cssText = 'width:390px;height:844px;border:none;transform:scale(0.5);transform-origin:top left;pointer-events:none;'
-          frameInner.style.overflow = 'hidden'
-          frameInner.appendChild(iframe)
+      for (const screen of data.screens) {
+        let savedId = null;
+        try {
+          const fetchUrl = apiEndpoint(screen.type === 'image' ? screen.url : screen.preview_url);
+          const res = await fetch(fetchUrl);
+          const blob = await res.blob();
+          
+          const ext = screen.type === 'image' ? 'png' : 'html';
+          const filename = `ui-screen-${screen.screen_name}-${Date.now()}.${ext}`;
+          
+          if (window.AOSGenerationStorage) {
+            const savedFile = await window.AOSGenerationStorage.saveBlob({
+              blob: blob,
+              filename: filename,
+              title: `UI Screen - ${screen.screen_name}`,
+              type: screen.type === 'image' ? 'Image' : 'HTML',
+              prompt: description
+            });
+            if (savedFile && savedFile.id) {
+              savedId = savedFile.id;
+            }
+          }
+        } catch (saveErr) {
+          console.error("Failed to save screen to Supabase:", saveErr);
         }
         
-        frameOuter.appendChild(notch)
-        frameOuter.appendChild(frameInner)
-        
-        const screenLabel = document.createElement('div')
-        screenLabel.style.cssText = 'font-family:Inter,sans-serif;font-size:12px;font-weight:600;color:#374151;text-align:center;'
-        screenLabel.textContent = screen.screen_name.charAt(0).toUpperCase() + screen.screen_name.slice(1) + ' Screen'
-        
-        const openBtn = document.createElement('button')
-        openBtn.style.cssText = 'background:#7c3aed;color:white;border:none;border-radius:8px;padding:6px 16px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;'
-        openBtn.textContent = 'Full Screen'
-        if (screen.preview_url) {
-          openBtn.onclick = () => window.open(apiEndpoint(screen.preview_url), '_blank')
-        }
-        
-        phoneFrame.appendChild(frameOuter)
-        phoneFrame.appendChild(screenLabel)
-        phoneFrame.appendChild(openBtn)
-        
+        const phoneFrame = renderUIPhoneFrame({
+          screen_name: screen.screen_name,
+          type: screen.type,
+          url: screen.url,
+          preview_url: screen.preview_url,
+          id: savedId
+        });
         document.getElementById('ui-screens-grid').appendChild(phoneFrame)
-      })
+      }
       
       showSuccess(data.count + ' UI screens generated successfully!')
     }
@@ -717,6 +688,98 @@ async function generateUIScreens() {
     btn.textContent = 'Generate UI Screens'
     btn.disabled = false
   }
+}
+
+function renderUIPhoneFrame(screen) {
+  const phoneFrame = document.createElement('div')
+  phoneFrame.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:10px;position:relative;'
+  
+  const frameOuter = document.createElement('div')
+  frameOuter.style.cssText = `
+    width: 195px; height: 422px;
+    background: #1a1a2e;
+    border-radius: 32px;
+    padding: 8px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3), inset 0 0 0 2px #333;
+    position: relative;
+  `
+  
+  const notch = document.createElement('div')
+  notch.style.cssText = `
+    position: absolute; top: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 60px; height: 6px;
+    background: #000; border-radius: 3px; z-index: 10;
+  `
+  
+  const frameInner = document.createElement('div')
+  frameInner.style.cssText = `
+    width: 100%; height: 100%;
+    border-radius: 26px;
+    overflow: hidden;
+    background: white;
+  `
+  
+  const url = screen.resolved_url || apiEndpoint(screen.type === 'image' ? screen.url : screen.preview_url);
+  
+  if (screen.type === 'image') {
+    const img = document.createElement('img')
+    img.src = url
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;'
+    img.alt = screen.screen_name
+    frameInner.appendChild(img)
+  } else {
+    const iframe = document.createElement('iframe')
+    iframe.src = url
+    iframe.style.cssText = 'width:390px;height:844px;border:none;transform:scale(0.5);transform-origin:top left;pointer-events:none;'
+    frameInner.style.overflow = 'hidden'
+    frameInner.appendChild(iframe)
+  }
+  
+  frameOuter.appendChild(notch)
+  frameOuter.appendChild(frameInner)
+  
+  const screenLabel = document.createElement('div')
+  screenLabel.style.cssText = 'font-family:Inter,sans-serif;font-size:12px;font-weight:600;color:#374151;text-align:center;'
+  screenLabel.textContent = screen.screen_name.charAt(0).toUpperCase() + screen.screen_name.slice(1) + ' Screen'
+  
+  const openBtn = document.createElement('button')
+  openBtn.style.cssText = 'background:#7c3aed;color:white;border:none;border-radius:8px;padding:6px 16px;font-size:11px;cursor:pointer;font-family:Inter,sans-serif;'
+  openBtn.textContent = 'Full Screen'
+  openBtn.onclick = () => window.open(url, '_blank')
+  
+  phoneFrame.appendChild(frameOuter)
+  phoneFrame.appendChild(screenLabel)
+  phoneFrame.appendChild(openBtn)
+  
+  if (screen.id) {
+    const delBtn = document.createElement('button');
+    delBtn.className = 'delete-file-btn';
+    delBtn.title = 'Delete screen';
+    delBtn.innerHTML = '×';
+    delBtn.style.cssText = 'position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;background:#ef4444;color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;z-index:20;line-height:1;font-weight:bold;';
+    delBtn.addEventListener('click', async (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      if (!confirm('Are you sure you want to delete this screen?')) return;
+      try {
+        await window.AOSGenerationStorage.deleteFile(screen.id);
+        phoneFrame.remove();
+        showToast('Screen deleted.');
+        const grid = document.getElementById('ui-screens-grid');
+        if (grid && grid.querySelectorAll('.delete-file-btn').length === 0) {
+          const emptyImg = document.getElementById('ui-empty');
+          if (emptyImg) emptyImg.style.display = 'flex';
+          grid.style.display = 'none';
+        }
+      } catch (err) {
+        showToast(`Could not delete screen: ${err.message}`);
+      }
+    });
+    phoneFrame.appendChild(delBtn);
+  }
+  
+  return phoneFrame;
 }
 
 async function autoGeneratePPT(project) {
@@ -984,6 +1047,36 @@ document.addEventListener('click', function(e) {
   const av = document.getElementById('topbar-avatar');
   if (dd && av && dd.classList.contains('open') && !dd.contains(e.target) && !av.contains(e.target)) {
     dd.classList.remove('open');
+  }
+});
+
+document.addEventListener('aos-generation-history', (event) => {
+  const grid = document.getElementById('ui-screens-grid');
+  if (!grid) return;
+  
+  const uiFiles = event.detail.filter(file => 
+    file.title && 
+    file.title.startsWith('UI Screen -') && 
+    (file.generation_type === 'image' || file.generation_type === 'html') &&
+    file.resolved_url
+  );
+  
+  if (uiFiles.length > 0) {
+    const emptyImg = document.getElementById('ui-empty');
+    if (emptyImg) emptyImg.style.display = 'none';
+    grid.style.display = 'grid';
+    grid.innerHTML = '';
+    
+    uiFiles.forEach(file => {
+      const screenName = file.title.replace('UI Screen - ', '');
+      const phoneFrame = renderUIPhoneFrame({
+        screen_name: screenName,
+        type: file.generation_type === 'image' ? 'image' : 'html',
+        resolved_url: file.resolved_url,
+        id: file.id
+      });
+      grid.appendChild(phoneFrame);
+    });
   }
 });
 
