@@ -148,6 +148,40 @@ def _generate_image_hf(prompt, width=400, height=300):
     return None
 
 
+STABILITY_API_KEY = os.environ.get("STABILITY_API_KEY")
+
+def _generate_image_stability(prompt, width=400, height=300):
+    """Generate image via Stability AI Core API. Returns BytesIO or None."""
+    if not STABILITY_API_KEY:
+        print("Stability image skipped: STABILITY_API_KEY is not set.")
+        return None
+    try:
+        ratio = "1:1"
+        if width > height * 1.3:
+            ratio = "16:9"
+        elif height > width * 1.3:
+            ratio = "9:16"
+            
+        res = requests.post(
+            'https://api.stability.ai/v2beta/stable-image/generate/core',
+            headers={'Authorization': f'Bearer {STABILITY_API_KEY}', 'accept': 'image/*'},
+            files={'prompt': (None, f"{prompt}, clean professional illustration, high quality, no text")},
+            data={'output_format': 'png', 'aspect_ratio': ratio},
+            timeout=60
+        )
+        if res.status_code == 200:
+            img = Image.open(BytesIO(res.content))
+            img = img.resize((width, height), Image.LANCZOS)
+            buf = BytesIO()
+            img.save(buf, format='PNG')
+            buf.seek(0)
+            return buf
+        print(f"Stability image failed: status {res.status_code} – {res.text[:200]}")
+    except Exception as e:
+        print(f"Stability image error: {type(e).__name__}: {e}")
+    return None
+
+
 def _generate_image_pollinations(prompt, width=400, height=300):
     """Fallback: use Pollinations.ai (free, no auth). Returns BytesIO or None."""
     try:
@@ -169,16 +203,24 @@ def _generate_image_pollinations(prompt, width=400, height=300):
 
 
 def _generate_image(prompt, width=400, height=300):
-    """Generate an image for a PPT slide. Tries HF first, falls back to Pollinations."""
-    # Try Hugging Face first (higher quality)
+    """Generate an image for a PPT slide. Tries HF first, falls back to Stability, then Pollinations."""
+    # 1. Try Hugging Face first
     buf = _generate_image_hf(prompt, width, height)
     if buf:
         return buf
-    # Fallback to Pollinations (free, always available)
+        
+    # 2. Try Stability AI (high quality, reliable credits)
+    print(f"Falling back to Stability AI for: {prompt[:60]}")
+    buf = _generate_image_stability(prompt, width, height)
+    if buf:
+        return buf
+        
+    # 3. Fallback to Pollinations (free, rate limited but last resort)
     print(f"Falling back to Pollinations for: {prompt[:60]}")
     buf = _generate_image_pollinations(prompt, width, height)
     if buf:
         return buf
+        
     print(f"All image providers failed for: {prompt[:80]}")
     return None
 
