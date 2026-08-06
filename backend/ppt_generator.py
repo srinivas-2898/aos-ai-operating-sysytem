@@ -18,9 +18,11 @@ from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 from PIL import Image
+import threading
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
 GEMINI_IMAGE_KEY = os.environ.get("GEMINI_IMAGE_KEY") or os.environ.get("GEMINI_API_KEY_2") or os.environ.get("GEMINI_API_KEY")
+_pollinations_lock = threading.Lock()
 router = APIRouter()
 
 
@@ -385,8 +387,43 @@ def _generate_placeholder_gradient(theme_name, width=400, height=300):
             return None
 
 
+def _generate_image_pollinations(prompt, width=400, height=300):
+    """Generate image via Pollinations AI. Returns BytesIO or None."""
+    import time
+    from urllib.parse import quote
+
+    safe_prompt = quote(prompt)
+    poll_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width={width}&height={height}&nologo=true"
+    
+    with _pollinations_lock:
+        # Sleep a little bit to space out requests to Pollinations and prevent rate limiting
+        time.sleep(1.5)
+        for attempt in range(3):
+            try:
+                res = requests.get(poll_url, timeout=60)
+                if res.status_code == 200 and len(res.content) > 1000:
+                    img = Image.open(BytesIO(res.content))
+                    img = img.resize((width, height), Image.LANCZOS)
+                    buf = BytesIO()
+                    img.save(buf, format='PNG')
+                    buf.seek(0)
+                    return buf
+                elif res.status_code == 429:
+                    sleep_time = 4 + attempt * 3
+                    print(f"Pollinations image rate limited (429), retrying in {sleep_time}s... (attempt {attempt + 1}/3)")
+                    time.sleep(sleep_time)
+                else:
+                    print(f"Pollinations image failed: status {res.status_code}")
+                    # Try once more after a small break
+                    time.sleep(2)
+            except Exception as e:
+                print(f"Pollinations image error (attempt {attempt + 1}/3): {type(e).__name__}: {e}")
+                time.sleep(2)
+    return None
+
+
 def _generate_image(prompt, width=400, height=300, theme='modern'):
-    """Generate an image for a PPT slide. Tries Gemini first, falls back to HF, Stability, then a local gradient placeholder."""
+    """Generate an image for a PPT slide. Tries Gemini first, falls back to HF, Stability, Pollinations, then a local gradient placeholder."""
     # 1. Try Gemini first
     buf = _generate_image_gemini(prompt, width, height)
     if buf:
@@ -403,8 +440,14 @@ def _generate_image(prompt, width=400, height=300, theme='modern'):
     buf = _generate_image_stability(prompt, width, height)
     if buf:
         return buf
+
+    # 4. Try Pollinations AI (free, no auth required)
+    print(f"Falling back to Pollinations AI for: {prompt[:60]}")
+    buf = _generate_image_pollinations(prompt, width, height)
+    if buf:
+        return buf
         
-    # 4. Fallback to a premium local gradient matching the theme
+    # 5. Fallback to a premium local gradient matching the theme
     print(f"All image generation APIs failed. Falling back to local gradient illustration for: {prompt[:60]}")
     return _generate_placeholder_gradient(theme, width, height)
 
