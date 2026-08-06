@@ -77,28 +77,40 @@ def _plan_scenes(prompt: str, count: int, style: str) -> list[str]:
 
 
 def _generate_scene_image(prompt: str, model: str, token: str) -> bytes:
-    response = requests.post(
-        HF_IMAGE_URL,
-        headers={"Authorization": f"Bearer {token}"},
-        json={"model": model, "prompt": prompt, "response_format": "b64_json"},
-        timeout=150,
-    )
-    if response.status_code in {401, 403}:
-        raise HTTPException(
-            status_code=502,
-            detail="Hugging Face rejected HF_TOKEN for image generation. Update the Railway HF_TOKEN with a valid token.",
-        )
+    """Generate a scene image. Tries Hugging Face first, and falls back to Pollinations if it fails."""
+    # 1. Try Hugging Face
     try:
-        response.raise_for_status()
-        encoded = ((response.json().get("data") or [{}])[0]).get("b64_json")
-        if not encoded:
-            raise ValueError("No image was returned")
-        return base64.b64decode(encoded)
-    except HTTPException:
-        raise
+        response = requests.post(
+            HF_IMAGE_URL,
+            headers={"Authorization": f"Bearer {token}"},
+            json={"model": model, "prompt": prompt, "response_format": "b64_json"},
+            timeout=120,
+        )
+        if response.status_code == 200:
+            encoded = ((response.json().get("data") or [{}])[0]).get("b64_json")
+            if encoded:
+                return base64.b64decode(encoded)
+        print(f"Hugging Face image generation failed (status {response.status_code}): {response.text[:200]}")
     except Exception as error:
-        detail = response.text[:250] if response.content else str(error)
-        raise HTTPException(status_code=502, detail=f"Scene image generation failed: {detail}") from error
+        print(f"Hugging Face image generation error: {error}")
+
+    # 2. Try Pollinations Fallback
+    print("Falling back to Pollinations for scene image generation...")
+    import time
+    from urllib.parse import quote
+    time.sleep(1.0)  # Space out requests to avoid rate limits
+    try:
+        safe_prompt = quote(prompt)
+        poll_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=960&height=540&nologo=true"
+        response = requests.get(poll_url, timeout=90)
+        if response.status_code == 200 and len(response.content) > 1000:
+            return response.content
+        print(f"Pollinations fallback failed (status {response.status_code})")
+    except Exception as error:
+        print(f"Pollinations fallback error: {error}")
+
+    raise HTTPException(status_code=502, detail="Failed to generate scene images from all available image providers.")
+
 
 
 def _create_video(image_paths: list[Path], output: Path, duration: int, ratio: str, quality: str) -> None:
