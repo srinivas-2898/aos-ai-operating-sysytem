@@ -126,6 +126,31 @@ def _generate_slide_content(prompt, slide_count):
                     print(f"Gemini model {model} attempt {attempt+1} failed: {e}")
                     time.sleep(1)
 
+    # Fallback to DeepSeek for slide script and text when Gemini is unavailable.
+    deepseek_key = os.getenv("DEEPSEEK_API_KEY")
+    if deepseek_key:
+        print("Falling back to DeepSeek for PPT content generation...")
+        try:
+            res = requests.post(
+                "https://api.deepseek.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {deepseek_key}", "Content-Type": "application/json"},
+                json={
+                    "model": "deepseek-chat",
+                    "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0.2,
+                    "max_tokens": 8192,
+                },
+                timeout=90,
+            )
+            if res.status_code == 200:
+                generated = json.loads(res.json()["choices"][0]["message"]["content"])
+                if isinstance(generated.get("slides"), list):
+                    return generated
+            print(f"DeepSeek PPT content failed: status {res.status_code}")
+        except Exception as e:
+            print(f"DeepSeek PPT content failed: {e}")
+
     # Fallback to Groq
     groq_key = os.getenv("GROQ_API_KEY")
     if groq_key:
@@ -432,9 +457,9 @@ def _generate_image_pollinations(prompt, width=400, height=300):
 
 
 def _generate_image(prompt, width=400, height=300, theme='modern'):
-    """Generate every PPT illustration through the configured Gemini image API."""
-    provider = "gemini"
-    buf = _generate_image_gemini(prompt, width, height)
+    """Generate every PPT illustration through Hugging Face only."""
+    provider = "huggingface"
+    buf = _generate_image_hf(prompt, width, height)
     if buf:
         return buf
     print(f"PPT image provider '{provider}' did not return an image; using a local visual fallback.")
