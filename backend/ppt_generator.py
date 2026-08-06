@@ -286,14 +286,18 @@ def _generate_image_gemini(prompt, width=400, height=300):
 
 def _generate_image_hf(prompt, width=400, height=300):
     """Try Hugging Face inference API. Returns BytesIO or None."""
-    if not HF_TOKEN:
+    # Read at request time so the value always matches the Railway HF_TOKEN
+    # used by AOS Image Generation after a service restart/redeploy.
+    token = os.getenv("HF_TOKEN")
+    if not token:
+        print("PPT Hugging Face image skipped: HF_TOKEN is missing.")
         return None
     try:
         res = requests.post(
             'https://router.huggingface.co/nscale/v1/images/generations',
-            headers={'Authorization': f'Bearer {HF_TOKEN}'},
+            headers={'Authorization': f'Bearer {token}'},
             json={
-                'model': 'black-forest-labs/FLUX.1-schnell',
+                'model': os.getenv('HF_IMAGE_MODEL', 'black-forest-labs/FLUX.1-schnell'),
                 'prompt': f"{prompt}, clean professional illustration, high quality, no text",
                 'response_format': 'b64_json'
             },
@@ -423,16 +427,9 @@ def _generate_image_pollinations(prompt, width=400, height=300):
 
 
 def _generate_image(prompt, width=400, height=300, theme='modern'):
-    """Generate every slide illustration through one configured provider."""
-    provider = os.getenv("PPT_IMAGE_PROVIDER", "huggingface").strip().lower()
-    if provider == "gemini":
-        buf = _generate_image_gemini(prompt, width, height)
-    elif provider == "stability":
-        buf = _generate_image_stability(prompt, width, height)
-    elif provider == "pollinations":
-        buf = _generate_image_pollinations(prompt, width, height)
-    else:
-        buf = _generate_image_hf(prompt, width, height)
+    """Generate every PPT illustration through the AOS Hugging Face setup."""
+    provider = "huggingface"
+    buf = _generate_image_hf(prompt, width, height)
     if buf:
         return buf
     print(f"PPT image provider '{provider}' did not return an image; using a local visual fallback.")
