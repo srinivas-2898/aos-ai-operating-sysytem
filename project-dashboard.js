@@ -161,6 +161,12 @@ function professionalProjectCard(project) {
 
   return `
     <div class="project-card project-card-pro" style="position:relative;text-align:left;cursor:pointer" onclick="openProject('${project.id}')">
+      <button class="edit-project-btn" title="Edit Project" onclick="editProject('${project.id}', event)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg>
+      </button>
       <button class="delete-project-btn" title="Delete Project" onclick="deleteProject('${project.id}', event)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="3 6 5 6 21 6"></polyline>
@@ -215,6 +221,86 @@ async function deleteProject(projectId, event) {
   }
 }
 
+function editProject(projectId, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  const project = projects.find(p => p.id === projectId);
+  if (!project) return;
+  
+  const modal = document.getElementById('create-modal');
+  modal.querySelector('.modal').innerHTML = `
+    <div style="padding:4px">
+      <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:24px">
+        <div style="display:grid;place-items:center;width:44px;height:44px;flex:none;border-radius:13px;background:linear-gradient(135deg,#dbeafe,#e0f2fe);color:#2563eb">
+          <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+        </div>
+        <div><h2 style="margin:1px 0 6px;color:#0f172a">Edit Project</h2><p style="margin:0;color:#64748b;font-size:14px;line-height:1.5">Update the details of your workspace.</p></div>
+      </div>
+      <div style="display:grid;gap:18px">
+        <label style="display:grid;gap:7px;font-size:13px;font-weight:700;color:#334155">
+          <span>Project Name <b style="color:#ef4444">*</b></span>
+          <input id="edit-project-name" value="${esc(project.name)}" placeholder="e.g. Customer Portal" style="box-sizing:border-box;width:100%;padding:13px 14px;border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc;color:#0f172a;font:400 14px inherit;outline:none">
+        </label>
+        <label style="display:grid;gap:7px;font-size:13px;font-weight:700;color:#334155">
+          <span>Project Description <b style="color:#ef4444">*</b></span>
+          <textarea id="edit-project-description" placeholder="Describe what you want to build..." style="box-sizing:border-box;width:100%;min-height:96px;resize:vertical;padding:13px 14px;border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc;color:#0f172a;font:400 14px inherit;outline:none">${esc(project.description)}</textarea>
+        </label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <label style="display:grid;gap:7px;font-size:13px;font-weight:700;color:#334155">
+            <span>Programming Language</span>
+            <input id="edit-project-language" value="${esc(project.programming_language)}" placeholder="e.g. TypeScript" style="box-sizing:border-box;width:100%;padding:13px 14px;border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc;color:#0f172a;font:400 14px inherit;outline:none">
+          </label>
+          <label style="display:grid;gap:7px;font-size:13px;font-weight:700;color:#334155">
+            <span>Framework</span>
+            <input id="edit-project-framework" value="${esc(project.framework)}" placeholder="e.g. React" style="box-sizing:border-box;width:100%;padding:13px 14px;border:1px solid #dbe3ef;border-radius:10px;background:#f8fafc;color:#0f172a;font:400 14px inherit;outline:none">
+          </label>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:26px;padding-top:18px;border-top:1px solid #e8eef6">
+        <button class="btn-cancel" style="margin:0;padding:11px 19px" onclick="closeCreateProject()">Cancel</button>
+        <button style="display:inline-flex;align-items:center;gap:8px;padding:11px 19px;border:0;border-radius:10px;background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 6px 14px rgba(37,99,235,.2);color:#fff;font:700 14px inherit;cursor:pointer" onclick="updateProject('${project.id}')">Save Changes</button>
+      </div>
+    </div>`;
+  modal.classList.add('open');
+}
+
+async function updateProject(projectId) {
+  const name = document.getElementById('edit-project-name').value.trim();
+  const description = document.getElementById('edit-project-description').value.trim();
+  const programming_language = document.getElementById('edit-project-language').value.trim() || null;
+  const framework = document.getElementById('edit-project-framework').value.trim() || null;
+  
+  if (!name || !description) return toast('Project name and description are required.');
+  
+  try {
+    const { data, error } = await aosSupabase.from('projects').update({ name, description, programming_language, framework }).eq('id', projectId).select().single();
+    if (error) throw error;
+    
+    const idx = projects.findIndex(p => p.id === projectId);
+    if (idx !== -1) {
+      projects[idx] = data;
+    }
+    
+    renderDashboard();
+    
+    const viewProjects = document.getElementById('view-projects');
+    if (viewProjects && viewProjects.classList.contains('active')) {
+      document.getElementById('projects-grid').innerHTML = projects.length ? projects.map(professionalProjectCard).join('') : '<div class="empty-state" style="grid-column:1/-1;padding:40px"><p>No projects yet.</p></div>';
+    }
+    
+    closeCreateProject();
+    toast('Project updated successfully.');
+  } catch (error) {
+    console.error(error);
+    toast(`Could not update project: ${error.message}`);
+  }
+}
+
 function switchView(name) {
   if (name === 'dashboard') {
     document.querySelectorAll('.view').forEach((view) => view.classList.remove('active'));
@@ -231,7 +317,7 @@ function switchView(name) {
 async function performLogout() { await aosSupabase.auth.signOut(); window.location.href = 'index.html'; }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Inject delete-project-btn CSS styles
+  // Inject delete-project-btn and edit-project-btn CSS styles
   const deleteBtnStyle = `
     .project-card-pro {
       position: relative;
@@ -261,6 +347,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     .project-card-pro .delete-project-btn:hover {
       background: #ef4444;
+      color: #fff;
+      transform: scale(1.08);
+    }
+    .project-card-pro .edit-project-btn {
+      position: absolute;
+      top: 14px;
+      right: 48px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(37, 99, 235, 0.08);
+      color: #2563eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+      z-index: 10;
+      opacity: 0.6;
+      transition: all 0.2s ease;
+      padding: 0;
+    }
+    .project-card-pro:hover .edit-project-btn {
+      opacity: 1;
+      background: rgba(37, 99, 235, 0.12);
+    }
+    .project-card-pro .edit-project-btn:hover {
+      background: #2563eb;
       color: #fff;
       transform: scale(1.08);
     }
