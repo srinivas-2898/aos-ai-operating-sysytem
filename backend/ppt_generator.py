@@ -423,32 +423,19 @@ def _generate_image_pollinations(prompt, width=400, height=300):
 
 
 def _generate_image(prompt, width=400, height=300, theme='modern'):
-    """Generate an image for a PPT slide. Tries Gemini first, falls back to HF, Stability, Pollinations, then a local gradient placeholder."""
-    # 1. Try Gemini first
-    buf = _generate_image_gemini(prompt, width, height)
+    """Generate every slide illustration through one configured provider."""
+    provider = os.getenv("PPT_IMAGE_PROVIDER", "huggingface").strip().lower()
+    if provider == "gemini":
+        buf = _generate_image_gemini(prompt, width, height)
+    elif provider == "stability":
+        buf = _generate_image_stability(prompt, width, height)
+    elif provider == "pollinations":
+        buf = _generate_image_pollinations(prompt, width, height)
+    else:
+        buf = _generate_image_hf(prompt, width, height)
     if buf:
         return buf
-
-    # 2. Try Hugging Face
-    print(f"Falling back to Hugging Face for: {prompt[:60]}")
-    buf = _generate_image_hf(prompt, width, height)
-    if buf:
-        return buf
-        
-    # 3. Try Stability AI (high quality, reliable credits)
-    print(f"Falling back to Stability AI for: {prompt[:60]}")
-    buf = _generate_image_stability(prompt, width, height)
-    if buf:
-        return buf
-
-    # 4. Try Pollinations AI (free, no auth required)
-    print(f"Falling back to Pollinations AI for: {prompt[:60]}")
-    buf = _generate_image_pollinations(prompt, width, height)
-    if buf:
-        return buf
-        
-    # 5. Fallback to a premium local gradient matching the theme
-    print(f"All image generation APIs failed. Falling back to local gradient illustration for: {prompt[:60]}")
+    print(f"PPT image provider '{provider}' did not return an image; using a local visual fallback.")
     return _generate_placeholder_gradient(theme, width, height)
 
 
@@ -498,8 +485,23 @@ def create_premium_pptx_data(prompt, slide_count=8, theme='modern'):
     H = prs.slide_height
 
     # ── Pre-generate all images concurrently ──
+    # Every slide receives an illustration by default. Set a smaller value only
+    # when deliberately requesting a faster text-and-design draft.
+    remote_image_count = max(0, min(int(os.getenv("PPT_REMOTE_IMAGE_COUNT", str(slide_count))), slide_count))
+    remote_image_indexes = []
+    if remote_image_count:
+        remote_image_indexes.append(0)
+    if remote_image_count > 1 and slide_count > 1:
+        remote_image_indexes.append(slide_count - 1)
+    if remote_image_count > 2:
+        step = max(1, (slide_count - 2) // (remote_image_count - 2))
+        remote_image_indexes.extend(range(1, slide_count - 1, step))
+    remote_image_indexes = set(remote_image_indexes[:remote_image_count])
+
     image_prompts = []
     for idx, sd in enumerate(slides_data):
+        if idx not in remote_image_indexes:
+            continue
         is_cover = idx == 0
         is_last = idx == slide_count - 1
         if is_cover:
@@ -510,7 +512,7 @@ def create_premium_pptx_data(prompt, slide_count=8, theme='modern'):
             image_prompts.append((idx, sd.get('image_prompt', f'illustration about {prompt}'), 480, 400))
 
     slide_images = {}
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(4, len(image_prompts) or 1)) as executor:
         future_to_idx = {}
         for idx, img_prompt, w, h in image_prompts:
             if img_prompt:
@@ -557,7 +559,7 @@ def create_premium_pptx_data(prompt, slide_count=8, theme='modern'):
             divider.line.fill.background()
 
             img_buf = slide_images.get(idx)
-            if img_buf:
+            if img_buf and idx in {0, len(slides_data) - 1}:
                 slide.shapes.add_picture(img_buf, Inches(4.4), Inches(4.2), Inches(4.5), Inches(3.0))
 
         elif is_last:
@@ -678,7 +680,16 @@ async def generate_ppt(request: PPTRequest):
             img_buf = slide_images.get(idx)
             img_b64 = None
             if img_buf:
-                img_b64 = base64.b64encode(img_buf.getvalue()).decode('utf-8')
+                # Return thumbnails for every preview slide. Full-size images
+                # stay in the editable PPTX, keeping the HTTP response small.
+                try:
+                    image = Image.open(BytesIO(img_buf.getvalue())).convert("RGB")
+                    image.thumbnail((240, 160), Image.LANCZOS)
+                    thumbnail = BytesIO()
+                    image.save(thumbnail, format="JPEG", quality=65, optimize=True)
+                    img_b64 = base64.b64encode(thumbnail.getvalue()).decode('utf-8')
+                except Exception:
+                    img_b64 = None
                 
             slides_response.append({
                 "title": sd.get('title', ''),
