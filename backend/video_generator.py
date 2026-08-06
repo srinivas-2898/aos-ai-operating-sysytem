@@ -141,6 +141,64 @@ def _create_video(image_paths: list[Path], output: Path, duration: int, ratio: s
         raise HTTPException(status_code=502, detail=f"Video finalization failed: {result.stderr[-400:]}")
 
 
+def _analyze_and_enhance_prompt(prompt: str) -> str:
+    """Analyze the prompt using DeepSeek or Gemini (via call_deepseek) to produce an enriched descriptive prompt for video generation."""
+    try:
+        from main import call_deepseek
+        system_prompt = (
+            "You are an AI video director. Analyze the user's prompt and enhance it into a vivid, descriptive "
+            "visual prompt suitable for a text-to-video diffusion model. Focus on style, lighting, camera angle, "
+            "and motion. Avoid text, watermarks, or quality buzzwords. Keep the final response under 60 words, "
+            "and return ONLY the enhanced description."
+        )
+        enhanced = call_deepseek(system_prompt, f"User Prompt: {prompt}")
+        if enhanced and len(enhanced.strip()) > 5:
+            return enhanced.strip()
+    except Exception as e:
+        print(f"Prompt analysis/enhancement error: {e}")
+    return prompt
+
+
+def _generate_video_local(prompt: str, duration: int, ratio: str, quality: str) -> bytes | None:
+    """Attempt to generate video locally using the diffusers text-to-video pipeline if libraries and CUDA are available."""
+    try:
+        import torch
+        from diffusers import DiffusionPipeline
+        from diffusers.utils import export_to_video
+        
+        if not torch.cuda.is_available():
+            print("Local video generation skipped: CUDA is not available.")
+            return None
+            
+        print("CUDA is available. Initializing local text-to-video pipeline...")
+        # Load the ModelScope Text-to-Video pipeline onto the GPU
+        pipe = DiffusionPipeline.from_pretrained(
+            "damo-vilab/text-to-video-ms-1.7b",
+            torch_dtype=torch.float16,
+            variant="fp16"
+        )
+        pipe = pipe.to("cuda")
+        
+        # Optimize VRAM usage (highly recommended for Colab T4 / limited GPU)
+        pipe.enable_model_cpu_offload()
+        
+        # Number of frames based on duration: e.g. 5 sec -> 16 frames, 10 sec -> 24 frames, etc.
+        # damo-vilab typically generates 16-24 frames best.
+        num_frames = 16 if duration <= 5 else 24
+        
+        print(f"Running local video generation for prompt: '{prompt}'...")
+        video_frames = pipe(prompt, num_inference_steps=25, num_frames=num_frames).frames[0]
+        
+        with tempfile.TemporaryDirectory(prefix="aos-local-video-") as temp_dir:
+            temp_path = Path(temp_dir) / "generated_video.mp4"
+            video_path = export_to_video(video_frames, output_video_path=str(temp_path))
+            if Path(video_path).exists():
+                return Path(video_path).read_bytes()
+    except Exception as e:
+        print(f"Local video generation failed/skipped: {e}")
+    return None
+
+
 @router.post("/api/generate/video")
 def generate_video(request: VideoRequest):
     if request.duration not in {5, 10, 15, 30}:
@@ -148,11 +206,26 @@ def generate_video(request: VideoRequest):
     if request.aspect_ratio not in ALLOWED_RATIOS:
         raise HTTPException(status_code=400, detail="Choose 16:9, 9:16, or 1:1 for the aspect ratio.")
 
+    # 1. Analyze and enhance prompt using Gemini / DeepSeek
+    enhanced_prompt = _analyze_and_enhance_prompt(request.prompt)
+    print(f"Original Video Prompt: {request.prompt}")
+    print(f"Enhanced Video Prompt: {enhanced_prompt}")
+
+    # 2. Attempt local video generation using python libraries (diffusers)
+    video_bytes = _generate_video_local(enhanced_prompt, request.duration, request.aspect_ratio, request.quality)
+    if video_bytes:
+        return Response(
+            content=video_bytes,
+            media_type="video/mp4",
+            headers={"Content-Disposition": "attachment; filename=aos-generated-video.mp4"},
+        )
+
+    # 3. Fallback: Scene-based image-to-video generation using Hugging Face images and FFmpeg
     token = os.getenv("HF_TOKEN")
     if not token:
         raise HTTPException(status_code=503, detail="Video generation is not configured. Add HF_TOKEN to Railway Variables.")
     model = os.getenv("HF_IMAGE_MODEL", "black-forest-labs/FLUX.1-schnell")
-    scenes = _plan_scenes(request.prompt, _scene_count(request.duration), request.style)
+    scenes = _plan_scenes(enhanced_prompt, _scene_count(request.duration), request.style)
     image_suffix = f"{request.style} visual style, no text, no logo, no watermark, {request.aspect_ratio} composition"
     if request.negative_prompt.strip():
         image_suffix += f". Avoid: {request.negative_prompt.strip()}"
@@ -178,3 +251,4 @@ def generate_video(request: VideoRequest):
         raise HTTPException(status_code=504, detail="Video assembly timed out. Try a shorter duration or Fast quality.") from error
     except Exception as error:
         raise HTTPException(status_code=502, detail=f"Video generation failed: {str(error)[:500]}") from error
+
