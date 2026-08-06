@@ -172,33 +172,36 @@ def _analyze_and_enhance_prompt(prompt: str) -> str:
 
 
 def _generate_video_local(prompt: str, duration: int, ratio: str, quality: str) -> bytes | None:
-    """Attempt to generate video locally using the diffusers text-to-video pipeline if libraries and CUDA are available."""
+    """Attempt to generate video locally using the diffusers text-to-video pipeline (GPU/CUDA if available, otherwise CPU)."""
     try:
         import torch
         from diffusers import DiffusionPipeline
         from diffusers.utils import export_to_video
         
-        if not torch.cuda.is_available():
-            print("Local video generation skipped: CUDA is not available.")
-            return None
-            
-        print("CUDA is available. Initializing local text-to-video pipeline...")
-        # Load the ModelScope Text-to-Video pipeline onto the GPU
-        pipe = DiffusionPipeline.from_pretrained(
-            "damo-vilab/text-to-video-ms-1.7b",
-            torch_dtype=torch.float16,
-            variant="fp16"
-        )
-        pipe = pipe.to("cuda")
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        dtype = torch.float16 if device == "cuda" else torch.float32
         
-        # Optimize VRAM usage (highly recommended for Colab T4 / limited GPU)
-        pipe.enable_model_cpu_offload()
+        print(f"Initializing local text-to-video pipeline on device: {device}...")
         
-        # Number of frames based on duration: e.g. 5 sec -> 16 frames, 10 sec -> 24 frames, etc.
-        # damo-vilab typically generates 16-24 frames best.
+        # Load the ModelScope Text-to-Video pipeline
+        if device == "cuda":
+            pipe = DiffusionPipeline.from_pretrained(
+                "damo-vilab/text-to-video-ms-1.7b",
+                torch_dtype=dtype,
+                variant="fp16"
+            )
+            pipe = pipe.to(device)
+            pipe.enable_model_cpu_offload()
+        else:
+            pipe = DiffusionPipeline.from_pretrained(
+                "damo-vilab/text-to-video-ms-1.7b",
+                torch_dtype=dtype
+            )
+            pipe = pipe.to(device)
+        
         num_frames = 16 if duration <= 5 else 24
         
-        print(f"Running local video generation for prompt: '{prompt}'...")
+        print(f"Running local video generation on {device} for prompt: '{prompt}'...")
         video_frames = pipe(prompt, num_inference_steps=25, num_frames=num_frames).frames[0]
         
         with tempfile.TemporaryDirectory(prefix="aos-local-video-") as temp_dir:
@@ -209,6 +212,7 @@ def _generate_video_local(prompt: str, duration: int, ratio: str, quality: str) 
     except Exception as e:
         print(f"Local video generation failed/skipped: {e}")
     return None
+
 
 
 @router.post("/api/generate/video")

@@ -14,3 +14,9 @@ Pillow
 cryptography
 huggingface_hub
 playwright
+torch
+torchvision
+diffusers
+transformers
+accelerate
+safetensors
