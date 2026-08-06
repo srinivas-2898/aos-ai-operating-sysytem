@@ -464,13 +464,26 @@ def _generate_image_pollinations(prompt, width=400, height=300):
 
 
 def _generate_image(prompt, width=400, height=300, theme='modern'):
-    """Generate every PPT illustration through Hugging Face only."""
-    provider = "huggingface"
-    buf = _generate_image_hf(prompt, width, height)
-    if buf:
-        return buf
-    print(f"PPT image provider '{provider}' did not return an image; using a local visual fallback.")
+    """Generate PPT illustration trying multiple providers in sequence for maximum robustness."""
+    providers = [
+        ("huggingface", lambda: _generate_image_hf(prompt, width, height)),
+        ("pollinations", lambda: _generate_image_pollinations(prompt, width, height)),
+        ("gemini", lambda: _generate_image_gemini(prompt, width, height)),
+        ("stability", lambda: _generate_image_stability(prompt, width, height)),
+    ]
+    
+    for name, func in providers:
+        try:
+            buf = func()
+            if buf:
+                print(f"PPT image generated successfully using {name}")
+                return buf
+        except Exception as e:
+            print(f"PPT image generation via {name} failed: {e}")
+            
+    print("All image generation providers failed; using local visual fallback gradient.")
     return _generate_placeholder_gradient(theme, width, height)
+
 
 
 def _add_rounded_rect(slide, left, top, width, height, fill_rgb, alpha=None):

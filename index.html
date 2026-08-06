@@ -563,9 +563,7 @@
         border-color: #f1f5f9;
         box-shadow: 0 4px 10px rgba(0,0,0,0.01);
       }
-      #btn-social-microsoft {
-        display: none !important;
-      }
+
       .secure-banner {
         display: flex;
         align-items: center;
@@ -794,15 +792,7 @@
               </svg>
               GitHub
             </button>
-            <button class="btn-social" id="btn-social-microsoft" onclick="handleMicrosoftSignIn()">
-              <svg width="20" height="20" viewBox="0 0 23 23">
-                <rect x="0" y="0" width="10.5" height="10.5" fill="#f25022" />
-                <rect x="12.5" y="0" width="10.5" height="10.5" fill="#7fba00" />
-                <rect x="0" y="12.5" width="10.5" height="10.5" fill="#00a4ef" />
-                <rect x="12.5" y="12.5" width="10.5" height="10.5" fill="#ffb900" />
-              </svg>
-              Microsoft
-            </button>
+
           </div>
 
           <!-- Secure Banner -->
@@ -993,12 +983,6 @@
       hideErr('signin-error');
       const { error } = await sb.auth.signInWithOAuth({ provider: 'github', options: { redirectTo: REDIRECT_URL } });
       if (error) showErr('signin-error', 'GitHub sign-in failed: ' + error.message);
-    }
-
-    async function handleMicrosoftSignIn() {
-      hideErr('signin-error');
-      const { error } = await sb.auth.signInWithOAuth({ provider: 'azure', options: { redirectTo: REDIRECT_URL } });
-      if (error) showErr('signin-error', 'Microsoft sign-in failed: ' + error.message);
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
