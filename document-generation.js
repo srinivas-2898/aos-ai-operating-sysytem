@@ -141,6 +141,67 @@
     return match?.[1] || fallback;
   };
 
+  // PPTX files cannot be rendered by the browser itself. This compact preview
+  // uses the real slide data returned by the generator and saved with the file.
+  const renderSavedPresentationPreview = (file) => {
+    const slides = Array.isArray(file.presentation_data) && file.presentation_data.length
+      ? file.presentation_data
+      : [{
+          title: file.title || 'Generated presentation',
+          subtitle: 'Download the PowerPoint file to view all editable slides.',
+          bullet_points: [file.prompt || 'Presentation created for this project.']
+        }];
+    const preview = document.createElement('div');
+    preview.className = 'presentation-preview-container';
+    let current = 0;
+    const render = () => {
+      const slide = slides[current] || {};
+      preview.innerHTML = '';
+      const header = document.createElement('div');
+      header.className = 'pres-preview-header';
+      header.innerHTML = `<span>Slide ${current + 1} of ${slides.length}</span>`;
+      const nav = document.createElement('div');
+      nav.className = 'pres-preview-nav';
+      const previous = document.createElement('button');
+      previous.textContent = '← Previous';
+      previous.disabled = current === 0;
+      previous.onclick = () => { current -= 1; render(); };
+      const next = document.createElement('button');
+      next.textContent = 'Next →';
+      next.disabled = current === slides.length - 1;
+      next.onclick = () => { current += 1; render(); };
+      nav.append(previous, next);
+      header.append(nav);
+      const page = document.createElement('div');
+      page.className = 'pres-preview-slide';
+      const content = document.createElement('div');
+      content.className = 'pres-slide-left';
+      const title = document.createElement('h3');
+      title.textContent = slide.title || 'Presentation slide';
+      content.append(title);
+      if (slide.subtitle) { const subtitle = document.createElement('p'); subtitle.textContent = slide.subtitle; content.append(subtitle); }
+      const list = document.createElement('ul');
+      (Array.isArray(slide.bullet_points) ? slide.bullet_points : []).slice(0, 6).forEach((point) => {
+        const item = document.createElement('li'); item.textContent = point; list.append(item);
+      });
+      content.append(list);
+      const art = document.createElement('div');
+      art.className = 'pres-slide-right';
+      if (slide.image_b64) {
+        const image = document.createElement('img');
+        image.src = `data:image/png;base64,${slide.image_b64}`;
+        image.alt = slide.title || 'Slide image';
+        art.append(image);
+      } else {
+        art.innerHTML = '<div style="width:100%;height:180px;border-radius:8px;background:linear-gradient(135deg,#3b82f6,#1e3a8a)"></div>';
+      }
+      page.append(content, art);
+      preview.append(header, page);
+    };
+    render();
+    return preview;
+  };
+
   const createFileCard = (gallery, blob, filename, label, icon, slidesData = null) => {
     const url = URL.createObjectURL(blob);
     let preview = null;
@@ -329,7 +390,14 @@
       
       const { card, download, preview } = createFileCard(gallery, blob, filename, label, icon, slidesData);
       try {
-        const savedFile = await window.AOSGenerationStorage?.saveBlob({ blob, filename, title: filename, type: label, prompt: payload.prompt || '' });
+        const savedFile = await window.AOSGenerationStorage?.saveBlob({
+          blob,
+          filename,
+          title: filename,
+          type: label,
+          prompt: payload.prompt || '',
+          metadata: label === 'Presentation' ? { presentation_data: slidesData || [] } : {}
+        });
         if (savedFile && savedFile.id) {
           addDeleteButtonToCard(card, savedFile.id, galleryId, emptyId, preview);
         }
@@ -392,6 +460,8 @@
       const galleryId = presentation ? 'pres-gallery' : 'doc-gallery';
       const emptyId = presentation ? 'pres-gallery-empty' : 'doc-gallery-empty';
       document.getElementById(emptyId)?.remove();
+      const preview = isPpt ? renderSavedPresentationPreview(file) : null;
+      if (preview) gallery.appendChild(preview);
       
       const card = document.createElement('a');
       card.className = 'file-output-card';
@@ -416,7 +486,7 @@
       card.querySelector('strong').textContent = file.title;
       card.querySelector('small').textContent = `${label.toUpperCase()} · ${new Date(file.created_at).toLocaleString()}`;
       
-      addDeleteButtonToCard(card, file.id, galleryId, emptyId, null);
+      addDeleteButtonToCard(card, file.id, galleryId, emptyId, preview);
       gallery.appendChild(card);
     });
   });

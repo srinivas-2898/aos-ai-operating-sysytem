@@ -40,6 +40,9 @@ CREATE INDEX IF NOT EXISTS idx_generation_files_project_updated ON public.genera
 CREATE INDEX IF NOT EXISTS idx_generation_files_owner_type ON public.generation_files(user_id, generation_type, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_project_activity_project_created ON public.project_activity(project_id, created_at DESC);
 
+-- Preserve structured PowerPoint slides so the in-app preview can be restored.
+ALTER TABLE public.generation_files ADD COLUMN IF NOT EXISTS presentation_data JSONB;
+
 -- Metadata used by real Pollinations video outputs. These fields remain NULL
 -- for other generation types.
 ALTER TABLE public.generation_files ADD COLUMN IF NOT EXISTS negative_prompt TEXT;
