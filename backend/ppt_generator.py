@@ -20,6 +20,7 @@ from pptx.enum.shapes import MSO_SHAPE
 from PIL import Image
 
 HF_TOKEN = os.environ.get("HF_TOKEN")
+GEMINI_IMAGE_KEY = os.environ.get("GEMINI_IMAGE_KEY") or os.environ.get("GEMINI_API_KEY_2") or os.environ.get("GEMINI_API_KEY")
 router = APIRouter()
 
 
@@ -188,6 +189,102 @@ def _generate_slide_content(prompt, slide_count):
     raise RuntimeError("All LLM providers (Gemini, Groq, OpenRouter) failed to generate slide content.")
 
 
+def _generate_image_gemini(prompt, width=400, height=300):
+    """Generate image via Google Gemini Image API. Supports both generateContent (Nano Banana) and predict (Imagen)."""
+    if not GEMINI_IMAGE_KEY:
+        print("Gemini image generation skipped: GEMINI_IMAGE_KEY is not set.")
+        return None
+
+    # 1. Try generateContent with Nano Banana models (e.g. gemini-3.1-flash-image)
+    nano_models = ["gemini-3.1-flash-image", "gemini-2.5-flash-image", "gemini-3-pro-image"]
+    for model in nano_models:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_IMAGE_KEY}"
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {
+                                "text": f"{prompt}, clean professional illustration, high quality, no text"
+                            }
+                        ]
+                    }
+                ],
+                "generationConfig": {
+                    "responseModalities": ["IMAGE"]
+                }
+            }
+            res = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=60)
+            if res.status_code == 200:
+                res_json = res.json()
+                candidates = res_json.get("candidates", [])
+                if candidates:
+                    parts = candidates[0].get("content", {}).get("parts", [])
+                    for part in parts:
+                        inline_data = part.get("inlineData")
+                        if inline_data:
+                            b64 = inline_data.get("data")
+                            if b64:
+                                img_data = base64.b64decode(b64)
+                                img = Image.open(BytesIO(img_data))
+                                img = img.resize((width, height), Image.LANCZOS)
+                                buf = BytesIO()
+                                img.save(buf, format='PNG')
+                                buf.seek(0)
+                                return buf
+            elif res.status_code == 429:
+                print(f"Gemini image ({model}) rate limited or quota exceeded.")
+        except Exception as e:
+            print(f"Gemini image error for {model}: {type(e).__name__}: {e}")
+
+    # 2. Try predict with Imagen models
+    imagen_models = ["imagen-3.0-generate-002"]
+    ratio = "1:1"
+    if width > height * 1.3:
+        ratio = "16:9"
+    elif width > height * 1.1:
+        ratio = "4:3"
+    elif height > width * 1.3:
+        ratio = "9:16"
+    elif height > width * 1.1:
+        ratio = "3:4"
+
+    for model in imagen_models:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:predict?key={GEMINI_IMAGE_KEY}"
+            payload = {
+                "instances": [
+                    {
+                        "prompt": f"{prompt}, clean professional illustration, high quality, no text"
+                    }
+                ],
+                "parameters": {
+                    "sampleCount": 1,
+                    "outputMimeType": "image/png",
+                    "aspectRatio": ratio
+                }
+            }
+            res = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=60)
+            if res.status_code == 200:
+                res_json = res.json()
+                predictions = res_json.get("predictions", [])
+                if predictions:
+                    b64 = predictions[0].get("bytesBase64Encoded")
+                    if b64:
+                        img_data = base64.b64decode(b64)
+                        img = Image.open(BytesIO(img_data))
+                        img = img.resize((width, height), Image.LANCZOS)
+                        buf = BytesIO()
+                        img.save(buf, format='PNG')
+                        buf.seek(0)
+                        return buf
+        except Exception as e:
+            print(f"Gemini image error for {model}: {type(e).__name__}: {e}")
+
+    return None
+
+
+
 def _generate_image_hf(prompt, width=400, height=300):
     """Try Hugging Face inference API. Returns BytesIO or None."""
     if not HF_TOKEN:
@@ -274,19 +371,25 @@ def _generate_image_pollinations(prompt, width=400, height=300):
 
 
 def _generate_image(prompt, width=400, height=300):
-    """Generate an image for a PPT slide. Tries HF first, falls back to Stability, then Pollinations."""
-    # 1. Try Hugging Face first
+    """Generate an image for a PPT slide. Tries Gemini first, falls back to HF, Stability, then Pollinations."""
+    # 1. Try Gemini first
+    buf = _generate_image_gemini(prompt, width, height)
+    if buf:
+        return buf
+
+    # 2. Try Hugging Face
+    print(f"Falling back to Hugging Face for: {prompt[:60]}")
     buf = _generate_image_hf(prompt, width, height)
     if buf:
         return buf
         
-    # 2. Try Stability AI (high quality, reliable credits)
+    # 3. Try Stability AI (high quality, reliable credits)
     print(f"Falling back to Stability AI for: {prompt[:60]}")
     buf = _generate_image_stability(prompt, width, height)
     if buf:
         return buf
         
-    # 3. Fallback to Pollinations (free, rate limited but last resort)
+    # 4. Fallback to Pollinations (free, rate limited but last resort)
     print(f"Falling back to Pollinations for: {prompt[:60]}")
     buf = _generate_image_pollinations(prompt, width, height)
     if buf:
