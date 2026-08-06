@@ -344,6 +344,13 @@ def _generate_image_hf(prompt, width=400, height=300):
                 buf.seek(0)
                 return buf
         print(f"HF image failed: status {res.status_code} – {res.text[:200]}")
+        if res.status_code in {401, 403}:
+            raise RuntimeError(
+                "Hugging Face rejected HF_TOKEN for image generation. "
+                "Create a token with Inference Providers permission and update Railway Variables."
+            )
+    except RuntimeError:
+        raise
     except Exception as e:
         print(f"HF image error: {type(e).__name__}: {e}")
     return None
@@ -539,6 +546,7 @@ def create_premium_pptx_data(prompt, slide_count=8, theme='modern'):
             image_prompts.append((idx, sd.get('image_prompt', f'illustration about {prompt}'), 480, 400))
 
     slide_images = {}
+    image_errors = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=min(4, len(image_prompts) or 1)) as executor:
         future_to_idx = {}
         for idx, img_prompt, w, h in image_prompts:
@@ -552,6 +560,10 @@ def create_premium_pptx_data(prompt, slide_count=8, theme='modern'):
             except Exception as e:
                 print(f"PPT image for slide {slide_idx} raised: {e}")
                 slide_images[slide_idx] = None
+                image_errors.append(str(e))
+
+    if remote_image_indexes and not any(slide_images.values()):
+        raise RuntimeError(image_errors[0] if image_errors else "Hugging Face returned no slide images.")
 
     for idx, sd in enumerate(slides_data):
         slide = prs.slides.add_slide(prs.slide_layouts[6])  # Blank layout
