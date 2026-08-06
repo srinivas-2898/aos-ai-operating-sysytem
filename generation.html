@@ -419,7 +419,7 @@ body{background:radial-gradient(circle at 86% 0,#e0f2fe 0,transparent 28%),#f6f9
         <p style="font-family:Inter,sans-serif;font-size:14px;font-weight:500;color:#6b7280;">Your generated UI screens will appear here</p>
         <p style="font-family:Inter,sans-serif;font-size:12px;color:#9ca3af;margin-top:4px;">Each screen shows in a beautiful phone frame</p>
       </div>
-      <div id="ui-screens-grid" style="display:none;grid-template-columns:repeat(auto-fill, minmax(200px, 1fr));gap:20px;padding:10px 0;overflow-y:auto;max-height:600px;"></div>
+      <div id="ui-screens-grid" style="display:none;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:18px;"></div>
     </div>
   </div>
 
@@ -657,11 +657,10 @@ async function generateUIScreens() {
   btn.textContent = 'Generating...'
   btn.disabled = true
   
-  const isDesktopLayout = document.getElementById('ui-platform').value === 'desktop';
   const grid = document.getElementById('ui-screens-grid');
   grid.style.display = 'grid';
-  grid.style.gridTemplateColumns = `repeat(auto-fill, minmax(${isDesktopLayout ? 350 : 230}px, 1fr))`;
-  grid.style.gap = '28px';
+  grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(180px, 1fr))';
+  grid.style.gap = '18px';
   grid.innerHTML = '';
   
   showLoading('ui-screens')
@@ -750,63 +749,83 @@ async function generateUIScreens() {
 }
 
 function renderUIPhoneFrame(screen) {
-  const phoneFrame = document.createElement('div')
-  phoneFrame.className = 'ui-screen-card'
-  phoneFrame.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:12px;position:relative;background:#ffffff;border:1.5px solid #e2e8f0;border-radius:16px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,0.04);'
-  
   const isDesktop = screen.platform === 'desktop';
-  
-  const frameOuter = document.createElement('div')
-  if (isDesktop) {
-    frameOuter.style.cssText = `
-      width: 320px; height: 180px;
-      background: #f8fafc;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid #e2e8f0;
-      position: relative;
-    `
-  } else {
-    frameOuter.style.cssText = `
-      width: 195px; height: 422px;
-      background: #f8fafc;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid #e2e8f0;
-      position: relative;
-    `
-  }
-  
   const url = screen.resolved_url || apiEndpoint(screen.type === 'image' ? screen.url : screen.preview_url);
-  
+  const screenTitle = screen.screen_name.charAt(0).toUpperCase() + screen.screen_name.slice(1) + ' Screen';
+
+  const item = document.createElement('figure');
+  item.className = 'gallery-img';
+  item.style.cssText = 'position:relative;cursor:pointer;aspect-ratio:auto;';
+  item.setAttribute('title', 'Click to view full screen');
+
   if (screen.type === 'image') {
-    const img = document.createElement('img')
-    img.src = url
-    img.style.cssText = 'width:100%;height:100%;object-fit:cover;'
-    img.alt = screen.screen_name
-    frameOuter.appendChild(img)
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = screenTitle;
+    img.style.cssText = 'display:block;width:100%;height:auto;object-fit:contain;border-radius:12px 12px 0 0;';
+    item.appendChild(img);
+
+    // Click to open full-screen viewer
+    item.addEventListener('click', () => {
+      let viewer = document.getElementById('image-viewer');
+      if (!viewer) {
+        viewer = document.createElement('div');
+        viewer.id = 'image-viewer';
+        viewer.setAttribute('role', 'dialog');
+        viewer.setAttribute('aria-modal', 'true');
+        const close = document.createElement('button');
+        close.className = 'viewer-close';
+        close.type = 'button';
+        close.setAttribute('aria-label', 'Close full screen preview');
+        close.textContent = '×';
+        close.addEventListener('click', () => viewer.classList.remove('open'));
+        const preview = document.createElement('img');
+        preview.id = 'image-viewer-preview';
+        const label = document.createElement('p');
+        label.className = 'viewer-caption';
+        label.id = 'image-viewer-caption';
+        viewer.append(close, preview, label);
+        viewer.addEventListener('click', (e) => { if (e.target === viewer) viewer.classList.remove('open'); });
+        document.body.appendChild(viewer);
+      }
+      viewer.querySelector('#image-viewer-preview').src = url;
+      viewer.querySelector('#image-viewer-preview').alt = screenTitle;
+      viewer.querySelector('#image-viewer-caption').textContent = screenTitle;
+      viewer.classList.add('open');
+    });
   } else {
-    const iframe = document.createElement('iframe')
+    // For HTML screens, render a scaled-down iframe preview
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `position:relative;width:100%;overflow:hidden;border-radius:12px 12px 0 0;aspect-ratio:${isDesktop ? '16/9' : '9/16'};background:#f8fafc;`;
+    const iframe = document.createElement('iframe');
     if (isDesktop) {
-      iframe.style.cssText = 'width:1280px;height:720px;border:none;transform:scale(0.25);transform-origin:top left;pointer-events:none;'
+      iframe.style.cssText = 'width:1280px;height:720px;border:none;transform-origin:top left;pointer-events:none;position:absolute;top:0;left:0;';
     } else {
-      iframe.style.cssText = 'width:390px;height:844px;border:none;transform:scale(0.5);transform-origin:top left;pointer-events:none;'
+      iframe.style.cssText = 'width:390px;height:844px;border:none;transform-origin:top left;pointer-events:none;position:absolute;top:0;left:0;';
     }
-    frameOuter.style.overflow = 'hidden'
-    frameOuter.appendChild(iframe)
-    
+    wrapper.appendChild(iframe);
+    item.appendChild(wrapper);
+
+    // Scale iframe to fit container after layout
+    const scaleIframe = () => {
+      const cw = wrapper.clientWidth;
+      if (cw > 0) {
+        const nativeW = isDesktop ? 1280 : 390;
+        iframe.style.transform = `scale(${cw / nativeW})`;
+      }
+    };
+    requestAnimationFrame(scaleIframe);
+    new ResizeObserver(scaleIframe).observe(wrapper);
+
     if (screen.code) {
       let clean = screen.code.trim();
       clean = clean.replace(/^\s*(?:```html|"""html|'''html|```|"""|''')\s*/i, '');
       clean = clean.replace(/\s*(?:```|"""|''')\s*$/, '');
       const startMatch = clean.match(/(<!DOCTYPE html|<html)/i);
-      if (startMatch) {
-        clean = clean.substring(startMatch.index);
-      }
+      if (startMatch) { clean = clean.substring(startMatch.index); }
       clean = clean.replace(/["']$/g, '');
       iframe.srcdoc = clean;
     } else {
-      // Fetch and assign content via srcdoc to avoid raw-text display of html files with text/plain type
       fetch(url)
         .then(res => res.text())
         .then(html => {
@@ -814,60 +833,46 @@ function renderUIPhoneFrame(screen) {
           clean = clean.replace(/^\s*(?:```html|"""html|'''html|```|"""|''')\s*/i, '');
           clean = clean.replace(/\s*(?:```|"""|''')\s*$/, '');
           const startMatch = clean.match(/(<!DOCTYPE html|<html)/i);
-          if (startMatch) {
-            clean = clean.substring(startMatch.index);
-          }
+          if (startMatch) { clean = clean.substring(startMatch.index); }
           clean = clean.replace(/["']$/g, '');
           iframe.srcdoc = clean;
         })
         .catch(err => {
-          console.error("Failed to load iframe content:", err);
+          console.error('Failed to load iframe content:', err);
           iframe.src = url;
         });
     }
-  }
-  
-  const screenLabel = document.createElement('div')
-  screenLabel.style.cssText = "font-family:'Plus Jakarta Sans',sans-serif;font-size:13.5px;font-weight:700;color:#1e293b;text-align:center;margin-top:4px;"
-  screenLabel.textContent = screen.screen_name.charAt(0).toUpperCase() + screen.screen_name.slice(1) + ' Screen'
-  
-  const openBtn = document.createElement('button')
-  openBtn.style.cssText = 'background:#2563eb;color:white;border:none;border-radius:8px;padding:8px 20px;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;box-shadow:0 4px 12px rgba(37,99,235,0.2);transition:all 0.2s;'
-  openBtn.textContent = 'Full Screen'
-  openBtn.onclick = async () => {
-    if (screen.type === 'image') {
-      window.open(url, '_blank');
-    } else {
+
+    // Click to open in new tab
+    item.addEventListener('click', async () => {
       try {
         const res = await fetch(url);
         const text = await res.text();
         const blob = new Blob([text], { type: 'text/html' });
-        const blobUrl = URL.createObjectURL(blob);
-        window.open(blobUrl, '_blank');
+        window.open(URL.createObjectURL(blob), '_blank');
       } catch (err) {
-        console.error("Failed to open full screen:", err);
         window.open(url, '_blank');
       }
-    }
+    });
   }
-  
-  phoneFrame.appendChild(frameOuter)
-  phoneFrame.appendChild(screenLabel)
-  phoneFrame.appendChild(openBtn)
-  
+
+  const caption = document.createElement('figcaption');
+  caption.style.cssText = "padding:10px 12px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;color:#1e293b;background:#fff;border-radius:0 0 12px 12px;";
+  caption.textContent = screenTitle;
+  item.appendChild(caption);
+
   if (screen.id) {
     const delBtn = document.createElement('button');
     delBtn.className = 'delete-file-btn';
     delBtn.title = 'Delete screen';
     delBtn.innerHTML = '×';
-    delBtn.style.cssText = 'position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;background:#ef4444;color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;z-index:20;line-height:1;font-weight:bold;box-shadow:0 4px 10px rgba(239,68,68,0.3);';
     delBtn.addEventListener('click', async (event) => {
       event.stopPropagation();
       event.preventDefault();
       if (!confirm('Are you sure you want to delete this screen?')) return;
       try {
         await window.AOSGenerationStorage.deleteFile(screen.id);
-        phoneFrame.remove();
+        item.remove();
         showToast('Screen deleted.');
         const grid = document.getElementById('ui-screens-grid');
         if (grid && grid.querySelectorAll('.delete-file-btn').length === 0) {
@@ -879,10 +884,10 @@ function renderUIPhoneFrame(screen) {
         showToast(`Could not delete screen: ${err.message}`);
       }
     });
-    phoneFrame.appendChild(delBtn);
+    item.appendChild(delBtn);
   }
-  
-  return phoneFrame;
+
+  return item;
 }
 
 async function autoGeneratePPT(project) {
@@ -1168,23 +1173,22 @@ document.addEventListener('aos-generation-history', (event) => {
   if (uiFiles.length > 0) {
     const emptyImg = document.getElementById('ui-empty');
     if (emptyImg) emptyImg.style.display = 'none';
-    const hasDesktopLayout = uiFiles.some(file => file.title.includes('(desktop)'));
     grid.style.display = 'grid';
-    grid.style.gridTemplateColumns = `repeat(auto-fill, minmax(${hasDesktopLayout ? 350 : 230}px, 1fr))`;
-    grid.style.gap = '28px';
+    grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(180px, 1fr))';
+    grid.style.gap = '18px';
     grid.innerHTML = '';
     
     uiFiles.forEach(file => {
       const isDesktop = file.title.includes('(desktop)');
       const screenName = file.title.replace('UI Screen - ', '').replace(' (desktop)', '');
-      const phoneFrame = renderUIPhoneFrame({
+      const screenItem = renderUIPhoneFrame({
         screen_name: screenName,
         type: file.generation_type === 'image' ? 'image' : 'html',
         resolved_url: file.resolved_url,
         platform: isDesktop ? 'desktop' : 'mobile',
         id: file.id
       });
-      grid.appendChild(phoneFrame);
+      grid.appendChild(screenItem);
     });
   }
 });

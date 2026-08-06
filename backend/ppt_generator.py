@@ -7,6 +7,7 @@ import re
 import json
 import base64
 import requests
+import concurrent.futures
 from io import BytesIO
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
@@ -82,9 +83,9 @@ def _generate_slide_content(prompt, slide_count):
 
     # Presentations use the dedicated Gemini key. This stays server-side and is
     # never exposed to the Firebase frontend.
-    gemini_key = os.getenv("GEMINI_API_KEY_2")
+    gemini_key = os.getenv("GEMINI_API_KEY_2") or os.getenv("GEMINI_API_KEY")
     if not gemini_key:
-        raise RuntimeError("GEMINI_API_KEY_2 is not configured in Railway Variables.")
+        raise RuntimeError("No Gemini API key is configured (GEMINI_API_KEY_2 or GEMINI_API_KEY).")
 
     try:
         # Gemini 2.5 Flash is unavailable for some newly created API projects.
@@ -117,32 +118,44 @@ def _generate_slide_content(prompt, slide_count):
 
 
 def _generate_image(prompt, width=400, height=300):
-    """Generate an image via Hugging Face and return as BytesIO."""
+    """Generate an image via Hugging Face and return as BytesIO.
+    Retries once on failure and uses a generous timeout."""
     if not HF_TOKEN:
+        print("PPT image skipped: HF_TOKEN is not set.")
         return None
-    try:
-        res = requests.post(
-            'https://router.huggingface.co/nscale/v1/images/generations',
-            headers={'Authorization': f'Bearer {HF_TOKEN}'},
-            json={
-                'model': 'black-forest-labs/FLUX.1-schnell',
-                'prompt': f"{prompt}, clean professional illustration, high quality, no text",
-                'response_format': 'b64_json'
-            },
-            timeout=25,
-        )
-        if res.status_code == 200:
-            b64 = res.json().get('data', [{}])[0].get('b64_json')
-            if b64:
-                img_data = base64.b64decode(b64)
-                img = Image.open(BytesIO(img_data))
-                img = img.resize((width, height), Image.LANCZOS)
-                buf = BytesIO()
-                img.save(buf, format='PNG')
-                buf.seek(0)
-                return buf
-    except Exception as e:
-        print(f"HF image generation failed for PPT slide: {e}")
+
+    for attempt in range(2):
+        try:
+            res = requests.post(
+                'https://router.huggingface.co/nscale/v1/images/generations',
+                headers={'Authorization': f'Bearer {HF_TOKEN}'},
+                json={
+                    'model': 'black-forest-labs/FLUX.1-schnell',
+                    'prompt': f"{prompt}, clean professional illustration, high quality, no text",
+                    'response_format': 'b64_json'
+                },
+                timeout=90,
+            )
+            if res.status_code == 200:
+                b64 = res.json().get('data', [{}])[0].get('b64_json')
+                if b64:
+                    img_data = base64.b64decode(b64)
+                    img = Image.open(BytesIO(img_data))
+                    img = img.resize((width, height), Image.LANCZOS)
+                    buf = BytesIO()
+                    img.save(buf, format='PNG')
+                    buf.seek(0)
+                    return buf
+                else:
+                    print(f"PPT image attempt {attempt+1}: HF returned 200 but no b64_json data.")
+            else:
+                print(f"PPT image attempt {attempt+1}: HF returned status {res.status_code} – {res.text[:200]}")
+        except requests.exceptions.Timeout:
+            print(f"PPT image attempt {attempt+1}: HF request timed out after 90s for prompt: {prompt[:80]}")
+        except Exception as e:
+            print(f"PPT image attempt {attempt+1} failed: {type(e).__name__}: {e}")
+
+    print(f"PPT image generation failed after 2 attempts for: {prompt[:80]}")
     return None
 
 
@@ -191,6 +204,33 @@ def create_premium_pptx(prompt, slide_count=8, theme='modern'):
     W = prs.slide_width
     H = prs.slide_height
 
+    # ── Pre-generate all images concurrently ──
+    image_prompts = []
+    for idx, sd in enumerate(slides_data):
+        is_cover = idx == 0
+        is_last = idx == slide_count - 1
+        if is_cover:
+            image_prompts.append((idx, sd.get('image_prompt', prompt), 500, 350))
+        elif is_last:
+            image_prompts.append((idx, None, 0, 0))  # No image for closing slide
+        else:
+            image_prompts.append((idx, sd.get('image_prompt', f'illustration about {prompt}'), 480, 400))
+
+    slide_images = {}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        future_to_idx = {}
+        for idx, img_prompt, w, h in image_prompts:
+            if img_prompt:
+                future = executor.submit(_generate_image, img_prompt, w, h)
+                future_to_idx[future] = idx
+        for future in concurrent.futures.as_completed(future_to_idx):
+            slide_idx = future_to_idx[future]
+            try:
+                slide_images[slide_idx] = future.result()
+            except Exception as e:
+                print(f"PPT image for slide {slide_idx} raised: {e}")
+                slide_images[slide_idx] = None
+
     for idx, sd in enumerate(slides_data):
         slide = prs.slides.add_slide(prs.slide_layouts[6])  # Blank layout
 
@@ -210,7 +250,6 @@ def create_premium_pptx(prompt, slide_count=8, theme='modern'):
 
         if is_cover:
             # ══════════ COVER SLIDE ══════════
-            # Large centered title
             _add_text(slide, Inches(1), Inches(2.0), Inches(11.3), Inches(1.5),
                       pres_title, 44, palette['fg'], bold=True, alignment=PP_ALIGN.CENTER)
 
@@ -219,14 +258,12 @@ def create_premium_pptx(prompt, slide_count=8, theme='modern'):
                 _add_text(slide, Inches(2), Inches(3.6), Inches(9.3), Inches(0.8),
                           subtitle, 22, palette['muted'], alignment=PP_ALIGN.CENTER)
 
-            # Accent divider line
             divider = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(5.5), Inches(3.3), Inches(2.3), Inches(0.06))
             divider.fill.solid()
             divider.fill.fore_color.rgb = _rgb(palette['accent'])
             divider.line.fill.background()
 
-            # Generate cover image
-            img_buf = _generate_image(sd.get('image_prompt', prompt), 500, 350)
+            img_buf = slide_images.get(idx)
             if img_buf:
                 slide.shapes.add_picture(img_buf, Inches(4.4), Inches(4.2), Inches(4.5), Inches(3.0))
 
@@ -243,7 +280,6 @@ def create_premium_pptx(prompt, slide_count=8, theme='modern'):
 
         else:
             # ══════════ CONTENT SLIDES ══════════
-            # Slide number badge
             badge = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(0.5), Inches(0.35), Inches(0.55), Inches(0.55))
             badge.fill.solid()
             badge.fill.fore_color.rgb = _rgb(palette['accent'])
@@ -256,43 +292,33 @@ def create_premium_pptx(prompt, slide_count=8, theme='modern'):
             badge_tf.paragraphs[0].alignment = PP_ALIGN.CENTER
             badge_tf.vertical_anchor = MSO_ANCHOR.MIDDLE
 
-            # Slide title
             _add_text(slide, Inches(1.3), Inches(0.3), Inches(7), Inches(0.7),
                       sd.get('title', ''), 28, palette['fg'], bold=True)
 
-            # Subtitle
             subtitle = sd.get('subtitle', '')
             if subtitle:
                 _add_text(slide, Inches(1.3), Inches(1.0), Inches(7), Inches(0.5),
                           subtitle, 16, palette['muted'])
 
-            # Content card background
             card_top = Inches(1.6)
             card_height = Inches(5.2)
             _add_rounded_rect(slide, Inches(0.5), card_top, Inches(7.5), card_height, palette['card'])
 
-            # Bullet points inside card
             bullets = sd.get('bullet_points', [])
             for bi, bp in enumerate(bullets[:6]):
                 y_pos = card_top + Inches(0.4 + bi * 0.7)
-                # Bullet icon
                 dot = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(1.0), y_pos + Inches(0.12), Inches(0.18), Inches(0.18))
                 dot.fill.solid()
                 dot.fill.fore_color.rgb = _rgb(palette['accent'])
                 dot.line.fill.background()
-                # Bullet text
                 _add_text(slide, Inches(1.4), y_pos, Inches(6.2), Inches(0.6),
                           bp, 16, palette['fg'])
 
-            # Right side: AI-generated illustration
+            img_buf = slide_images.get(idx)
             img_prompt = sd.get('image_prompt', f'illustration about {prompt}')
-            img_buf = _generate_image(img_prompt, 480, 400)
             if img_buf:
-                # Image card background
                 _add_rounded_rect(slide, Inches(8.3), card_top, Inches(4.5), card_height, palette['card'])
                 slide.shapes.add_picture(img_buf, Inches(8.5), Inches(1.9), Inches(4.1), Inches(3.4))
-
-                # Image caption
                 _add_text(slide, Inches(8.5), Inches(5.5), Inches(4.1), Inches(0.5),
                           img_prompt[:50], 11, palette['muted'], alignment=PP_ALIGN.CENTER)
 
