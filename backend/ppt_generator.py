@@ -197,8 +197,12 @@ def _generate_image_gemini(prompt, width=400, height=300):
         print("Gemini image generation skipped: GEMINI_IMAGE_KEY is not set.")
         return None
 
-    # 1. Try generateContent with Nano Banana models (e.g. gemini-3.1-flash-image)
-    nano_models = ["gemini-3.1-flash-image", "gemini-2.5-flash-image", "gemini-3-pro-image"]
+    # Gemini native image generation. The primary model can be changed without
+    # code changes through Railway Variables when Google releases new models.
+    nano_models = [
+        os.getenv("PPT_GEMINI_IMAGE_MODEL", "gemini-3.1-flash-image"),
+        "gemini-3.1-flash-lite-image",
+    ]
     for model in nano_models:
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_IMAGE_KEY}"
@@ -211,7 +215,8 @@ def _generate_image_gemini(prompt, width=400, height=300):
                             }
                         ]
                     }
-                ]
+                ],
+                "generationConfig": {"responseModalities": ["IMAGE"]},
             }
             res = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=60)
             if res.status_code == 200:
@@ -427,9 +432,9 @@ def _generate_image_pollinations(prompt, width=400, height=300):
 
 
 def _generate_image(prompt, width=400, height=300, theme='modern'):
-    """Generate every PPT illustration through the AOS Hugging Face setup."""
-    provider = "huggingface"
-    buf = _generate_image_hf(prompt, width, height)
+    """Generate every PPT illustration through the configured Gemini image API."""
+    provider = "gemini"
+    buf = _generate_image_gemini(prompt, width, height)
     if buf:
         return buf
     print(f"PPT image provider '{provider}' did not return an image; using a local visual fallback.")
