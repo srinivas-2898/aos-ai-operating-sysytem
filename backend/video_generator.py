@@ -23,6 +23,7 @@ router = APIRouter()
 
 HF_IMAGE_URL = "https://router.huggingface.co/nscale/v1/images/generations"
 ALLOWED_RATIOS = {"16:9": (1280, 720), "9:16": (720, 1280), "1:1": (960, 960)}
+HD_RATIOS = {"16:9": (1920, 1080), "9:16": (1080, 1920), "1:1": (1440, 1440)}
 
 
 class VideoRequest(BaseModel):
@@ -76,14 +77,20 @@ def _plan_scenes(prompt: str, count: int, style: str) -> list[str]:
     return _fallback_scenes(prompt, count)
 
 
-def _generate_scene_image(prompt: str, model: str, token: str) -> bytes:
+def _generate_scene_image(prompt: str, model: str, token: str, width: int = 1280, height: int = 720) -> bytes:
     """Generate a scene image. Tries Hugging Face first, and falls back to Pollinations if it fails."""
     # 1. Try Hugging Face
     try:
         response = requests.post(
             HF_IMAGE_URL,
             headers={"Authorization": f"Bearer {token}"},
-            json={"model": model, "prompt": prompt, "response_format": "b64_json"},
+            json={
+                "model": model,
+                "prompt": prompt,
+                "width": width,
+                "height": height,
+                "response_format": "b64_json"
+            },
             timeout=120,
         )
         if response.status_code == 200:
@@ -101,7 +108,7 @@ def _generate_scene_image(prompt: str, model: str, token: str) -> bytes:
     time.sleep(1.0)  # Space out requests to avoid rate limits
     try:
         safe_prompt = quote(prompt)
-        poll_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=960&height=540&nologo=true"
+        poll_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width={width}&height={height}&nologo=true"
         response = requests.get(poll_url, timeout=90)
         if response.status_code == 200 and len(response.content) > 1000:
             return response.content
@@ -119,22 +126,31 @@ def _create_video(image_paths: list[Path], output: Path, duration: int, ratio: s
         raise HTTPException(status_code=503, detail="Video assembly is unavailable because FFmpeg is missing from the server.")
 
     width, height = ALLOWED_RATIOS[ratio]
+    if quality.lower() == "hd":
+        width, height = HD_RATIOS[ratio]
+
     fps = 24
     scene_duration = duration / len(image_paths)
     clip_paths: list[Path] = []
     preset = "medium" if quality.lower() == "hd" else "veryfast"
+    crf = "18" if quality.lower() == "hd" else "23"
+
     for index, image_path in enumerate(image_paths):
         clip_path = image_path.with_suffix(".mp4")
         frames = max(1, round(scene_duration * fps))
+        
+        # Scale and pad to high-resolution (2x target) first, perform zoompan, 
+        # and let zoompan scale it down to output target. This fixes aliasing/pixelation!
+        zoom_w, zoom_h = width * 2, height * 2
         video_filter = (
-            f"scale={width}:{height}:force_original_aspect_ratio=decrease,"
-            f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2,"
-            f"zoompan=z='min(zoom+0.0008,1.12)':d={frames}:s={width}x{height}:fps={fps},format=yuv420p"
+            f"scale={zoom_w}:{zoom_h}:force_original_aspect_ratio=decrease,"
+            f"pad={zoom_w}:{zoom_h}:(ow-iw)/2:(oh-ih)/2,"
+            f"zoompan=z='min(zoom+0.0008,1.12)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d={frames}:s={width}x{height}:fps={fps},format=yuv420p"
         )
         command = [
             ffmpeg, "-y", "-loop", "1", "-i", str(image_path), "-t", str(scene_duration),
             "-vf", video_filter, "-r", str(fps), "-c:v", "libx264", "-preset", preset,
-            "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(clip_path),
+            "-crf", crf, "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(clip_path),
         ]
         result = subprocess.run(command, capture_output=True, text=True, timeout=180)
         if result.returncode != 0:
@@ -263,7 +279,7 @@ def generate_video(request: VideoRequest):
             headers={"Content-Disposition": "attachment; filename=aos-generated-video.mp4"},
         )
 
-    # 3. Fallback: Scene-based image-to-video generation using Hugging Face images and FFmpeg
+    # 4. Fallback: Scene-based image-to-video generation using Hugging Face images and FFmpeg
     token = os.getenv("HF_TOKEN")
     if not token:
         raise HTTPException(status_code=503, detail="Video generation is not configured. Add HF_TOKEN to Railway Variables.")
@@ -273,13 +289,19 @@ def generate_video(request: VideoRequest):
     if request.negative_prompt.strip():
         image_suffix += f". Avoid: {request.negative_prompt.strip()}"
 
+    # Determine requested image resolution
+    width, height = ALLOWED_RATIOS[request.aspect_ratio]
+    if request.quality.lower() == "hd":
+        width, height = HD_RATIOS[request.aspect_ratio]
+
     try:
         with tempfile.TemporaryDirectory(prefix="aos-video-") as temp_dir:
             work_dir = Path(temp_dir)
             image_paths = []
             for index, scene in enumerate(scenes):
                 image_path = work_dir / f"scene-{index + 1}.png"
-                image_path.write_bytes(_generate_scene_image(f"{scene}. {image_suffix}", model, token))
+                image_bytes = _generate_scene_image(f"{scene}. {image_suffix}", model, token, width=width, height=height)
+                image_path.write_bytes(image_bytes)
                 image_paths.append(image_path)
             output = work_dir / "aos-generated-video.mp4"
             _create_video(image_paths, output, request.duration, request.aspect_ratio, request.quality)

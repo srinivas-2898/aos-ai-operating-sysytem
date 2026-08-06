@@ -88,11 +88,48 @@
       if (!response.ok) { const error = await response.json().catch(() => ({})); throw new Error(error.detail || 'Video generation failed.'); }
       const blob = await response.blob();
       if (!blob.type.startsWith('video/')) throw new Error('The provider did not return a playable video.');
-      updateProgress(100, 'Saving video to this project…');
-      const saved = await saveVideoHistory(blob, settings);
-      const signedUrl = await window.AOSGenerationStorage.getSignedUrl(saved.storage_path);
-      displayVideo({ ...saved, ...settings, resolved_url: signedUrl });
-      toast('Video generated and saved to this project.');
+      
+      // Render the video instantly via local object URL so it shows up immediately
+      const objectUrl = URL.createObjectURL(blob);
+      const tempId = `temp-${Date.now()}`;
+      displayVideo({
+        id: tempId,
+        title: settings.prompt.slice(0, 90) || 'Generated video',
+        prompt: settings.prompt,
+        duration_seconds: settings.duration,
+        created_at: new Date().toISOString(),
+        resolved_url: objectUrl
+      });
+      toast('Video generated successfully.');
+
+      // Save to project storage in the background
+      try {
+        updateProgress(100, 'Saving video to project history…');
+        const saved = await saveVideoHistory(blob, settings);
+        if (saved && saved.id) {
+          // Update the temp card attributes & action handlers with real DB values
+          const card = document.querySelector(`[data-video-id="${tempId}"]`);
+          if (card) {
+            card.dataset.videoId = saved.id;
+            const deleteBtn = card.querySelector('[data-action="delete"]');
+            if (deleteBtn) {
+              deleteBtn.onclick = async () => {
+                if (!confirm('Delete this video from this project?')) return;
+                try {
+                  await window.AOSGenerationStorage.deleteFile(saved.id);
+                  card.remove();
+                  toast('Video deleted.');
+                } catch (error) {
+                  toast(`Could not delete video: ${error.message}`);
+                }
+              };
+            }
+          }
+        }
+      } catch (saveError) {
+        console.error('Failed to persist video history:', saveError);
+        toast('Video is displayed, but could not be saved to project history.');
+      }
     } catch (error) {
       if (error.name === 'AbortError') toast('Video generation cancelled.');
       else toast(`${error.message} Retry when you are ready.`);
@@ -101,8 +138,13 @@
 
   function initializeVideoGeneration() {
     document.getElementById('vid-cancel-btn')?.addEventListener('click', () => activeController?.abort());
-    document.addEventListener('aos-generation-history', (event) => event.detail.filter(file => file.generation_type === 'video' && file.resolved_url).forEach(file => displayVideo(file, false)));
   }
+
+  // Register history listeners synchronously immediately as the script runs to prevent race conditions
+  document.addEventListener('aos-generation-history', (event) => {
+    event.detail.filter(file => file.generation_type === 'video' && file.resolved_url).forEach(file => displayVideo(file, false));
+  });
+
   window.initializeVideoGeneration = initializeVideoGeneration;
   window.generateVideo = generateVideo;
   window.showLoading = showLoading;

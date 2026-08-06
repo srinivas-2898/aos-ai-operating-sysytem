@@ -448,7 +448,7 @@
   };
 
   document.addEventListener('aos-generation-history', (event) => {
-    event.detail.filter((file) => file.generation_type !== 'image' && file.generation_type !== 'html' && file.resolved_url).forEach((file) => {
+    event.detail.filter((file) => file.generation_type !== 'image' && file.generation_type !== 'html' && file.generation_type !== 'video' && file.resolved_url).forEach((file) => {
       const type = file.generation_type;
       const isPdf = type === 'pdf';
       const isWord = type === 'word';
