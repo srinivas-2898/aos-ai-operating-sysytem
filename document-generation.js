@@ -1,6 +1,135 @@
 /* Real document and presentation downloads served by the Python backend. */
 (() => {
   const showToast = window.showToast || ((msg) => console.log('Toast:', msg));
+
+  // Inject slide preview styles dynamically
+  (() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .presentation-preview-container {
+        grid-column: 1 / -1;
+        border: 1px solid #dce6f2;
+        border-radius: 12px;
+        background: #fff;
+        padding: 20px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.055);
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .pres-preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        color: #64748b;
+        font-weight: 600;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 8px;
+      }
+      .pres-preview-nav {
+        display: flex;
+        gap: 6px;
+      }
+      .pres-preview-nav button {
+        padding: 6px 12px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #334155;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+      }
+      .pres-preview-nav button:hover:not(:disabled) {
+        background: #eff6ff;
+        color: #2563eb;
+        border-color: #bfdbfe;
+      }
+      .pres-preview-nav button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .pres-preview-slide {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 24px;
+        padding: 28px;
+        border-radius: 10px;
+        min-height: 280px;
+        background: #0f172a;
+        color: #fff;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        align-items: center;
+      }
+      .pres-slide-left {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        text-align: left;
+      }
+      .pres-slide-left h3 {
+        font-family: 'Plus Jakarta Sans', Inter, sans-serif;
+        font-size: 24px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.5px;
+        margin-bottom: 2px;
+      }
+      .pres-slide-left p {
+        color: #94a3b8;
+        font-size: 14px;
+        margin-bottom: 12px;
+      }
+      .pres-slide-left ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .pres-slide-left li {
+        font-size: 14px;
+        line-height: 1.5;
+        color: #cbd5e1;
+        position: relative;
+        padding-left: 14px;
+      }
+      .pres-slide-left li::before {
+        content: '•';
+        color: #3b82f6;
+        position: absolute;
+        left: 0;
+        font-weight: bold;
+      }
+      .pres-slide-right {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+      }
+      .pres-slide-right img {
+        width: 100%;
+        max-height: 220px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 1px solid #334155;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      }
+      @media (max-width: 620px) {
+        .pres-preview-slide {
+          grid-template-columns: 1fr;
+          gap: 16px;
+          padding: 16px;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  })();
+
   const apiEndpoint = (path) => {
     const chatUrl = window.AOS_AI_API_URL || '/api/chat';
     const base = chatUrl.replace(/\/api\/chat(?:\?.*)?$/, '');
@@ -12,7 +141,7 @@
     return match?.[1] || fallback;
   };
 
-  const createFileCard = (gallery, blob, filename, label, icon) => {
+  const createFileCard = (gallery, blob, filename, label, icon, slidesData = null) => {
     const url = URL.createObjectURL(blob);
     let preview = null;
     if (blob.type === 'application/pdf') {
@@ -20,6 +149,82 @@
       preview.className = 'document-pdf-preview';
       preview.src = url;
       preview.title = `${label} preview`;
+      gallery.prepend(preview);
+    } else if (label === 'Presentation' && slidesData && slidesData.length > 0) {
+      preview = document.createElement('div');
+      preview.className = 'presentation-preview-container';
+      
+      let currentSlide = 0;
+      const renderSlide = () => {
+        const slide = slidesData[currentSlide];
+        preview.innerHTML = '';
+        
+        const header = document.createElement('div');
+        header.className = 'pres-preview-header';
+        header.innerHTML = `<span>Slide ${currentSlide + 1} of ${slidesData.length}</span>`;
+        
+        const nav = document.createElement('div');
+        nav.className = 'pres-preview-nav';
+        
+        const prevBtn = document.createElement('button');
+        prevBtn.textContent = '◀ Prev';
+        prevBtn.disabled = currentSlide === 0;
+        prevBtn.onclick = (e) => { e.preventDefault(); if (currentSlide > 0) { currentSlide--; renderSlide(); } };
+        
+        const nextBtn = document.createElement('button');
+        nextBtn.textContent = 'Next ▶';
+        nextBtn.disabled = currentSlide === slidesData.length - 1;
+        nextBtn.onclick = (e) => { e.preventDefault(); if (currentSlide < slidesData.length - 1) { currentSlide++; renderSlide(); } };
+        
+        nav.append(prevBtn, nextBtn);
+        header.appendChild(nav);
+        
+        const slideEl = document.createElement('div');
+        slideEl.className = 'pres-preview-slide';
+        
+        const leftCol = document.createElement('div');
+        leftCol.className = 'pres-slide-left';
+        
+        const title = document.createElement('h3');
+        title.textContent = slide.title;
+        
+        leftCol.appendChild(title);
+        
+        if (slide.subtitle) {
+          const sub = document.createElement('p');
+          sub.textContent = slide.subtitle;
+          leftCol.appendChild(sub);
+        }
+        
+        if (slide.bullet_points && slide.bullet_points.length > 0) {
+          const ul = document.createElement('ul');
+          slide.bullet_points.forEach(bp => {
+            const li = document.createElement('li');
+            li.textContent = bp;
+            ul.appendChild(li);
+          });
+          leftCol.appendChild(ul);
+        }
+        
+        const rightCol = document.createElement('div');
+        rightCol.className = 'pres-slide-right';
+        
+        if (slide.image_b64) {
+          const img = document.createElement('img');
+          img.src = `data:image/png;base64,${slide.image_b64}`;
+          img.alt = slide.title || 'Slide illustration';
+          rightCol.appendChild(img);
+        } else {
+          const placeholder = document.createElement('div');
+          placeholder.style.cssText = 'width:100%;height:180px;background:linear-gradient(135deg,#3b82f6,#1e3a8a);border-radius:8px';
+          rightCol.appendChild(placeholder);
+        }
+        
+        slideEl.append(leftCol, rightCol);
+        preview.append(header, slideEl);
+      };
+      
+      renderSlide();
       gallery.prepend(preview);
     }
     const card = document.createElement('section');
@@ -99,9 +304,30 @@
         const error = await response.json().catch(() => ({}));
         throw new Error(error.error || error.detail || 'File generation failed.');
       }
-      const blob = await response.blob();
-      const filename = fileNameFrom(response, fallbackName);
-      const { card, download, preview } = createFileCard(gallery, blob, filename, label, icon);
+      
+      let blob;
+      let filename = fallbackName;
+      let slidesData = null;
+      
+      if (path === '/api/generate-ppt') {
+        const json = await response.json();
+        filename = json.filename || fallbackName;
+        slidesData = json.slides || null;
+        
+        // Decode base64 to binary
+        const byteCharacters = atob(json.pptx);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+      } else {
+        blob = await response.blob();
+        filename = fileNameFrom(response, fallbackName);
+      }
+      
+      const { card, download, preview } = createFileCard(gallery, blob, filename, label, icon, slidesData);
       try {
         const savedFile = await window.AOSGenerationStorage?.saveBlob({ blob, filename, title: filename, type: label, prompt: payload.prompt || '' });
         if (savedFile && savedFile.id) {

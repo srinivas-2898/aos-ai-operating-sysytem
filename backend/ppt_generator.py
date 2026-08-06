@@ -477,8 +477,8 @@ def _add_text(slide, left, top, width, height, text, font_size, color, bold=Fals
     return txBox
 
 
-def create_premium_pptx(prompt, slide_count=8, theme='modern'):
-    """Generate a premium PowerPoint presentation with AI images."""
+def create_premium_pptx_data(prompt, slide_count=8, theme='modern'):
+    """Generate structured presentation slides and in-memory images, then return the PPTX bytes, slides text data, and slide images dict."""
     palette = THEMES.get(theme, THEMES['modern'])
 
     # 1. Generate structured slide content via LLM
@@ -644,7 +644,13 @@ def create_premium_pptx(prompt, slide_count=8, theme='modern'):
 
     buf = BytesIO()
     prs.save(buf)
-    return buf.getvalue(), 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'pptx'
+    return buf.getvalue(), slides_data, slide_images
+
+
+def create_premium_pptx(prompt, slide_count=8, theme='modern'):
+    """Generate a premium PowerPoint presentation bytes (backward compatible)."""
+    pptx_bytes, slides_data, slide_images = create_premium_pptx_data(prompt, slide_count, theme)
+    return pptx_bytes, 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'pptx'
 
 
 @router.post("/api/generate-ppt")
@@ -660,12 +666,33 @@ async def generate_ppt(request: PPTRequest):
         theme = "corporate"
 
     try:
-        content, media_type, extension = create_premium_pptx(prompt, slide_count, theme)
+        pptx_bytes, slides_data, slide_images = create_premium_pptx_data(prompt, slide_count, theme)
         filename = re.sub(r"[^a-zA-Z0-9_-]+", "-", prompt[:60]).strip("-") or "aos-presentation"
-        return Response(
-            content=content,
-            media_type=media_type,
-            headers={"Content-Disposition": f'attachment; filename="{filename}.{extension}"'},
-        )
+        
+        # Base64-encode the presentation bytes
+        pptx_b64 = base64.b64encode(pptx_bytes).decode('utf-8')
+        
+        # Base64-encode the slide illustrations
+        slides_response = []
+        for idx, sd in enumerate(slides_data):
+            img_buf = slide_images.get(idx)
+            img_b64 = None
+            if img_buf:
+                img_b64 = base64.b64encode(img_buf.getvalue()).decode('utf-8')
+                
+            slides_response.append({
+                "title": sd.get('title', ''),
+                "subtitle": sd.get('subtitle', ''),
+                "bullet_points": sd.get('bullet_points', []),
+                "image_b64": img_b64
+            })
+            
+        return {
+            "filename": f"{filename}.pptx",
+            "pptx": pptx_b64,
+            "slides": slides_response
+        }
     except Exception as error:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"PowerPoint generation failed: {error}") from error
