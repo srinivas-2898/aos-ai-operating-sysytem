@@ -117,45 +117,69 @@ def _generate_slide_content(prompt, slide_count):
         raise RuntimeError(f"Gemini PPT generation failed: {detail}") from error
 
 
-def _generate_image(prompt, width=400, height=300):
-    """Generate an image via Hugging Face and return as BytesIO.
-    Retries once on failure and uses a generous timeout."""
+def _generate_image_hf(prompt, width=400, height=300):
+    """Try Hugging Face inference API. Returns BytesIO or None."""
     if not HF_TOKEN:
-        print("PPT image skipped: HF_TOKEN is not set.")
         return None
+    try:
+        res = requests.post(
+            'https://router.huggingface.co/nscale/v1/images/generations',
+            headers={'Authorization': f'Bearer {HF_TOKEN}'},
+            json={
+                'model': 'black-forest-labs/FLUX.1-schnell',
+                'prompt': f"{prompt}, clean professional illustration, high quality, no text",
+                'response_format': 'b64_json'
+            },
+            timeout=90,
+        )
+        if res.status_code == 200:
+            b64 = res.json().get('data', [{}])[0].get('b64_json')
+            if b64:
+                img_data = base64.b64decode(b64)
+                img = Image.open(BytesIO(img_data))
+                img = img.resize((width, height), Image.LANCZOS)
+                buf = BytesIO()
+                img.save(buf, format='PNG')
+                buf.seek(0)
+                return buf
+        print(f"HF image failed: status {res.status_code} – {res.text[:200]}")
+    except Exception as e:
+        print(f"HF image error: {type(e).__name__}: {e}")
+    return None
 
-    for attempt in range(2):
-        try:
-            res = requests.post(
-                'https://router.huggingface.co/nscale/v1/images/generations',
-                headers={'Authorization': f'Bearer {HF_TOKEN}'},
-                json={
-                    'model': 'black-forest-labs/FLUX.1-schnell',
-                    'prompt': f"{prompt}, clean professional illustration, high quality, no text",
-                    'response_format': 'b64_json'
-                },
-                timeout=90,
-            )
-            if res.status_code == 200:
-                b64 = res.json().get('data', [{}])[0].get('b64_json')
-                if b64:
-                    img_data = base64.b64decode(b64)
-                    img = Image.open(BytesIO(img_data))
-                    img = img.resize((width, height), Image.LANCZOS)
-                    buf = BytesIO()
-                    img.save(buf, format='PNG')
-                    buf.seek(0)
-                    return buf
-                else:
-                    print(f"PPT image attempt {attempt+1}: HF returned 200 but no b64_json data.")
-            else:
-                print(f"PPT image attempt {attempt+1}: HF returned status {res.status_code} – {res.text[:200]}")
-        except requests.exceptions.Timeout:
-            print(f"PPT image attempt {attempt+1}: HF request timed out after 90s for prompt: {prompt[:80]}")
-        except Exception as e:
-            print(f"PPT image attempt {attempt+1} failed: {type(e).__name__}: {e}")
 
-    print(f"PPT image generation failed after 2 attempts for: {prompt[:80]}")
+def _generate_image_pollinations(prompt, width=400, height=300):
+    """Fallback: use Pollinations.ai (free, no auth). Returns BytesIO or None."""
+    try:
+        from urllib.parse import quote
+        safe_prompt = quote(f"{prompt}, clean professional illustration, high quality, no text")
+        url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width={width}&height={height}&nologo=true&seed={hash(prompt) % 100000}"
+        res = requests.get(url, timeout=90)
+        if res.status_code == 200 and len(res.content) > 1000:
+            img = Image.open(BytesIO(res.content))
+            img = img.resize((width, height), Image.LANCZOS)
+            buf = BytesIO()
+            img.save(buf, format='PNG')
+            buf.seek(0)
+            return buf
+        print(f"Pollinations image failed: status {res.status_code}, size {len(res.content)}")
+    except Exception as e:
+        print(f"Pollinations image error: {type(e).__name__}: {e}")
+    return None
+
+
+def _generate_image(prompt, width=400, height=300):
+    """Generate an image for a PPT slide. Tries HF first, falls back to Pollinations."""
+    # Try Hugging Face first (higher quality)
+    buf = _generate_image_hf(prompt, width, height)
+    if buf:
+        return buf
+    # Fallback to Pollinations (free, always available)
+    print(f"Falling back to Pollinations for: {prompt[:60]}")
+    buf = _generate_image_pollinations(prompt, width, height)
+    if buf:
+        return buf
+    print(f"All image providers failed for: {prompt[:80]}")
     return None
 
 

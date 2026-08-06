@@ -197,11 +197,29 @@ async def generate_image(data: dict):
             'provider': 'huggingface',
             'model': model
         }
-    except httpx.HTTPError as error:
-        detail = error.response.text[:300] if error.response is not None else str(error)
-        raise HTTPException(status_code=502, detail=f'Hugging Face API request failed: {detail}')
-    except Exception as error:
-        raise HTTPException(status_code=502, detail=f'Image generation failed: {str(error)}')
+    except Exception as hf_error:
+        print(f'HF image failed, trying Pollinations fallback: {hf_error}')
+        # Fallback to Pollinations (free, no auth required)
+        try:
+            from urllib.parse import quote
+            import requests as sync_requests
+            safe_prompt = quote(prompt)
+            poll_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=1024&height=1024&nologo=true"
+            poll_res = sync_requests.get(poll_url, timeout=90)
+            if poll_res.status_code == 200 and len(poll_res.content) > 1000:
+                encoded = base64.b64encode(poll_res.content).decode('utf-8')
+                return {
+                    'image_url': f'data:image/jpeg;base64,{encoded}',
+                    'provider': 'pollinations',
+                    'model': 'pollinations-ai'
+                }
+            raise ValueError(f'Pollinations returned status {poll_res.status_code}')
+        except Exception as poll_error:
+            print(f'Pollinations fallback also failed: {poll_error}')
+            if isinstance(hf_error, httpx.HTTPError):
+                detail = hf_error.response.text[:300] if hf_error.response is not None else str(hf_error)
+                raise HTTPException(status_code=502, detail=f'Image generation failed (HF + Pollinations): {detail}')
+            raise HTTPException(status_code=502, detail=f'Image generation failed: {str(hf_error)}')
 
 
 DOCUMENT_TYPES = {'PDF', 'Word', 'Excel', 'PowerPoint', 'Resume', 'Invoice', 'Business Plan', 'Research'}
