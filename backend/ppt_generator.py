@@ -59,7 +59,8 @@ def _rgb(t):
 
 
 def _generate_slide_content(prompt, slide_count):
-    """Use LLM to generate rich, structured slide content as JSON."""
+    """Use LLM to generate rich, structured slide content as JSON.
+    Attempts multiple Gemini models with backoff retry, and falls back to Groq/OpenRouter."""
     system = (
         "You are a professional presentation designer. Generate structured slide content as JSON.\n"
         "Return ONLY valid JSON (no markdown, no ```json wrapper). Structure:\n"
@@ -81,40 +82,110 @@ def _generate_slide_content(prompt, slide_count):
     )
     user = f"Create a {slide_count}-slide presentation about: {prompt}"
 
-    # Presentations use the dedicated Gemini key. This stays server-side and is
-    # never exposed to the Firebase frontend.
+    # Try Gemini first
     gemini_key = os.getenv("GEMINI_API_KEY_2") or os.getenv("GEMINI_API_KEY")
-    if not gemini_key:
-        raise RuntimeError("No Gemini API key is configured (GEMINI_API_KEY_2 or GEMINI_API_KEY).")
+    if gemini_key:
+        models = [
+            os.getenv("PPT_GEMINI_MODEL", "gemini-3.6-flash"),
+            "gemini-2.5-flash",
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-8b"
+        ]
+        import time
+        for model in models:
+            for attempt in range(2):
+                try:
+                    response = requests.post(
+                        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                        params={"key": gemini_key},
+                        json={
+                            "system_instruction": {"parts": [{"text": system}]},
+                            "contents": [{"role": "user", "parts": [{"text": user}]}],
+                            "generationConfig": {
+                                "maxOutputTokens": 8192,
+                                "responseMimeType": "application/json",
+                            },
+                        },
+                        timeout=90,
+                    )
+                    if response.status_code == 200:
+                        reply = response.json()["candidates"][0]["content"]["parts"][0]["text"]
+                        match = re.search(r'(\{.*\})', reply.strip(), re.DOTALL)
+                        if match:
+                            generated = json.loads(match.group(1))
+                            if isinstance(generated.get("slides"), list):
+                                return generated
+                    elif response.status_code in [429, 503]:
+                        # Backoff retry
+                        time.sleep(2 * (attempt + 1))
+                        continue
+                except Exception as e:
+                    print(f"Gemini model {model} attempt {attempt+1} failed: {e}")
+                    time.sleep(1)
 
-    try:
-        # Gemini 2.5 Flash is unavailable for some newly created API projects.
-        # Gemini 3.6 Flash is the supported stable replacement for this flow.
-        model = os.getenv("PPT_GEMINI_MODEL", "gemini-3.6-flash")
-        response = requests.post(
-            f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-            params={"key": gemini_key},
-            json={
-                "system_instruction": {"parts": [{"text": system}]},
-                "contents": [{"role": "user", "parts": [{"text": user}]}],
-                "generationConfig": {
-                    "maxOutputTokens": 8192,
-                    "responseMimeType": "application/json",
+    # Fallback to Groq
+    groq_key = os.getenv("GROQ_API_KEY")
+    if groq_key:
+        print("Falling back to Groq for PPT content generation...")
+        try:
+            res = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {groq_key}", "Content-Type": "application/json"},
+                json={
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user}
+                    ],
+                    "response_format": {"type": "json_object"},
+                    "temperature": 0.2
                 },
-            },
-            timeout=90,
-        )
-        response.raise_for_status()
-        reply = response.json()["candidates"][0]["content"]["parts"][0]["text"]
-        match = re.search(r'(\{.*\})', reply.strip(), re.DOTALL)
-        if match:
-            generated = json.loads(match.group(1))
-            if isinstance(generated.get("slides"), list):
-                return generated
-        raise ValueError("The AI response did not contain a slides array.")
-    except Exception as error:
-        detail = response.text[:300] if 'response' in locals() else str(error)
-        raise RuntimeError(f"Gemini PPT generation failed: {detail}") from error
+                timeout=60
+            )
+            if res.status_code == 200:
+                reply = res.json()["choices"][0]["message"]["content"]
+                match = re.search(r'(\{.*\})', reply.strip(), re.DOTALL)
+                if match:
+                    generated = json.loads(match.group(1))
+                    if isinstance(generated.get("slides"), list):
+                        return generated
+        except Exception as e:
+            print(f"Groq fallback failed: {e}")
+
+    # Fallback to OpenRouter
+    or_key = os.getenv("OPENROUTER_API_KEY")
+    if or_key:
+        print("Falling back to OpenRouter for PPT content generation...")
+        try:
+            res = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {or_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://aos-operating-system.web.app",
+                    "X-Title": "AOS Studio"
+                },
+                json={
+                    "model": "google/gemini-2.5-flash",
+                    "messages": [
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user}
+                    ],
+                    "response_format": {"type": "json_object"}
+                },
+                timeout=60
+            )
+            if res.status_code == 200:
+                reply = res.json()["choices"][0]["message"]["content"]
+                match = re.search(r'(\{.*\})', reply.strip(), re.DOTALL)
+                if match:
+                    generated = json.loads(match.group(1))
+                    if isinstance(generated.get("slides"), list):
+                        return generated
+        except Exception as e:
+            print(f"OpenRouter fallback failed: {e}")
+
+    raise RuntimeError("All LLM providers (Gemini, Groq, OpenRouter) failed to generate slide content.")
 
 
 def _generate_image_hf(prompt, width=400, height=300):
