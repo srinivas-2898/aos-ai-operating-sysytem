@@ -227,7 +227,34 @@ def generate_video(request: VideoRequest):
     print(f"Original Video Prompt: {request.prompt}")
     print(f"Enhanced Video Prompt: {enhanced_prompt}")
 
-    # 2. Attempt local video generation using python libraries (diffusers)
+    # 2. Attempt external Colab GPU API if configured
+    external_url = os.getenv("EXTERNAL_VIDEO_API_URL")
+    if external_url:
+        try:
+            print(f"Calling external Colab GPU API at {external_url}...")
+            response = requests.post(
+                f"{external_url.rstrip('/')}/generate-video",
+                json={
+                    "prompt": enhanced_prompt,
+                    "duration": request.duration,
+                    "aspect_ratio": request.aspect_ratio,
+                    "quality": request.quality,
+                    "style": request.style
+                },
+                timeout=240
+            )
+            if response.status_code == 200:
+                print("External Colab GPU API generation successful!")
+                return Response(
+                    content=response.content,
+                    media_type="video/mp4",
+                    headers={"Content-Disposition": "attachment; filename=aos-generated-video.mp4"},
+                )
+            print(f"External API failed (status {response.status_code}): {response.text[:200]}")
+        except Exception as e:
+            print(f"External API error: {e}")
+
+    # 3. Attempt local video generation using python libraries (diffusers)
     video_bytes = _generate_video_local(enhanced_prompt, request.duration, request.aspect_ratio, request.quality)
     if video_bytes:
         return Response(
