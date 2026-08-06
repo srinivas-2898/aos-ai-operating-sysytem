@@ -209,10 +209,7 @@ def _generate_image_gemini(prompt, width=400, height=300):
                             }
                         ]
                     }
-                ],
-                "generationConfig": {
-                    "responseModalities": ["IMAGE"]
-                }
+                ]
             }
             res = requests.post(url, headers={"Content-Type": "application/json"}, json=payload, timeout=60)
             if res.status_code == 200:
@@ -221,7 +218,7 @@ def _generate_image_gemini(prompt, width=400, height=300):
                 if candidates:
                     parts = candidates[0].get("content", {}).get("parts", [])
                     for part in parts:
-                        inline_data = part.get("inlineData")
+                        inline_data = part.get("inlineData") or part.get("inline_data")
                         if inline_data:
                             b64 = inline_data.get("data")
                             if b64:
@@ -350,28 +347,46 @@ def _generate_image_stability(prompt, width=400, height=300):
     return None
 
 
-def _generate_image_pollinations(prompt, width=400, height=300):
-    """Fallback: use Pollinations.ai (free, no auth). Returns BytesIO or None."""
+def _generate_placeholder_gradient(theme_name, width=400, height=300):
+    """Generate a premium gradient placeholder image matching the theme palette as a fallback."""
     try:
-        from urllib.parse import quote
-        safe_prompt = quote(f"{prompt}, clean professional illustration, high quality, no text")
-        url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width={width}&height={height}&nologo=true&seed={hash(prompt) % 100000}"
-        res = requests.get(url, timeout=90)
-        if res.status_code == 200 and len(res.content) > 1000:
-            img = Image.open(BytesIO(res.content))
-            img = img.resize((width, height), Image.LANCZOS)
+        from PIL import ImageDraw
+        palette = THEMES.get(theme_name, THEMES['modern'])
+        c1 = palette.get('accent', (59, 130, 246))
+        c2 = palette.get('gradient_end', (30, 64, 175))
+        
+        # Create a linear gradient image
+        img = Image.new("RGB", (width, height), c1)
+        draw = ImageDraw.Draw(img)
+        
+        # Draw vertical gradient
+        for y in range(height):
+            # Interpolate between c1 and c2
+            t = y / (height - 1)
+            r = int(c1[0] + (c2[0] - c1[0]) * t)
+            g = int(c1[1] + (c2[1] - c1[1]) * t)
+            b = int(c1[2] + (c2[2] - c1[2]) * t)
+            draw.line([(0, y), (width, y)], fill=(r, g, b))
+            
+        buf = BytesIO()
+        img.save(buf, format='PNG')
+        buf.seek(0)
+        return buf
+    except Exception as e:
+        print(f"Error generating placeholder gradient: {e}")
+        # Return a simple solid color image if gradient fails
+        try:
+            img = Image.new("RGB", (width, height), (30, 41, 59))
             buf = BytesIO()
             img.save(buf, format='PNG')
             buf.seek(0)
             return buf
-        print(f"Pollinations image failed: status {res.status_code}, size {len(res.content)}")
-    except Exception as e:
-        print(f"Pollinations image error: {type(e).__name__}: {e}")
-    return None
+        except Exception:
+            return None
 
 
-def _generate_image(prompt, width=400, height=300):
-    """Generate an image for a PPT slide. Tries Gemini first, falls back to HF, Stability, then Pollinations."""
+def _generate_image(prompt, width=400, height=300, theme='modern'):
+    """Generate an image for a PPT slide. Tries Gemini first, falls back to HF, Stability, then a local gradient placeholder."""
     # 1. Try Gemini first
     buf = _generate_image_gemini(prompt, width, height)
     if buf:
@@ -389,14 +404,9 @@ def _generate_image(prompt, width=400, height=300):
     if buf:
         return buf
         
-    # 4. Fallback to Pollinations (free, rate limited but last resort)
-    print(f"Falling back to Pollinations for: {prompt[:60]}")
-    buf = _generate_image_pollinations(prompt, width, height)
-    if buf:
-        return buf
-        
-    print(f"All image providers failed for: {prompt[:80]}")
-    return None
+    # 4. Fallback to a premium local gradient matching the theme
+    print(f"All image generation APIs failed. Falling back to local gradient illustration for: {prompt[:60]}")
+    return _generate_placeholder_gradient(theme, width, height)
 
 
 def _add_rounded_rect(slide, left, top, width, height, fill_rgb, alpha=None):
@@ -452,7 +462,7 @@ def create_premium_pptx(prompt, slide_count=8, theme='modern'):
         if is_cover:
             image_prompts.append((idx, sd.get('image_prompt', prompt), 500, 350))
         elif is_last:
-            image_prompts.append((idx, None, 0, 0))  # No image for closing slide
+            image_prompts.append((idx, sd.get('image_prompt', f'thank you summary illustration about {prompt}'), 480, 400))
         else:
             image_prompts.append((idx, sd.get('image_prompt', f'illustration about {prompt}'), 480, 400))
 
@@ -461,7 +471,7 @@ def create_premium_pptx(prompt, slide_count=8, theme='modern'):
         future_to_idx = {}
         for idx, img_prompt, w, h in image_prompts:
             if img_prompt:
-                future = executor.submit(_generate_image, img_prompt, w, h)
+                future = executor.submit(_generate_image, img_prompt, w, h, theme)
                 future_to_idx[future] = idx
         for future in concurrent.futures.as_completed(future_to_idx):
             slide_idx = future_to_idx[future]
@@ -509,14 +519,35 @@ def create_premium_pptx(prompt, slide_count=8, theme='modern'):
 
         elif is_last:
             # ══════════ CLOSING SLIDE ══════════
-            _add_text(slide, Inches(1), Inches(2.4), Inches(11.3), Inches(1.2),
-                      sd.get('title', 'Thank You'), 40, palette['fg'], bold=True, alignment=PP_ALIGN.CENTER)
+            _add_text(slide, Inches(1.3), Inches(0.3), Inches(7), Inches(0.7),
+                      sd.get('title', 'Thank You'), 28, palette['fg'], bold=True)
+
+            subtitle = sd.get('subtitle', '')
+            if subtitle:
+                _add_text(slide, Inches(1.3), Inches(1.0), Inches(7), Inches(0.5),
+                          subtitle, 16, palette['muted'])
+
+            card_top = Inches(1.6)
+            card_height = Inches(5.2)
+            _add_rounded_rect(slide, Inches(0.5), card_top, Inches(7.5), card_height, palette['card'])
 
             bullets = sd.get('bullet_points', [])
-            if bullets:
-                for bi, bp in enumerate(bullets[:4]):
-                    _add_text(slide, Inches(3), Inches(3.6 + bi * 0.6), Inches(7.3), Inches(0.5),
-                              f"→  {bp}", 18, palette['muted'], alignment=PP_ALIGN.CENTER)
+            for bi, bp in enumerate(bullets[:6]):
+                y_pos = card_top + Inches(0.4 + bi * 0.7)
+                dot = slide.shapes.add_shape(MSO_SHAPE.OVAL, Inches(1.0), y_pos + Inches(0.12), Inches(0.18), Inches(0.18))
+                dot.fill.solid()
+                dot.fill.fore_color.rgb = _rgb(palette['accent'])
+                dot.line.fill.background()
+                _add_text(slide, Inches(1.4), y_pos, Inches(6.2), Inches(0.6),
+                          bp, 16, palette['fg'])
+
+            img_buf = slide_images.get(idx)
+            img_prompt = sd.get('image_prompt', f'thank you summary illustration about {prompt}')
+            if img_buf:
+                _add_rounded_rect(slide, Inches(8.3), card_top, Inches(4.5), card_height, palette['card'])
+                slide.shapes.add_picture(img_buf, Inches(8.5), Inches(1.9), Inches(4.1), Inches(3.4))
+                _add_text(slide, Inches(8.5), Inches(5.5), Inches(4.1), Inches(0.5),
+                          img_prompt[:50], 11, palette['muted'], alignment=PP_ALIGN.CENTER)
 
         else:
             # ══════════ CONTENT SLIDES ══════════
