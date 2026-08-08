@@ -1978,7 +1978,7 @@ body.dark-theme .opt-card-icon.outside {
     <div class="resizer-h" id="resizer-terminal" title="Drag up/down to resize Terminal"></div>
 
     <!-- Bottom Real Multi-Tab Interactive Terminal Panel -->
-    <div class="bottom-terminal-panel" id="bottom-terminal-panel">
+    <div class="bottom-terminal-panel hidden" id="bottom-terminal-panel">
       <div class="panel-tab-bar">
         <div class="panel-tabs-left">
           <button class="panel-tab-btn active" id="tab-term" onclick="switchBottomPanel('term')">TERMINAL</button>
@@ -2049,7 +2049,7 @@ body.dark-theme .opt-card-icon.outside {
     </div>
 
     <!-- Pull tab when terminal is closed -->
-    <div class="bottom-pull-tab" id="bottom-pull-tab" title="Drag up to open Terminal" style="display:none"></div>
+    <div class="bottom-pull-tab" id="bottom-pull-tab" title="Drag up to open Terminal" style="display:block"></div>
 
   </section>
 
@@ -2304,11 +2304,11 @@ function initTerminalSystem() {
   isPowerShellMode = isDesktop;
   updateTerminalModeUI();
 
-  // Create initial terminal tab session
-  addNewTerminalTab();
+  // Create initial terminal tab session silently
+  addNewTerminalTab(false);
 }
 
-function addNewTerminalTab() {
+function addNewTerminalTab(showToast = true) {
   const wrapper = document.getElementById('terminal-sessions-wrapper');
   if (!wrapper) return;
 
@@ -2384,7 +2384,9 @@ function addNewTerminalTab() {
   writeSessionPrompt(sessionObj);
 
   renderTerminalSessionTabs();
-  toast(`Terminal session ${sessionId} created`);
+  if (showToast) {
+    toast(`Terminal session ${sessionId} created`);
+  }
 }
 
 function setupSessionListeners(session) {
