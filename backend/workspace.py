@@ -67,6 +67,33 @@ class GitPushRequest(BaseModel):
     user_id: Optional[str] = None
 
 
+class FileReadRequest(BaseModel):
+    path: str
+    project_id: Optional[str] = "default-project"
+    user_id: Optional[str] = None
+
+
+class FileSaveRequest(BaseModel):
+    path: str
+    content: str
+    project_id: Optional[str] = "default-project"
+    user_id: Optional[str] = None
+
+
+class FileCreateRequest(BaseModel):
+    path: str
+    is_directory: bool = False
+    content: Optional[str] = ""
+    project_id: Optional[str] = "default-project"
+    user_id: Optional[str] = None
+
+
+class FileDeleteRequest(BaseModel):
+    path: str
+    project_id: Optional[str] = "default-project"
+    user_id: Optional[str] = None
+
+
 class CopilotRequest(BaseModel):
     action: str = "chat"  # chat, generate, fix, explain, refactor, docs, test
     prompt: str = ""
@@ -83,10 +110,10 @@ class CopilotRequest(BaseModel):
 # ── Helpers ──
 
 def get_workspace_dir(project_id: str, user_id: Optional[str] = None) -> Path:
-    """Returns safe, isolated directory path for the given project."""
-    clean_pid = re.sub(r'[^a-zA-Z0-9_\-]', '', project_id)
-    if not clean_pid:
-        clean_pid = "default_project"
+    """Returns safe, isolated directory path for the given project or workspace."""
+    clean_pid = re.sub(r'[^a-zA-Z0-9_\-]', '', project_id or "default-project")
+    if not clean_pid or clean_pid == "default-project" or clean_pid == "root":
+        return BASE_DIR
 
     if user_id:
         clean_uid = re.sub(r'[^a-zA-Z0-9_\-]', '', user_id)
@@ -96,6 +123,7 @@ def get_workspace_dir(project_id: str, user_id: Optional[str] = None) -> Path:
 
     target.mkdir(parents=True, exist_ok=True)
     return target
+
 
 
 BLOCKED_COMMANDS = [
@@ -318,12 +346,177 @@ def workspace_health():
     }
 
 
+def scan_dir_recursive(dir_path: Path, base_path: Path, max_depth: int = 6, current_depth: int = 0) -> List[Dict[str, Any]]:
+    """Recursively scans directory into structured tree."""
+    if current_depth > max_depth:
+        return []
+
+    IGNORE_PATTERNS = {
+        '.git', 'node_modules', '__pycache__', '.venv', 'venv', '.firebase',
+        '.gemini', '.idea', '.vscode', '.next', 'dist', 'build', '.pytest_cache'
+    }
+
+    entries = []
+    try:
+        items = sorted(list(dir_path.iterdir()), key=lambda x: (not x.is_dir(), x.name.lower()))
+        for item in items:
+            if item.name in IGNORE_PATTERNS:
+                continue
+
+            rel_path = str(item.relative_to(base_path)).replace("\\", "/")
+            if item.is_dir():
+                children = scan_dir_recursive(item, base_path, max_depth, current_depth + 1)
+                entries.append({
+                    "name": item.name,
+                    "path": rel_path,
+                    "kind": "directory",
+                    "children": children
+                })
+            else:
+                try:
+                    size = item.stat().st_size
+                except Exception:
+                    size = 0
+                entries.append({
+                    "name": item.name,
+                    "path": rel_path,
+                    "kind": "file",
+                    "size": size
+                })
+    except Exception as e:
+        pass
+
+    return entries
+
+
+@router.get("/files")
+def get_workspace_files(project_id: str = "default-project", user_id: Optional[str] = None):
+    """Returns the hierarchical file tree of the project workspace."""
+    workspace_path = get_workspace_dir(project_id, user_id)
+    tree = scan_dir_recursive(workspace_path, workspace_path)
+    return {
+        "project_id": project_id,
+        "root_name": workspace_path.name or "AOS-AI-OPERATING-SYSTEM",
+        "tree": tree
+    }
+
+
+@router.post("/file/read")
+def read_workspace_file(body: FileReadRequest):
+    """Reads file content from workspace."""
+    workspace_path = get_workspace_dir(body.project_id, body.user_id)
+    clean_rel = body.path.lstrip("/\\")
+    file_path = (workspace_path / clean_rel).resolve()
+
+    if workspace_path not in file_path.parents and file_path != workspace_path:
+        raise HTTPException(status_code=403, detail="Access denied outside workspace root")
+
+    if not file_path.exists() or not file_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    try:
+        content = file_path.read_text(encoding="utf-8", errors="replace")
+        return {
+            "path": body.path,
+            "content": content,
+            "size": file_path.stat().st_size
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read file: {str(e)}")
+
+
+@router.post("/file/save")
+def save_workspace_file(body: FileSaveRequest):
+    """Saves file content to workspace."""
+    workspace_path = get_workspace_dir(body.project_id, body.user_id)
+    clean_rel = body.path.lstrip("/\\")
+    file_path = (workspace_path / clean_rel).resolve()
+
+    if workspace_path not in file_path.parents and file_path != workspace_path:
+        raise HTTPException(status_code=403, detail="Access denied outside workspace root")
+
+    try:
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_text(body.content, encoding="utf-8")
+        return {
+            "success": True,
+            "path": body.path,
+            "size": file_path.stat().st_size
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+
+
+@router.post("/file/create")
+def create_workspace_item(body: FileCreateRequest):
+    """Creates a new file or directory in workspace."""
+    workspace_path = get_workspace_dir(body.project_id, body.user_id)
+    clean_rel = body.path.lstrip("/\\")
+    target_path = (workspace_path / clean_rel).resolve()
+
+    if workspace_path not in target_path.parents and target_path != workspace_path:
+        raise HTTPException(status_code=403, detail="Access denied outside workspace root")
+
+    try:
+        if body.is_directory:
+            target_path.mkdir(parents=True, exist_ok=True)
+        else:
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            if not target_path.exists():
+                target_path.write_text(body.content or "", encoding="utf-8")
+        return {"success": True, "path": body.path}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create item: {str(e)}")
+
+
+@router.post("/file/delete")
+def delete_workspace_item(body: FileDeleteRequest):
+    """Deletes a file or directory in workspace."""
+    workspace_path = get_workspace_dir(body.project_id, body.user_id)
+    clean_rel = body.path.lstrip("/\\")
+    target_path = (workspace_path / clean_rel).resolve()
+
+    if workspace_path not in target_path.parents:
+        raise HTTPException(status_code=403, detail="Access denied outside workspace root")
+
+    if not target_path.exists():
+        return {"success": True}
+
+    try:
+        if target_path.is_dir():
+            shutil.rmtree(target_path)
+        else:
+            target_path.unlink()
+        return {"success": True, "path": body.path}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete item: {str(e)}")
+
+
+
 @router.post("/terminal")
 def execute_terminal(body: TerminalRequest):
-    """Executes a command safely inside the project workspace directory."""
+    """Executes a command safely inside the project workspace directory using PowerShell/Shell."""
     raw_cmd = (body.command or "").strip()
+    workspace_path = get_workspace_dir(body.project_id, body.user_id)
+
+    # Determine execution working directory
+    target_cwd = workspace_path
+    if body.cwd:
+        candidate = Path(body.cwd)
+        if not candidate.is_absolute():
+            candidate = (workspace_path / body.cwd).resolve()
+        if candidate.exists() and candidate.is_dir():
+            target_cwd = candidate
+
     if not raw_cmd:
-        return {"stdout": "", "stderr": "", "exit_code": 0, "status": "empty"}
+        return {
+            "stdout": "",
+            "stderr": "",
+            "exit_code": 0,
+            "status": "empty",
+            "cwd": str(target_cwd),
+            "rel_cwd": str(target_cwd.relative_to(workspace_path)) if target_cwd != workspace_path else "."
+        }
 
     if not is_command_safe(raw_cmd):
         raise HTTPException(
@@ -331,36 +524,82 @@ def execute_terminal(body: TerminalRequest):
             detail="Command blocked: Execution of dangerous or unrestricted system commands is prohibited."
         )
 
-    workspace_path = get_workspace_dir(body.project_id, body.user_id)
-
-    # Determine execution working directory
-    target_cwd = workspace_path
-    if body.cwd:
-        candidate = (workspace_path / body.cwd).resolve()
-        if workspace_path in candidate.parents or candidate == workspace_path:
-            target_cwd = candidate
+    # Handle built-in cd command
+    if raw_cmd == "cd" or raw_cmd == "cd ~":
+        target_cwd = workspace_path
+        return {
+            "stdout": "",
+            "stderr": "",
+            "exit_code": 0,
+            "status": "completed",
+            "cwd": str(target_cwd),
+            "rel_cwd": "."
+        }
+    elif raw_cmd.startswith("cd "):
+        target_arg = raw_cmd[3:].strip().strip('"').strip("'")
+        new_target = (target_cwd / target_arg).resolve() if not Path(target_arg).is_absolute() else Path(target_arg)
+        if new_target.exists() and new_target.is_dir():
+            target_cwd = new_target
+            return {
+                "stdout": "",
+                "stderr": "",
+                "exit_code": 0,
+                "status": "completed",
+                "cwd": str(target_cwd),
+                "rel_cwd": str(target_cwd.relative_to(workspace_path)) if target_cwd != workspace_path and target_cwd.is_relative_to(workspace_path) else str(target_cwd)
+            }
+        else:
+            return {
+                "stdout": "",
+                "stderr": f"cd: {target_arg}: No such directory",
+                "exit_code": 1,
+                "status": "error",
+                "cwd": str(target_cwd),
+                "rel_cwd": str(target_cwd.relative_to(workspace_path)) if target_cwd != workspace_path and target_cwd.is_relative_to(workspace_path) else "."
+            }
 
     start_time = time.time()
     try:
-        # Use shell execution with a strict timeout and environment isolation
         env = os.environ.copy()
         env["AOS_WORKSPACE"] = str(workspace_path)
         env["PYTHONUNBUFFERED"] = "1"
 
-        # On Windows vs POSIX, execute appropriately
         is_win = sys.platform.startswith("win")
-        process = subprocess.run(
-            raw_cmd,
-            shell=True,
-            cwd=str(target_cwd),
-            env=env,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            timeout=40,
-            errors="replace"
-        )
+        if is_win:
+            # Use PowerShell for rich Windows CLI execution
+            cmd_args = ["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", raw_cmd]
+            process = subprocess.run(
+                cmd_args,
+                cwd=str(target_cwd),
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=45,
+                errors="replace"
+            )
+        else:
+            process = subprocess.run(
+                raw_cmd,
+                shell=True,
+                cwd=str(target_cwd),
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=45,
+                errors="replace"
+            )
+
         duration = round((time.time() - start_time) * 1000, 2)
+        rel_cwd = "."
+        try:
+            if target_cwd != workspace_path and target_cwd.is_relative_to(workspace_path):
+                rel_cwd = str(target_cwd.relative_to(workspace_path))
+            else:
+                rel_cwd = str(target_cwd)
+        except Exception:
+            rel_cwd = str(target_cwd)
 
         return {
             "stdout": process.stdout,
@@ -368,22 +607,27 @@ def execute_terminal(body: TerminalRequest):
             "exit_code": process.returncode,
             "duration_ms": duration,
             "status": "completed" if process.returncode == 0 else "error",
-            "cwd": str(target_cwd.relative_to(workspace_path)) if target_cwd != workspace_path else "."
+            "cwd": str(target_cwd),
+            "rel_cwd": rel_cwd
         }
 
     except subprocess.TimeoutExpired:
         return {
             "stdout": "",
-            "stderr": "Command execution timed out (maximum 40 seconds allowed).",
+            "stderr": "Command execution timed out (maximum 45 seconds allowed).",
             "exit_code": 124,
-            "status": "timeout"
+            "status": "timeout",
+            "cwd": str(target_cwd),
+            "rel_cwd": "."
         }
     except Exception as e:
         return {
             "stdout": "",
             "stderr": f"Execution error: {str(e)}",
             "exit_code": 1,
-            "status": "failed"
+            "status": "failed",
+            "cwd": str(target_cwd),
+            "rel_cwd": "."
         }
 
 
