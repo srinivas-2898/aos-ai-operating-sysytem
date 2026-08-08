@@ -826,3 +826,38 @@ def copilot_service(body: CopilotRequest):
         "provider": ai_result.get("provider", "Proxima AI"),
         "target_file": body.current_file_path
     }
+
+
+class ProjectSyncRequest(BaseModel):
+    project_id: str
+    project_name: Optional[str] = "aos_project"
+    files: Optional[List[Dict[str, Any]]] = None
+
+
+@router.post("/sync_local_project")
+def sync_local_project(req: ProjectSyncRequest):
+    """Saves/creates the project folder and files onto the user's laptop/local machine."""
+    clean_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', req.project_name or req.project_id)
+    project_dir = WORKSPACES_ROOT / clean_name
+    project_dir.mkdir(parents=True, exist_ok=True)
+
+    saved_files = []
+    if req.files:
+        for f in req.files:
+            file_path = f.get("path", "")
+            content = f.get("content", "")
+            if not file_path:
+                continue
+            dest_file = project_dir / file_path
+            dest_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(dest_file, "w", encoding="utf-8") as fp:
+                fp.write(content or "")
+            saved_files.append(file_path)
+
+    return {
+        "success": True,
+        "local_path": str(project_dir.resolve()),
+        "saved_files": saved_files,
+        "project_id": req.project_id
+    }
+
