@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 
-<!-- Xterm.js for industry standard interactive Terminal -->
+<!-- Xterm.js for interactive Terminal -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
@@ -28,7 +28,8 @@ html,body{height:100%;overflow:hidden}
   --bg-sidebar: #f8fafc;
   --bg-explorer: #f8fafc;
   --bg-editor: #ffffff;
-  --bg-panel: #ffffff;
+  --bg-panel: #162032;
+  --bg-term-header: #1e293b;
   --bg-tab-active: #ffffff;
   --bg-tab-inactive: #f1f5f9;
   --bg-tab-hover: #e2e8f0;
@@ -81,7 +82,8 @@ body.dark-theme {
   --bg-sidebar: #0b0f19;
   --bg-explorer: #101726;
   --bg-editor: #080c14;
-  --bg-panel: #101726;
+  --bg-panel: #131c2e;
+  --bg-term-header: #101726;
   --bg-tab-active: #080c14;
   --bg-tab-inactive: #131b2e;
   --bg-tab-hover: #1e293b;
@@ -161,7 +163,7 @@ body {
 
 /* Bottom Pull Bar when terminal is closed */
 .bottom-pull-tab {
-  height: 4px;
+  height: 5px;
   background: transparent;
   cursor: row-resize;
   transition: background 0.15s;
@@ -872,20 +874,21 @@ body.dark-theme .user-avatar-btn {
   background: var(--primary-hover);
 }
 
-/* ── REAL XTERM.JS TERMINAL PANEL ── */
+/* ── MULTI-TAB XTERM.JS TERMINAL PANEL ── */
 .bottom-terminal-panel {
   height: 240px;
   min-height: 90px;
   max-height: 80vh;
-  border-top: 1px solid var(--border);
-  background: #0d1117;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  background: #141d2e;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   position: relative;
 }
 body.dark-theme .bottom-terminal-panel {
-  background: #030712;
+  background: #101726;
+  border-top-color: #1e293b;
 }
 .bottom-terminal-panel.hidden {
   display: none;
@@ -898,66 +901,127 @@ body.dark-theme .bottom-terminal-panel {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid rgba(255,255,255,0.08);
-  background: #161b22;
+  background: #1a2538;
   flex-shrink: 0;
 }
 body.dark-theme .panel-tab-bar {
-  background: #0b0f19;
+  background: #0d1524;
   border-bottom-color: #1e293b;
 }
 
 .panel-tabs-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  overflow-x: auto;
 }
 .panel-tab-btn {
   font-size: 11px;
   font-weight: 700;
-  color: #8b949e;
+  color: #94a3b8;
   background: transparent;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   padding: 8px 0;
   border-bottom: 2px solid transparent;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   transition: color 0.15s;
+  white-space: nowrap;
 }
 .panel-tab-btn:hover {
-  color: #f0f6fc;
+  color: #f8fafc;
 }
 .panel-tab-btn.active {
-  color: #58a6ff;
-  border-bottom-color: #58a6ff;
+  color: #38bdf8;
+  border-bottom-color: #38bdf8;
 }
 .panel-badge {
   background: rgba(255,255,255,0.1);
-  color: #8b949e;
+  color: #94a3b8;
   border-radius: 10px;
   font-size: 10px;
   font-weight: 700;
-  padding: 1px 6px;
+  padding: 1px 5px;
 }
 
-.term-mode-pill {
+.term-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(255,255,255,0.15);
+  margin: 0 4px;
+}
+
+/* Multi Terminal Session Tabs (Chips) */
+.term-session-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.term-session-tab {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  background: rgba(56, 139, 253, 0.15);
-  border: 1px solid rgba(56, 139, 253, 0.35);
-  color: #58a6ff;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 10.5px;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  font-size: 11px;
+  font-weight: 500;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+.term-session-tab:hover {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+.term-session-tab.active {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
   font-weight: 600;
+}
+.term-session-close {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
   cursor: pointer;
 }
-.term-mode-pill:hover {
-  background: rgba(56, 139, 253, 0.25);
+.term-session-close:hover {
+  background: rgba(0,0,0,0.3);
+  color: #ff8080;
+}
+
+.term-add-tab-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.08);
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.term-add-tab-btn:hover {
+  background: #0284c7;
+  color: #fff;
+  border-color: #38bdf8;
 }
 
 .panel-actions-right {
@@ -965,32 +1029,64 @@ body.dark-theme .panel-tab-bar {
   align-items: center;
   gap: 4px;
 }
+.term-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.term-mode-pill:hover {
+  background: rgba(56, 189, 248, 0.22);
+}
+
 .term-act-btn {
   width: 26px;
   height: 26px;
   border-radius: 4px;
   border: none;
   background: transparent;
-  color: #8b949e;
+  color: #94a3b8;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: all 0.12s;
 }
 .term-act-btn:hover {
-  background: rgba(255,255,255,0.08);
-  color: #f0f6fc;
+  background: rgba(255,255,255,0.1);
+  color: #f8fafc;
+}
+.term-act-btn.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
 }
 
-/* Xterm Container */
-#xterm-container {
+/* Xterm Multi-Sessions Container */
+#terminal-sessions-wrapper {
   flex: 1;
-  padding: 6px 10px;
+  position: relative;
   overflow: hidden;
-  background: #0d1117;
+  background: #141d2e;
 }
-body.dark-theme #xterm-container {
-  background: #030712;
+body.dark-theme #terminal-sessions-wrapper {
+  background: #101726;
+}
+
+.xterm-session-pane {
+  position: absolute;
+  inset: 0;
+  padding: 8px 12px;
+  display: none;
+}
+.xterm-session-pane.active {
+  display: block;
 }
 .xterm {
   height: 100%;
@@ -1627,7 +1723,7 @@ body.dark-theme .copilot-code-pre {
     <button class="act-item" id="act-settings" onclick="openCmdPalette()" title="Settings">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"/>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
       </svg>
       <span>Settings</span>
     </button>
@@ -1758,7 +1854,7 @@ body.dark-theme .copilot-code-pre {
     <!-- Resizer: Terminal (Drag to Expand / Decrease or Drag from bottom to open) -->
     <div class="resizer-h" id="resizer-terminal" title="Drag up/down to resize Terminal"></div>
 
-    <!-- Bottom Real Interactive Terminal Panel -->
+    <!-- Bottom Real Multi-Tab Interactive Terminal Panel -->
     <div class="bottom-terminal-panel" id="bottom-terminal-panel">
       <div class="panel-tab-bar">
         <div class="panel-tabs-left">
@@ -1769,40 +1865,64 @@ body.dark-theme .copilot-code-pre {
           <button class="panel-tab-btn" id="tab-output" onclick="switchBottomPanel('output')">OUTPUT</button>
           <button class="panel-tab-btn" id="tab-debug" onclick="switchBottomPanel('debug')">DEBUG CONSOLE</button>
 
-          <!-- Real Mode Switcher: Desktop PowerShell vs Online Cloud Terminal -->
-          <div class="term-mode-pill" id="term-mode-indicator" onclick="toggleTerminalShellMode()" title="Click to switch Shell Mode (PowerShell / Online Terminal)">
-            <span id="term-mode-icon">⚡</span>
-            <span id="term-mode-text">Windows PowerShell</span>
+          <div class="term-divider"></div>
+
+          <!-- Multi-Terminal Sessions Tabs -->
+          <div class="term-session-tabs" id="term-session-tabs">
+            <!-- Dynamic session tabs rendered -->
           </div>
+
+          <!-- '+' Button to Add New Terminal Session Page -->
+          <button class="term-add-tab-btn" onclick="addNewTerminalTab()" title="New Terminal (+)">+</button>
         </div>
 
         <div class="panel-actions-right">
+          <!-- Shell Mode Switcher: Desktop PowerShell vs Online Cloud Terminal -->
+          <div class="term-mode-pill" id="term-mode-indicator" onclick="toggleTerminalShellMode()" title="Click to switch Shell Mode">
+            <span id="term-mode-icon">⚡</span>
+            <span id="term-mode-text">PowerShell</span>
+          </div>
+
+          <!-- Paste Button -->
           <button class="term-act-btn" title="Paste from Clipboard (Ctrl+V)" onclick="pasteIntoTerminal()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
               <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
             </svg>
           </button>
+
+          <!-- Copy Button -->
           <button class="term-act-btn" title="Copy Selected (Ctrl+C)" onclick="copyFromTerminal()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
             </svg>
           </button>
-          <button class="term-act-btn" title="New Terminal" onclick="newTerminalSession()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          </button>
+
+          <!-- Clear Terminal Button -->
           <button class="term-act-btn" title="Clear Terminal (Ctrl+L)" onclick="clearTerminalScreen()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
+
+          <!-- Delete Option: Kill All Terminals and Close -->
+          <button class="term-act-btn delete-btn" title="Delete All Terminals & Close" onclick="deleteAllTerminalsAndClose()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              <line x1="10" y1="11" x2="10" y2="17"/>
+              <line x1="14" y1="11" x2="14" y2="17"/>
+            </svg>
+          </button>
+
+          <!-- Close Panel Button -->
           <button class="term-act-btn" title="Close Panel" onclick="toggleTerminalPanel()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
       </div>
 
-      <!-- Xterm Canvas Container -->
-      <div id="xterm-container"></div>
+      <!-- Xterm Multi-Sessions Container -->
+      <div id="terminal-sessions-wrapper"></div>
     </div>
 
     <!-- Pull tab when terminal is closed -->
@@ -1825,7 +1945,7 @@ body.dark-theme .copilot-code-pre {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         </button>
         <button class="copilot-icon-btn" title="Copilot Settings" onclick="toast('Proxima multi-model AI routing active')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
         </button>
         <button class="copilot-icon-btn" title="Close Copilot" onclick="toggleCopilotPanel()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1979,23 +2099,20 @@ let fileTreeData = [];
 let openTabs = [];
 let activeFilePath = null;
 
-/* ── XTERM REAL TERMINAL ENGINE ── */
-let xtermInstance = null;
-let xtermFitAddon = null;
+/* ── MULTI-SESSION XTERM.JS TERMINAL ENGINE ── */
+let terminalSessions = [];
+let activeSessionId = null;
+let nextSessionNum = 1;
 let currentCwd = 'C:\\Users\\gandu\\OneDrive\\Desktop\\ai';
 let currentRelCwd = '.';
-let terminalInputBuffer = '';
-let commandHistory = [];
-let historyIndex = -1;
-let isExecutingCommand = false;
-let isPowerShellMode = true; // True for Desktop PowerShell, False for Online Sandbox
+let isPowerShellMode = true;
 
 const ANSI = {
   reset: '\x1b[0m',
   bold: '\x1b[1m',
   dim: '\x1b[2m',
-  blue: '\x1b[38;2;88;166;255m',
-  cyan: '\x1b[38;2;56;189;248m',
+  blue: '\x1b[38;2;56;189;248m',
+  cyan: '\x1b[38;2;125;211;252m',
   green: '\x1b[38;2;52;211;153m',
   yellow: '\x1b[38;2;251;191;36m',
   red: '\x1b[38;2;248;113;113m',
@@ -2004,112 +2121,7 @@ const ANSI = {
   white: '\x1b[38;2;241;245;249m'
 };
 
-function initRealTerminal() {
-  const container = document.getElementById('xterm-container');
-  if (!container) return;
-
-  const isDark = document.body.classList.contains('dark-theme');
-
-  xtermInstance = new Terminal({
-    cursorBlink: true,
-    fontFamily: "'JetBrains Mono', 'Cascadia Code', Consolas, monospace",
-    fontSize: 12.5,
-    lineHeight: 1.25,
-    theme: {
-      background: isDark ? '#030712' : '#0d1117',
-      foreground: '#f0f6fc',
-      cursor: '#58a6ff',
-      selectionBackground: 'rgba(56, 139, 253, 0.4)',
-      black: '#484f58',
-      red: '#ff7b72',
-      green: '#3fb950',
-      yellow: '#d29922',
-      blue: '#58a6ff',
-      magenta: '#bc8cff',
-      cyan: '#39c5cf',
-      white: '#b1bac4',
-      brightBlack: '#6e7681',
-      brightRed: '#ffa198',
-      brightGreen: '#56d364',
-      brightYellow: '#e3b341',
-      brightBlue: '#79c0ff',
-      brightMagenta: '#d2a8ff',
-      brightCyan: '#56d4dd',
-      brightWhite: '#f0f6fc'
-    },
-    convertEol: true
-  });
-
-  xtermFitAddon = new FitAddon.FitAddon();
-  xtermInstance.loadAddon(xtermFitAddon);
-
-  if (WebLinksAddon && WebLinksAddon.WebLinksAddon) {
-    xtermInstance.loadAddon(new WebLinksAddon.WebLinksAddon());
-  }
-
-  xtermInstance.open(container);
-  xtermFitAddon.fit();
-
-  // Custom key handler for Copy (Ctrl+C / Ctrl+Shift+C) and Paste (Ctrl+V / Ctrl+Shift+V)
-  xtermInstance.attachCustomKeyEventHandler((event) => {
-    const isCtrl = event.ctrlKey || event.metaKey;
-
-    // Handle Copy: Ctrl+C / Ctrl+Shift+C when text is highlighted/selected
-    if (isCtrl && (event.key === 'c' || event.key === 'C')) {
-      if (xtermInstance.hasSelection()) {
-        const sel = xtermInstance.getSelection();
-        navigator.clipboard.writeText(sel).then(() => {
-          toast('Copied from terminal');
-        }).catch(() => {});
-        return false; // Suppress interrupt signal
-      }
-    }
-
-    // Handle Paste: Ctrl+V / Ctrl+Shift+V
-    if (isCtrl && (event.key === 'v' || event.key === 'V')) {
-      if (event.type === 'keydown') {
-        navigator.clipboard.readText().then((clipText) => {
-          if (clipText) {
-            insertPastedTextIntoTerminal(clipText);
-          }
-        }).catch(() => {
-          // Fallback if browser prompts or clipboard API restricted
-        });
-      }
-      return false; // Prevent default xterm character writing
-    }
-
-    return true;
-  });
-
-  // Native Paste Event on Container
-  container.addEventListener('paste', (e) => {
-    e.preventDefault();
-    const pasted = (e.clipboardData || window.clipboardData)?.getData('text');
-    if (pasted) {
-      insertPastedTextIntoTerminal(pasted);
-    }
-  });
-
-  // Right-Click Context Menu / Mouse Action (Windows Terminal Style: Copy if selected, else Paste)
-  container.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    if (xtermInstance.hasSelection()) {
-      const sel = xtermInstance.getSelection();
-      navigator.clipboard.writeText(sel).then(() => {
-        xtermInstance.clearSelection();
-        toast('Copied to clipboard');
-      }).catch(() => {});
-    } else {
-      navigator.clipboard.readText().then((clipText) => {
-        if (clipText) {
-          insertPastedTextIntoTerminal(clipText);
-        }
-      }).catch(() => {});
-    }
-  });
-
-  // Detect environment (Desktop App vs Web Hosting)
+function initTerminalSystem() {
   const isDesktop = (window.process && window.process.type) ||
                     navigator.userAgent.includes('Electron') ||
                     window.location.hostname === 'localhost' ||
@@ -2118,64 +2130,300 @@ function initRealTerminal() {
   isPowerShellMode = isDesktop;
   updateTerminalModeUI();
 
-  // Welcome banner & prompt
-  printTerminalWelcome();
-  writePrompt();
+  // Create initial terminal tab session
+  addNewTerminalTab();
+}
 
-  // Keyboard input handler
-  xtermInstance.onData((data) => {
-    if (isExecutingCommand) return;
+function addNewTerminalTab() {
+  const wrapper = document.getElementById('terminal-sessions-wrapper');
+  if (!wrapper) return;
 
-    if (data === '\r') { // Enter key
-      xtermInstance.write('\r\n');
-      const cmd = terminalInputBuffer.trim();
-      terminalInputBuffer = '';
-      if (cmd) {
-        commandHistory.push(cmd);
-        historyIndex = commandHistory.length;
-        executeRealCommand(cmd);
-      } else {
-        writePrompt();
+  const sessionId = nextSessionNum++;
+  const sessionName = `${sessionId}: ${isPowerShellMode ? 'powershell' : 'terminal'}`;
+
+  const pane = document.createElement('div');
+  pane.className = 'xterm-session-pane';
+  pane.id = `xterm-pane-${sessionId}`;
+  wrapper.appendChild(pane);
+
+  const term = new Terminal({
+    cursorBlink: true,
+    fontFamily: "'JetBrains Mono', 'Cascadia Code', Consolas, monospace",
+    fontSize: 12.5,
+    lineHeight: 1.25,
+    theme: {
+      background: '#141d2e',
+      foreground: '#f8fafc',
+      cursor: '#38bdf8',
+      selectionBackground: 'rgba(56, 189, 248, 0.35)',
+      black: '#475569',
+      red: '#f87171',
+      green: '#4ade80',
+      yellow: '#fbbf24',
+      blue: '#38bdf8',
+      magenta: '#c084fc',
+      cyan: '#67e8f9',
+      white: '#f1f5f9',
+      brightBlack: '#64748b',
+      brightRed: '#fca5a5',
+      brightGreen: '#86efac',
+      brightYellow: '#fde047',
+      brightBlue: '#7dd3fc',
+      brightMagenta: '#d8b4fe',
+      brightCyan: '#a5f3fc',
+      brightWhite: '#ffffff'
+    },
+    convertEol: true
+  });
+
+  const fitAddon = new FitAddon.FitAddon();
+  term.loadAddon(fitAddon);
+
+  if (WebLinksAddon && WebLinksAddon.WebLinksAddon) {
+    term.loadAddon(new WebLinksAddon.WebLinksAddon());
+  }
+
+  term.open(pane);
+
+  const sessionObj = {
+    id: sessionId,
+    name: sessionName,
+    pane: pane,
+    term: term,
+    fitAddon: fitAddon,
+    buffer: '',
+    history: [],
+    historyIdx: -1,
+    isExecuting: false
+  };
+
+  terminalSessions.push(sessionObj);
+
+  // Setup Key and Mouse Listeners for this Terminal Session
+  setupSessionListeners(sessionObj);
+
+  // Switch to this session
+  switchTerminalSession(sessionId);
+
+  // Print initial welcome & prompt
+  printSessionWelcome(sessionObj);
+  writeSessionPrompt(sessionObj);
+
+  renderTerminalSessionTabs();
+  toast(`Terminal session ${sessionId} created`);
+}
+
+function setupSessionListeners(session) {
+  const { pane, term } = session;
+
+  // Custom key handler for Copy/Paste
+  term.attachCustomKeyEventHandler((event) => {
+    const isCtrl = event.ctrlKey || event.metaKey;
+
+    if (isCtrl && (event.key === 'c' || event.key === 'C')) {
+      if (term.hasSelection()) {
+        const sel = term.getSelection();
+        navigator.clipboard.writeText(sel).then(() => toast('Copied from terminal')).catch(() => {});
+        return false;
       }
-    } else if (data === '\x7f' || data === '\b') { // Backspace
-      if (terminalInputBuffer.length > 0) {
-        terminalInputBuffer = terminalInputBuffer.slice(0, -1);
-        xtermInstance.write('\b \b');
+    }
+
+    if (isCtrl && (event.key === 'v' || event.key === 'V')) {
+      if (event.type === 'keydown') {
+        navigator.clipboard.readText().then((clipText) => {
+          if (clipText) insertTextIntoSession(session, clipText);
+        }).catch(() => {});
       }
-    } else if (data === '\x1b[A') { // Up arrow (history back)
-      if (historyIndex > 0) {
-        historyIndex--;
-        replaceTerminalLine(commandHistory[historyIndex]);
-      }
-    } else if (data === '\x1b[B') { // Down arrow (history forward)
-      if (historyIndex < commandHistory.length - 1) {
-        historyIndex++;
-        replaceTerminalLine(commandHistory[historyIndex]);
-      } else {
-        historyIndex = commandHistory.length;
-        replaceTerminalLine('');
-      }
-    } else if (data === '\x03') { // Ctrl+C interrupt
-      xtermInstance.write('^C\r\n');
-      terminalInputBuffer = '';
-      writePrompt();
-    } else if (data === '\x0c') { // Ctrl+L (Clear)
-      clearTerminalScreen();
-    } else if (data.length >= 1 && data >= ' ') { // Printable chars
-      terminalInputBuffer += data;
-      xtermInstance.write(data);
+      return false;
+    }
+
+    return true;
+  });
+
+  pane.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData)?.getData('text');
+    if (pasted) insertTextIntoSession(session, pasted);
+  });
+
+  pane.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (term.hasSelection()) {
+      const sel = term.getSelection();
+      navigator.clipboard.writeText(sel).then(() => {
+        term.clearSelection();
+        toast('Copied to clipboard');
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.readText().then((clipText) => {
+        if (clipText) insertTextIntoSession(session, clipText);
+      }).catch(() => {});
     }
   });
 
-  window.addEventListener('resize', () => {
-    if (xtermFitAddon) {
-      try { xtermFitAddon.fit(); } catch(e) {}
+  term.onData((data) => {
+    if (session.isExecuting) return;
+
+    if (data === '\r') {
+      term.write('\r\n');
+      const cmd = session.buffer.trim();
+      session.buffer = '';
+      if (cmd) {
+        session.history.push(cmd);
+        session.historyIdx = session.history.length;
+        executeSessionCommand(session, cmd);
+      } else {
+        writeSessionPrompt(session);
+      }
+    } else if (data === '\x7f' || data === '\b') {
+      if (session.buffer.length > 0) {
+        session.buffer = session.buffer.slice(0, -1);
+        term.write('\b \b');
+      }
+    } else if (data === '\x1b[A') {
+      if (session.historyIdx > 0) {
+        session.historyIdx--;
+        replaceSessionBuffer(session, session.history[session.historyIdx]);
+      }
+    } else if (data === '\x1b[B') {
+      if (session.historyIdx < session.history.length - 1) {
+        session.historyIdx++;
+        replaceSessionBuffer(session, session.history[session.historyIdx]);
+      } else {
+        session.historyIdx = session.history.length;
+        replaceSessionBuffer(session, '');
+      }
+    } else if (data === '\x03') {
+      term.write('^C\r\n');
+      session.buffer = '';
+      writeSessionPrompt(session);
+    } else if (data === '\x0c') {
+      term.clear();
+      writeSessionPrompt(session);
+    } else if (data.length >= 1 && data >= ' ') {
+      session.buffer += data;
+      term.write(data);
     }
   });
 }
 
-function insertPastedTextIntoTerminal(text) {
-  if (!xtermInstance || isExecutingCommand) return;
+function renderTerminalSessionTabs() {
+  const container = document.getElementById('term-session-tabs');
+  if (!container) return;
+  container.innerHTML = '';
+
+  terminalSessions.forEach((s) => {
+    const isActive = s.id === activeSessionId;
+    const tab = document.createElement('div');
+    tab.className = `term-session-tab${isActive ? ' active' : ''}`;
+    tab.innerHTML = `
+      <span>${s.name}</span>
+      <button class="term-session-close" onclick="closeTerminalSession(event, ${s.id})" title="Close Session">×</button>
+    `;
+    tab.onclick = () => switchTerminalSession(s.id);
+    container.appendChild(tab);
+  });
+}
+
+function switchTerminalSession(sessionId) {
+  activeSessionId = sessionId;
+
+  terminalSessions.forEach((s) => {
+    if (s.id === sessionId) {
+      s.pane.classList.add('active');
+      setTimeout(() => {
+        try { s.fitAddon.fit(); } catch(e) {}
+        s.term.focus();
+      }, 40);
+    } else {
+      s.pane.classList.remove('active');
+    }
+  });
+
+  renderTerminalSessionTabs();
+}
+
+function closeTerminalSession(e, sessionId) {
+  if (e) e.stopPropagation();
+
+  const idx = terminalSessions.findIndex(s => s.id === sessionId);
+  if (idx === -1) return;
+
+  const sessionToClose = terminalSessions[idx];
+  sessionToClose.term.dispose();
+  sessionToClose.pane.remove();
+  terminalSessions.splice(idx, 1);
+
+  if (terminalSessions.length === 0) {
+    // All terminal pages closed -> close panel completely
+    const panel = document.getElementById('bottom-terminal-panel');
+    const pullTab = document.getElementById('bottom-pull-tab');
+    if (panel) panel.classList.add('hidden');
+    if (pullTab) pullTab.style.display = 'block';
+    activeSessionId = null;
+    if (monacoEditorInstance) monacoEditorInstance.layout();
+    toast('All terminal sessions closed');
+  } else {
+    // Switch to adjacent session
+    const nextSession = terminalSessions[Math.max(0, idx - 1)];
+    switchTerminalSession(nextSession.id);
+  }
+
+  renderTerminalSessionTabs();
+}
+
+function deleteAllTerminalsAndClose() {
+  terminalSessions.forEach((s) => {
+    try { s.term.dispose(); } catch(e) {}
+    try { s.pane.remove(); } catch(e) {}
+  });
+
+  terminalSessions = [];
+  activeSessionId = null;
+
+  const panel = document.getElementById('bottom-terminal-panel');
+  const pullTab = document.getElementById('bottom-pull-tab');
+  if (panel) panel.classList.add('hidden');
+  if (pullTab) pullTab.style.display = 'block';
+
+  renderTerminalSessionTabs();
+  if (monacoEditorInstance) monacoEditorInstance.layout();
+  toast('All terminals deleted & panel closed');
+}
+
+function printSessionWelcome(session) {
+  const { term } = session;
+  if (isPowerShellMode) {
+    term.writeln(`${ANSI.bold}${ANSI.blue}Windows PowerShell${ANSI.reset} — AOS Studio Desktop Engine [Version 1.0.4]`);
+    term.writeln(`${ANSI.gray}Copyright (C) Microsoft Corporation / AOS Intelligence. All rights reserved.${ANSI.reset}`);
+    term.writeln(`${ANSI.dim}Type commands below. PowerShell aliases, git, python, npm & scripts supported.${ANSI.reset}\r\n`);
+  } else {
+    term.writeln(`${ANSI.bold}${ANSI.cyan}AOS Cloud Online Terminal${ANSI.reset} [Sandboxed Web Environment]`);
+    term.writeln(`${ANSI.gray}Connected to Proxima AI Subsystem & Supabase Cloud Storage.${ANSI.reset}`);
+    term.writeln(`${ANSI.dim}Type 'help' for online command list or run python/node/git.${ANSI.reset}\r\n`);
+  }
+}
+
+function writeSessionPrompt(session) {
+  const { term } = session;
+  if (isPowerShellMode) {
+    term.write(`${ANSI.bold}${ANSI.cyan}PS ${currentCwd}> ${ANSI.reset}`);
+  } else {
+    term.write(`${ANSI.bold}${ANSI.green}aos@cloud${ANSI.reset}:${ANSI.blue}${currentRelCwd}${ANSI.reset}$ `);
+  }
+}
+
+function replaceSessionBuffer(session, newText) {
+  while (session.buffer.length > 0) {
+    session.term.write('\b \b');
+    session.buffer = session.buffer.slice(0, -1);
+  }
+  session.buffer = newText;
+  session.term.write(newText);
+}
+
+function insertTextIntoSession(session, text) {
+  if (!session || session.isExecuting) return;
   const clean = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
   if (clean.includes('\n')) {
@@ -2183,102 +2431,84 @@ function insertPastedTextIntoTerminal(text) {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       if (i === lines.length - 1) {
-        terminalInputBuffer += line;
-        xtermInstance.write(line);
+        session.buffer += line;
+        session.term.write(line);
       } else {
-        terminalInputBuffer += line;
-        xtermInstance.write(line + '\r\n');
-        const cmd = terminalInputBuffer.trim();
-        terminalInputBuffer = '';
+        session.buffer += line;
+        session.term.write(line + '\r\n');
+        const cmd = session.buffer.trim();
+        session.buffer = '';
         if (cmd) {
-          commandHistory.push(cmd);
-          historyIndex = commandHistory.length;
-          executeRealCommand(cmd);
+          session.history.push(cmd);
+          session.historyIdx = session.history.length;
+          executeSessionCommand(session, cmd);
         }
       }
     }
   } else {
-    terminalInputBuffer += clean;
-    xtermInstance.write(clean);
+    session.buffer += clean;
+    session.term.write(clean);
   }
 }
 
+function getActiveSession() {
+  return terminalSessions.find(s => s.id === activeSessionId) || terminalSessions[0];
+}
+
 async function pasteIntoTerminal() {
+  const session = getActiveSession();
+  if (!session) return;
+
   try {
     const text = await navigator.clipboard.readText();
     if (text) {
-      insertPastedTextIntoTerminal(text);
-      if (xtermInstance) xtermInstance.focus();
+      insertTextIntoSession(session, text);
+      session.term.focus();
     } else {
       toast('Clipboard is empty');
     }
   } catch (err) {
     const manual = prompt('Paste your command below:');
     if (manual) {
-      insertPastedTextIntoTerminal(manual);
-      if (xtermInstance) xtermInstance.focus();
+      insertTextIntoSession(session, manual);
+      session.term.focus();
     }
   }
 }
 
 function copyFromTerminal() {
-  if (xtermInstance && xtermInstance.hasSelection()) {
-    const sel = xtermInstance.getSelection();
-    navigator.clipboard.writeText(sel).then(() => {
-      toast('Copied from terminal');
-    }).catch(() => {});
-  } else if (terminalInputBuffer) {
-    navigator.clipboard.writeText(terminalInputBuffer).then(() => {
-      toast('Copied current command');
-    }).catch(() => {});
-  } else {
-    toast('Select text to copy, or type a command');
-  }
-}
+  const session = getActiveSession();
+  if (!session) return;
 
-function printTerminalWelcome() {
-  if (!xtermInstance) return;
-  if (isPowerShellMode) {
-    xtermInstance.writeln(`${ANSI.bold}${ANSI.blue}Windows PowerShell${ANSI.reset} — AOS Studio Desktop Engine [Version 1.0.4]`);
-    xtermInstance.writeln(`${ANSI.gray}Copyright (C) Microsoft Corporation / AOS Intelligence. All rights reserved.${ANSI.reset}`);
-    xtermInstance.writeln(`${ANSI.dim}Type commands below. PowerShell aliases, git, python, npm & scripts supported.${ANSI.reset}\r\n`);
+  if (session.term.hasSelection()) {
+    const sel = session.term.getSelection();
+    navigator.clipboard.writeText(sel).then(() => toast('Copied from terminal')).catch(() => {});
+  } else if (session.buffer) {
+    navigator.clipboard.writeText(session.buffer).then(() => toast('Copied current command')).catch(() => {});
   } else {
-    xtermInstance.writeln(`${ANSI.bold}${ANSI.cyan}AOS Cloud Online Terminal${ANSI.reset} [Sandboxed Web Environment]`);
-    xtermInstance.writeln(`${ANSI.gray}Connected to Proxima AI Subsystem & Supabase Cloud Storage.${ANSI.reset}`);
-    xtermInstance.writeln(`${ANSI.dim}Type 'help' for online command list or run python/node/git.${ANSI.reset}\r\n`);
+    toast('Select text in terminal to copy');
   }
-}
-
-function writePrompt() {
-  if (!xtermInstance) return;
-  if (isPowerShellMode) {
-    xtermInstance.write(`${ANSI.bold}${ANSI.cyan}PS ${currentCwd}> ${ANSI.reset}`);
-  } else {
-    xtermInstance.write(`${ANSI.bold}${ANSI.green}aos@cloud${ANSI.reset}:${ANSI.blue}${currentRelCwd}${ANSI.reset}$ `);
-  }
-}
-
-function replaceTerminalLine(newText) {
-  while (terminalInputBuffer.length > 0) {
-    xtermInstance.write('\b \b');
-    terminalInputBuffer = terminalInputBuffer.slice(0, -1);
-  }
-  terminalInputBuffer = newText;
-  xtermInstance.write(newText);
 }
 
 function clearTerminalScreen() {
-  if (xtermInstance) {
-    xtermInstance.clear();
-    writePrompt();
+  const session = getActiveSession();
+  if (session) {
+    session.term.clear();
+    writeSessionPrompt(session);
   }
 }
 
 function toggleTerminalShellMode() {
   isPowerShellMode = !isPowerShellMode;
   updateTerminalModeUI();
-  xtermInstance.writeln(`\r\n${ANSI.yellow}Switched to ${isPowerShellMode ? 'Windows PowerShell (Desktop)' : 'Online Cloud Terminal'}${ANSI.reset}`);
-  writePrompt();
+
+  const session = getActiveSession();
+  if (session) {
+    session.name = `${session.id}: ${isPowerShellMode ? 'powershell' : 'terminal'}`;
+    session.term.writeln(`\r\n${ANSI.yellow}Switched to ${isPowerShellMode ? 'Windows PowerShell (Desktop)' : 'Online Cloud Terminal'}${ANSI.reset}`);
+    writeSessionPrompt(session);
+    renderTerminalSessionTabs();
+  }
   toast(`Active Shell: ${isPowerShellMode ? 'Windows PowerShell' : 'Online Terminal'}`);
 }
 
@@ -2287,39 +2517,39 @@ function updateTerminalModeUI() {
   const textEl = document.getElementById('term-mode-text');
   if (iconEl && textEl) {
     iconEl.textContent = isPowerShellMode ? '⚡' : '☁️';
-    textEl.textContent = isPowerShellMode ? 'Windows PowerShell' : 'Online Terminal';
+    textEl.textContent = isPowerShellMode ? 'PowerShell' : 'Online';
   }
 }
 
-async function executeRealCommand(cmd) {
-  isExecutingCommand = true;
+async function executeSessionCommand(session, cmd) {
+  session.isExecuting = true;
   const lower = cmd.toLowerCase();
 
-  // Local built-in terminal commands
   if (lower === 'clear' || lower === 'cls') {
-    clearTerminalScreen();
-    isExecutingCommand = false;
+    session.term.clear();
+    writeSessionPrompt(session);
+    session.isExecuting = false;
     return;
   }
 
   if (lower === 'help') {
-    xtermInstance.writeln(`${ANSI.bold}${ANSI.yellow}AOS Terminal Commands:${ANSI.reset}`);
-    xtermInstance.writeln(`  ${ANSI.cyan}ls / dir${ANSI.reset}         List directory files and folders`);
-    xtermInstance.writeln(`  ${ANSI.cyan}cd <path>${ANSI.reset}       Change current working directory`);
-    xtermInstance.writeln(`  ${ANSI.cyan}pwd${ANSI.reset}             Display current absolute path`);
-    xtermInstance.writeln(`  ${ANSI.cyan}python <file>${ANSI.reset}   Run Python scripts and applications`);
-    xtermInstance.writeln(`  ${ANSI.cyan}git status/diff${ANSI.reset} Git source control commands`);
-    xtermInstance.writeln(`  ${ANSI.cyan}npm run dev${ANSI.reset}     Start frontend or full-stack dev server`);
-    xtermInstance.writeln(`  ${ANSI.cyan}ai <prompt>${ANSI.reset}     Ask Proxima AI directly from CLI`);
-    xtermInstance.writeln(`  ${ANSI.cyan}clear / cls${ANSI.reset}     Clear terminal screen\r\n`);
-    writePrompt();
-    isExecutingCommand = false;
+    session.term.writeln(`${ANSI.bold}${ANSI.yellow}AOS Terminal Commands:${ANSI.reset}`);
+    session.term.writeln(`  ${ANSI.cyan}ls / dir${ANSI.reset}         List directory files and folders`);
+    session.term.writeln(`  ${ANSI.cyan}cd <path>${ANSI.reset}       Change current working directory`);
+    session.term.writeln(`  ${ANSI.cyan}pwd${ANSI.reset}             Display current absolute path`);
+    session.term.writeln(`  ${ANSI.cyan}python <file>${ANSI.reset}   Run Python scripts and applications`);
+    session.term.writeln(`  ${ANSI.cyan}git status/diff${ANSI.reset} Git source control commands`);
+    session.term.writeln(`  ${ANSI.cyan}npm run dev${ANSI.reset}     Start frontend or full-stack dev server`);
+    session.term.writeln(`  ${ANSI.cyan}ai <prompt>${ANSI.reset}     Ask Proxima AI directly from CLI`);
+    session.term.writeln(`  ${ANSI.cyan}clear / cls${ANSI.reset}     Clear terminal screen\r\n`);
+    writeSessionPrompt(session);
+    session.isExecuting = false;
     return;
   }
 
   if (lower.startsWith('ai ')) {
     const promptText = cmd.slice(3).trim();
-    xtermInstance.writeln(`${ANSI.dim}Routing prompt to Proxima AI (${activeAIModel})...${ANSI.reset}`);
+    session.term.writeln(`${ANSI.dim}Routing prompt to Proxima AI (${activeAIModel})...${ANSI.reset}`);
     try {
       const resp = await fetch(`${BACKEND_BASE}/api/workspace/copilot`, {
         method: 'POST',
@@ -2328,24 +2558,23 @@ async function executeRealCommand(cmd) {
       });
       if (resp.ok) {
         const data = await resp.json();
-        xtermInstance.writeln(`${ANSI.green}${data.reply}${ANSI.reset}`);
+        session.term.writeln(`${ANSI.green}${data.reply}${ANSI.reset}`);
         if (data.code) {
-          xtermInstance.writeln(`\r\n${ANSI.yellow}--- Code generated ---${ANSI.reset}`);
-          xtermInstance.writeln(data.code);
+          session.term.writeln(`\r\n${ANSI.yellow}--- Code generated ---${ANSI.reset}`);
+          session.term.writeln(data.code);
         }
       } else {
-        xtermInstance.writeln(`${ANSI.red}AI request returned error status.${ANSI.reset}`);
+        session.term.writeln(`${ANSI.red}AI request returned error status.${ANSI.reset}`);
       }
     } catch(err) {
-      xtermInstance.writeln(`${ANSI.red}AI error: ${err.message}${ANSI.reset}`);
+      session.term.writeln(`${ANSI.red}AI error: ${err.message}${ANSI.reset}`);
     }
-    xtermInstance.writeln('');
-    writePrompt();
-    isExecutingCommand = false;
+    session.term.writeln('');
+    writeSessionPrompt(session);
+    session.isExecuting = false;
     return;
   }
 
-  // Execute against Backend Terminal Runner
   try {
     const resp = await fetch(`${BACKEND_BASE}/api/workspace/terminal`, {
       method: 'POST',
@@ -2365,29 +2594,27 @@ async function executeRealCommand(cmd) {
       }
       if (data.stdout) {
         const lines = data.stdout.split('\n');
-        lines.forEach(l => xtermInstance.writeln(l.replace(/\r/g, '')));
+        lines.forEach(l => session.term.writeln(l.replace(/\r/g, '')));
       }
       if (data.stderr) {
         const lines = data.stderr.split('\n');
-        lines.forEach(l => xtermInstance.writeln(`${ANSI.red}${l.replace(/\r/g, '')}${ANSI.reset}`));
+        lines.forEach(l => session.term.writeln(`${ANSI.red}${l.replace(/\r/g, '')}${ANSI.reset}`));
       }
       if (!data.stdout && !data.stderr && data.exit_code !== 0) {
-        xtermInstance.writeln(`${ANSI.red}Command failed with exit code ${data.exit_code}${ANSI.reset}`);
+        session.term.writeln(`${ANSI.red}Command failed with exit code ${data.exit_code}${ANSI.reset}`);
       }
     } else {
-      // Offline / Cloud fallback command execution simulation
-      executeCloudFallbackCommand(cmd);
+      executeCloudFallbackCommand(session, cmd);
     }
   } catch (err) {
-    // Standalone Static Cloud Execution Fallback
-    executeCloudFallbackCommand(cmd);
+    executeCloudFallbackCommand(session, cmd);
   }
 
-  writePrompt();
-  isExecutingCommand = false;
+  writeSessionPrompt(session);
+  session.isExecuting = false;
 }
 
-function executeCloudFallbackCommand(cmd) {
+function executeCloudFallbackCommand(session, cmd) {
   const parts = cmd.trim().split(' ');
   const mainCmd = parts[0].toLowerCase();
 
@@ -2396,36 +2623,22 @@ function executeCloudFallbackCommand(cmd) {
     if (fileKeys.length > 0) {
       fileKeys.forEach(k => {
         const isDir = k.includes('/');
-        xtermInstance.writeln(isDir ? `${ANSI.blue}${k}${ANSI.reset}` : `${ANSI.white}${k}${ANSI.reset}`);
+        session.term.writeln(isDir ? `${ANSI.blue}${k}${ANSI.reset}` : `${ANSI.white}${k}${ANSI.reset}`);
       });
     } else {
-      xtermInstance.writeln(`app.py  deploy.html  ide.html  index.html  public-config.js  requirements.txt`);
+      session.term.writeln(`app.py  deploy.html  ide.html  index.html  public-config.js  requirements.txt`);
     }
   } else if (mainCmd === 'pwd') {
-    xtermInstance.writeln(currentCwd);
+    session.term.writeln(currentCwd);
   } else if (mainCmd === 'echo') {
-    xtermInstance.writeln(parts.slice(1).join(' '));
+    session.term.writeln(parts.slice(1).join(' '));
   } else if (mainCmd === 'python' || mainCmd === 'node') {
-    xtermInstance.writeln(`${ANSI.green}Executing ${parts.slice(1).join(' ') || 'REPL'}... Process finished.${ANSI.reset}`);
+    session.term.writeln(`${ANSI.green}Executing ${parts.slice(1).join(' ') || 'REPL'}... Process finished.${ANSI.reset}`);
   } else if (mainCmd === 'git') {
-    xtermInstance.writeln(`On branch main. Your branch is up to date with 'origin/main'.`);
+    session.term.writeln(`On branch main. Your branch is up to date with 'origin/main'.`);
   } else {
-    xtermInstance.writeln(`${cmd}: command executed successfully (Cloud Online Sandbox).`);
+    session.term.writeln(`${cmd}: command executed successfully (Cloud Online Sandbox).`);
   }
-}
-
-function newTerminalSession() {
-  const panel = document.getElementById('bottom-terminal-panel');
-  panel.classList.remove('hidden');
-  const pullTab = document.getElementById('bottom-pull-tab');
-  if (pullTab) pullTab.style.display = 'none';
-  if (xtermInstance) {
-    xtermInstance.clear();
-    printTerminalWelcome();
-    writePrompt();
-    xtermInstance.focus();
-  }
-  if (monacoEditorInstance) monacoEditorInstance.layout();
 }
 
 function toggleTerminalPanel() {
@@ -2434,11 +2647,19 @@ function toggleTerminalPanel() {
   panel.classList.toggle('hidden');
   const isHidden = panel.classList.contains('hidden');
   if (pullTab) pullTab.style.display = isHidden ? 'block' : 'none';
-  if (!isHidden && xtermInstance) {
-    setTimeout(() => {
-      if (xtermFitAddon) xtermFitAddon.fit();
-      xtermInstance.focus();
-    }, 50);
+
+  if (!isHidden) {
+    if (terminalSessions.length === 0) {
+      addNewTerminalTab();
+    } else {
+      const session = getActiveSession();
+      if (session) {
+        setTimeout(() => {
+          try { session.fitAddon.fit(); } catch(e) {}
+          session.term.focus();
+        }, 50);
+      }
+    }
   }
   if (monacoEditorInstance) monacoEditorInstance.layout();
 }
@@ -2450,19 +2671,24 @@ function runCode() {
   if (pullTab) pullTab.style.display = 'none';
   switchBottomPanel('term');
 
+  if (terminalSessions.length === 0) {
+    addNewTerminalTab();
+  }
+
+  const session = getActiveSession();
   if (!activeFilePath) {
-    if (xtermInstance) {
-      xtermInstance.writeln(`\r\n${ANSI.red}No active file selected. Open or create a file in Explorer to run.${ANSI.reset}`);
-      writePrompt();
+    if (session) {
+      session.term.writeln(`\r\n${ANSI.red}No active file selected. Open or create a file in Explorer to run.${ANSI.reset}`);
+      writeSessionPrompt(session);
     }
     return;
   }
 
   const cmd = `python "${activeFilePath}"`;
-  if (xtermInstance) {
-    xtermInstance.writeln(`\r\n${ANSI.bold}${ANSI.yellow}> ${cmd}${ANSI.reset}`);
-    executeRealCommand(cmd);
-    xtermInstance.focus();
+  if (session) {
+    session.term.writeln(`\r\n${ANSI.bold}${ANSI.yellow}> ${cmd}${ANSI.reset}`);
+    executeSessionCommand(session, cmd);
+    session.term.focus();
   }
   if (monacoEditorInstance) monacoEditorInstance.layout();
 }
@@ -2473,27 +2699,28 @@ function switchBottomPanel(panelKey) {
   const targetBtn = document.getElementById(btnMap[panelKey]);
   if (targetBtn) targetBtn.classList.add('active');
 
+  const session = getActiveSession();
   if (panelKey === 'term') {
-    if (xtermInstance) {
+    if (session) {
       setTimeout(() => {
-        if (xtermFitAddon) xtermFitAddon.fit();
-        xtermInstance.focus();
+        try { session.fitAddon.fit(); } catch(e) {}
+        session.term.focus();
       }, 50);
     }
   } else if (panelKey === 'probs') {
-    if (xtermInstance) {
-      xtermInstance.writeln(`\r\n${ANSI.green}No problems or syntax errors detected in workspace.${ANSI.reset}`);
-      writePrompt();
+    if (session) {
+      session.term.writeln(`\r\n${ANSI.green}No problems or syntax errors detected in workspace.${ANSI.reset}`);
+      writeSessionPrompt(session);
     }
   } else if (panelKey === 'output') {
-    if (xtermInstance) {
-      xtermInstance.writeln(`\r\n${ANSI.cyan}[AOS Output Channel] Connected and listening on 127.0.0.1:8000${ANSI.reset}`);
-      writePrompt();
+    if (session) {
+      session.term.writeln(`\r\n${ANSI.cyan}[AOS Output Channel] Connected and listening on 127.0.0.1:8000${ANSI.reset}`);
+      writeSessionPrompt(session);
     }
   } else if (panelKey === 'debug') {
-    if (xtermInstance) {
-      xtermInstance.writeln(`\r\n${ANSI.gray}[Debug Console] Ready for debugger attachment.${ANSI.reset}`);
-      writePrompt();
+    if (session) {
+      session.term.writeln(`\r\n${ANSI.gray}[Debug Console] Ready for debugger attachment.${ANSI.reset}`);
+      writeSessionPrompt(session);
     }
   }
 }
@@ -2511,13 +2738,6 @@ function applyTheme(theme) {
   if (monacoEditorInstance) {
     monaco.editor.setTheme(isDark ? 'aos-dark' : 'aos-light');
   }
-  if (xtermInstance) {
-    xtermInstance.options.theme = {
-      background: isDark ? '#030712' : '#0d1117',
-      foreground: '#f0f6fc',
-      cursor: '#58a6ff'
-    };
-  }
 }
 
 function toggleTheme() {
@@ -2527,13 +2747,6 @@ function toggleTheme() {
   updateThemeIcon(isDark);
   if (monacoEditorInstance) {
     monaco.editor.setTheme(isDark ? 'aos-dark' : 'aos-light');
-  }
-  if (xtermInstance) {
-    xtermInstance.options.theme = {
-      background: isDark ? '#030712' : '#0d1117',
-      foreground: '#f0f6fc',
-      cursor: '#58a6ff'
-    };
   }
   toast(`${isDark ? 'Dark' : 'Light'} mode enabled`);
 }
@@ -2633,7 +2846,7 @@ require(['vs/editor/editor.main'], function () {
 
   initCleanWorkspace();
   setupInteractiveResizers();
-  initRealTerminal();
+  initTerminalSystem();
 });
 
 /* ── REAL WORKSPACE DATA INITIALIZER ── */
@@ -2719,7 +2932,6 @@ function showEmptyWorkspaceState() {
 
 /* ── INTERACTIVE DRAG RESIZERS ── */
 function setupInteractiveResizers() {
-  // 1. Terminal Horizontal Resizer (Drag up/down)
   const resizerTerm = document.getElementById('resizer-terminal');
   const termPanel = document.getElementById('bottom-terminal-panel');
   const pullTab = document.getElementById('bottom-pull-tab');
@@ -2738,6 +2950,7 @@ function setupInteractiveResizers() {
       if (pullTab) pullTab.style.display = 'none';
       startHeight = 240;
       termPanel.style.height = '240px';
+      if (terminalSessions.length === 0) addNewTerminalTab();
     } else {
       startHeight = termPanel.getBoundingClientRect().height;
     }
@@ -2770,8 +2983,9 @@ function setupInteractiveResizers() {
     newHeight = Math.max(80, Math.min(newHeight, maxHeight));
     termPanel.style.height = `${newHeight}px`;
 
-    if (xtermFitAddon) {
-      try { xtermFitAddon.fit(); } catch(err) {}
+    const session = getActiveSession();
+    if (session && session.fitAddon) {
+      try { session.fitAddon.fit(); } catch(err) {}
     }
     if (monacoEditorInstance) {
       monacoEditorInstance.layout();
@@ -2786,8 +3000,10 @@ function setupInteractiveResizers() {
     document.removeEventListener('mouseup', onTermMouseUp);
     document.removeEventListener('touchmove', onTermMouseMove);
     document.removeEventListener('touchend', onTermMouseUp);
-    if (xtermFitAddon) {
-      try { xtermFitAddon.fit(); } catch(err) {}
+
+    const session = getActiveSession();
+    if (session && session.fitAddon) {
+      try { session.fitAddon.fit(); } catch(err) {}
     }
     if (monacoEditorInstance) monacoEditorInstance.layout();
   }
@@ -2800,7 +3016,7 @@ function setupInteractiveResizers() {
     pullTab.addEventListener('touchstart', onTermMouseDown);
   }
 
-  // 2. AI Copilot Vertical Resizer (Drag left/right)
+  // AI Copilot Resizer
   const resizerCopilot = document.getElementById('resizer-copilot');
   const copilotPanel = document.getElementById('copilot-panel');
 
@@ -2851,7 +3067,7 @@ function setupInteractiveResizers() {
   resizerCopilot.addEventListener('mousedown', onCopilotMouseDown);
   resizerCopilot.addEventListener('touchstart', onCopilotMouseDown);
 
-  // 3. Explorer Sidebar Resizer
+  // Explorer Sidebar Resizer
   const resizerSidebar = document.getElementById('resizer-sidebar');
   const explorerSidebar = document.getElementById('explorer-sidebar');
 
@@ -3497,7 +3713,9 @@ function toggleUserDropdown() {
 /* ── COMMAND PALETTE ── */
 const PALETTE_COMMANDS = [
   { name: 'Terminal: Open / Toggle Terminal', kbd: 'Ctrl+`', fn: toggleTerminalPanel },
-  { name: 'Terminal: Clear Terminal', kbd: 'Ctrl+L', fn: clearTerminalScreen },
+  { name: 'Terminal: Add New Session', kbd: 'Ctrl+Shift+`', fn: addNewTerminalTab },
+  { name: 'Terminal: Clear Terminal Screen', kbd: 'Ctrl+L', fn: clearTerminalScreen },
+  { name: 'Terminal: Delete All & Close', kbd: '', fn: deleteAllTerminalsAndClose },
   { name: 'Terminal: Toggle PowerShell / Cloud Mode', kbd: '', fn: toggleTerminalShellMode },
   { name: 'New File', kbd: 'Ctrl+N', fn: promptNewFile },
   { name: 'Open Folder', kbd: 'Ctrl+O', fn: openLocalFolder },
