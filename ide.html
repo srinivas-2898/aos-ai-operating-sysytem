@@ -1777,6 +1777,18 @@ body.dark-theme .copilot-code-pre {
         </div>
 
         <div class="panel-actions-right">
+          <button class="term-act-btn" title="Paste from Clipboard (Ctrl+V)" onclick="pasteIntoTerminal()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+            </svg>
+          </button>
+          <button class="term-act-btn" title="Copy Selected (Ctrl+C)" onclick="copyFromTerminal()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+          </button>
           <button class="term-act-btn" title="New Terminal" onclick="newTerminalSession()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
@@ -2038,6 +2050,65 @@ function initRealTerminal() {
   xtermInstance.open(container);
   xtermFitAddon.fit();
 
+  // Custom key handler for Copy (Ctrl+C / Ctrl+Shift+C) and Paste (Ctrl+V / Ctrl+Shift+V)
+  xtermInstance.attachCustomKeyEventHandler((event) => {
+    const isCtrl = event.ctrlKey || event.metaKey;
+
+    // Handle Copy: Ctrl+C / Ctrl+Shift+C when text is highlighted/selected
+    if (isCtrl && (event.key === 'c' || event.key === 'C')) {
+      if (xtermInstance.hasSelection()) {
+        const sel = xtermInstance.getSelection();
+        navigator.clipboard.writeText(sel).then(() => {
+          toast('Copied from terminal');
+        }).catch(() => {});
+        return false; // Suppress interrupt signal
+      }
+    }
+
+    // Handle Paste: Ctrl+V / Ctrl+Shift+V
+    if (isCtrl && (event.key === 'v' || event.key === 'V')) {
+      if (event.type === 'keydown') {
+        navigator.clipboard.readText().then((clipText) => {
+          if (clipText) {
+            insertPastedTextIntoTerminal(clipText);
+          }
+        }).catch(() => {
+          // Fallback if browser prompts or clipboard API restricted
+        });
+      }
+      return false; // Prevent default xterm character writing
+    }
+
+    return true;
+  });
+
+  // Native Paste Event on Container
+  container.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData)?.getData('text');
+    if (pasted) {
+      insertPastedTextIntoTerminal(pasted);
+    }
+  });
+
+  // Right-Click Context Menu / Mouse Action (Windows Terminal Style: Copy if selected, else Paste)
+  container.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (xtermInstance.hasSelection()) {
+      const sel = xtermInstance.getSelection();
+      navigator.clipboard.writeText(sel).then(() => {
+        xtermInstance.clearSelection();
+        toast('Copied to clipboard');
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.readText().then((clipText) => {
+        if (clipText) {
+          insertPastedTextIntoTerminal(clipText);
+        }
+      }).catch(() => {});
+    }
+  });
+
   // Detect environment (Desktop App vs Web Hosting)
   const isDesktop = (window.process && window.process.type) ||
                     navigator.userAgent.includes('Electron') ||
@@ -2084,13 +2155,13 @@ function initRealTerminal() {
         historyIndex = commandHistory.length;
         replaceTerminalLine('');
       }
-    } else if (data === '\x03') { // Ctrl+C
+    } else if (data === '\x03') { // Ctrl+C interrupt
       xtermInstance.write('^C\r\n');
       terminalInputBuffer = '';
       writePrompt();
     } else if (data === '\x0c') { // Ctrl+L (Clear)
       clearTerminalScreen();
-    } else if (data.length === 1 && data >= ' ') { // Printable chars
+    } else if (data.length >= 1 && data >= ' ') { // Printable chars
       terminalInputBuffer += data;
       xtermInstance.write(data);
     }
@@ -2101,6 +2172,68 @@ function initRealTerminal() {
       try { xtermFitAddon.fit(); } catch(e) {}
     }
   });
+}
+
+function insertPastedTextIntoTerminal(text) {
+  if (!xtermInstance || isExecutingCommand) return;
+  const clean = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  if (clean.includes('\n')) {
+    const lines = clean.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (i === lines.length - 1) {
+        terminalInputBuffer += line;
+        xtermInstance.write(line);
+      } else {
+        terminalInputBuffer += line;
+        xtermInstance.write(line + '\r\n');
+        const cmd = terminalInputBuffer.trim();
+        terminalInputBuffer = '';
+        if (cmd) {
+          commandHistory.push(cmd);
+          historyIndex = commandHistory.length;
+          executeRealCommand(cmd);
+        }
+      }
+    }
+  } else {
+    terminalInputBuffer += clean;
+    xtermInstance.write(clean);
+  }
+}
+
+async function pasteIntoTerminal() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text) {
+      insertPastedTextIntoTerminal(text);
+      if (xtermInstance) xtermInstance.focus();
+    } else {
+      toast('Clipboard is empty');
+    }
+  } catch (err) {
+    const manual = prompt('Paste your command below:');
+    if (manual) {
+      insertPastedTextIntoTerminal(manual);
+      if (xtermInstance) xtermInstance.focus();
+    }
+  }
+}
+
+function copyFromTerminal() {
+  if (xtermInstance && xtermInstance.hasSelection()) {
+    const sel = xtermInstance.getSelection();
+    navigator.clipboard.writeText(sel).then(() => {
+      toast('Copied from terminal');
+    }).catch(() => {});
+  } else if (terminalInputBuffer) {
+    navigator.clipboard.writeText(terminalInputBuffer).then(() => {
+      toast('Copied current command');
+    }).catch(() => {});
+  } else {
+    toast('Select text to copy, or type a command');
+  }
 }
 
 function printTerminalWelcome() {
