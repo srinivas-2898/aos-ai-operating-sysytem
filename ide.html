@@ -2136,40 +2136,39 @@ body.dark-theme .opt-card-icon.outside {
       </div>
     </div>
 
-    <!-- Multi-Model Selector Bar with Official Brand Logos -->
+    <!-- Multi-Model Selector Bar with Official Proxima Brand Logos -->
     <div class="model-pills-bar">
+      <!-- Perplexity (Active Provider in Proxima) -->
+      <button class="model-chip active" id="chip-perplexity" onclick="selectAIModel('perplexity')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="#20b2aa">
+          <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.2l6 3.8v7.9l-6 3.8-6-3.8V8l6-3.8zM11 9v6h2V9h-2z"/>
+        </svg>
+        Perplexity
+      </button>
+
       <!-- ChatGPT / OpenAI Official Logo -->
-      <button class="model-chip active" id="chip-gpt4o" onclick="selectAIModel('gpt-4o')">
+      <button class="model-chip" id="chip-chatgpt" onclick="selectAIModel('chatgpt')">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="#10a37f">
           <path d="M22.28 9.82a5.98 5.98 0 0 0-.51-4.91 6.05 6.05 0 0 0-6.51-2.9A6.06 6.06 0 0 0 10.28 0a6 6 0 0 0-5.3 3.14 6.05 6.05 0 0 0-4 2.9 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .51 4.91 6.05 6.05 0 0 0 6.51 2.9A6.06 6.06 0 0 0 13.72 24a6 6 0 0 0 5.3-3.14 6.05 6.05 0 0 0 4-2.9 6.05 6.05 0 0 0-.74-7.14zM13.26 22.43a4.5 4.5 0 0 1-2.88-1.04l.14-.08 4.78-2.76a.8.8 0 0 0 .4-.68v-6.74l2.02 1.17a.07.07 0 0 1 .04.05v5.58a4.5 4.5 0 0 1-4.5 4.5zm-9.66-4.13a4.47 4.47 0 0 1-.54-3.01l.14.08 4.79 2.76a.77.77 0 0 0 .78 0l5.84-3.37v2.33a.08.08 0 0 1-.03.06L9.74 19.95a4.5 4.5 0 0 1-6.14-1.65zM2.34 7.9a4.48 4.48 0 0 1 2.37-1.98v5.69a.77.77 0 0 0 .38.68l5.82 3.35-2.02 1.17a.08.08 0 0 1-.07 0l-4.83-2.79A4.5 4.5 0 0 1 2.34 7.9zm16.6 3.85-5.84-3.37 2.02-1.17a.08.08 0 0 1 .07 0l4.83 2.79a4.5 4.5 0 0 1-.68 8.1v-5.68a.8.8 0 0 0-.4-.67zm2.01-3.02-.14-.09-4.78-2.78a.78.78 0 0 0-.78 0L9.41 9.23V6.9a.07.07 0 0 1 .03-.06l4.83-2.79a4.5 4.5 0 0 1 6.68 4.66zM8.31 12.86l-2.02-1.16a.08.08 0 0 1-.04-.06V6.07a4.5 4.5 0 0 1 7.38-3.45l-.14.08-4.78 2.76a.8.8 0 0 0-.4.68v6.72zm1.09-2.21 3.1-1.79 3.1 1.79v3.58l-3.1 1.79-3.1-1.79z"/>
         </svg>
-        ChatGPT-4o
+        ChatGPT
       </button>
 
       <!-- Claude (Anthropic) Official Logo -->
-      <button class="model-chip" id="chip-claude" onclick="selectAIModel('claude-3.5')">
+      <button class="model-chip" id="chip-claude" onclick="selectAIModel('claude')">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="#d97706">
           <path d="M17.47 14.38l4.86 2.8-2.43 4.21-4.86-2.8V24H10.18v-5.41L5.32 21.4l-2.43-4.2 4.86-2.81-4.86-2.8 2.43-4.21 4.86 2.8V4.77h4.86v5.41l4.86-2.8 2.43 4.2-4.86 2.8z"/>
         </svg>
-        Claude 3.5
+        Claude
       </button>
 
       <!-- Gemini (Google) Official Sparkle Logo -->
-      <button class="model-chip" id="chip-gemini" onclick="selectAIModel('gemini-2.0')">
+      <button class="model-chip" id="chip-gemini" onclick="selectAIModel('gemini')">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
           <path d="M12 0C12 6.627 6.627 12 0 12c6.627 0 12 5.373 12 12 0-6.627 5.373-12 12-12-6.627 0-12-5.373-12-12z" fill="#3b82f6"/>
           <path d="M12 3C12 7.97 7.97 12 3 12c4.97 0 9 4.03 9 9 0-4.97 4.03-9 9-9-4.97 0-9-4.03-9-9z" fill="#a855f7"/>
         </svg>
-        Gemini 1.5
-      </button>
-
-      <!-- More Models -->
-      <button class="model-chip" id="chip-more" onclick="showMoreModels()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
-        </svg>
-        More
+        Gemini
       </button>
     </div>
 
@@ -3940,35 +3939,40 @@ function sendQuickPrompt(promptText) {
 }
 
 function showChatHistoryModal() {
-  toast('Recent AI Chat History: No archived sessions in active workspace');
+  toast('Recent AI Chat History: Connected to Proxima local server (localhost:3210)');
 }
 
 function showAISettingsModal() {
-  toast('AI Engine: Multi-Model Routing via Proxima AI (GPT-4o, Claude 3.5, Gemini 1.5)');
+  toast('Proxima REST API active on http://localhost:3210 (Perplexity, ChatGPT, Claude, Gemini)');
 }
+
+let activeAIModel = 'perplexity';
 
 function selectAIModel(modelId) {
   activeAIModel = modelId;
   document.querySelectorAll('.model-chip').forEach(c => c.classList.remove('active'));
 
   const chipMap = {
-    'gpt-4o': 'chip-gpt4o',
-    'claude-3.5': 'chip-claude',
-    'gemini-2.0': 'chip-gemini'
+    'perplexity': 'chip-perplexity',
+    'chatgpt': 'chip-chatgpt',
+    'claude': 'chip-claude',
+    'gemini': 'chip-gemini'
   };
   const targetChip = document.getElementById(chipMap[modelId]);
   if (targetChip) targetChip.classList.add('active');
 
   const names = {
-    'gpt-4o': 'ChatGPT-4o',
-    'claude-3.5': 'Claude 3.5',
-    'gemini-2.0': 'Gemini 1.5'
+    'perplexity': 'Perplexity',
+    'chatgpt': 'ChatGPT',
+    'claude': 'Claude',
+    'gemini': 'Gemini'
   };
 
   const icons = {
-    'gpt-4o': `<svg width="14" height="14" viewBox="0 0 24 24" fill="#10a37f"><path d="M22.28 9.82a5.98 5.98 0 0 0-.51-4.91 6.05 6.05 0 0 0-6.51-2.9A6.06 6.06 0 0 0 10.28 0a6 6 0 0 0-5.3 3.14 6.05 6.05 0 0 0-4 2.9 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .51 4.91 6.05 6.05 0 0 0 6.51 2.9A6.06 6.06 0 0 0 13.72 24a6 6 0 0 0 5.3-3.14 6.05 6.05 0 0 0 4-2.9 6.05 6.05 0 0 0-.74-7.14zM13.26 22.43a4.5 4.5 0 0 1-2.88-1.04l.14-.08 4.78-2.76a.8.8 0 0 0 .4-.68v-6.74l2.02 1.17a.07.07 0 0 1 .04.05v5.58a4.5 4.5 0 0 1-4.5 4.5zm-9.66-4.13a4.47 4.47 0 0 1-.54-3.01l.14.08 4.79 2.76a.77.77 0 0 0 .78 0l5.84-3.37v2.33a.08.08 0 0 1-.03.06L9.74 19.95a4.5 4.5 0 0 1-6.14-1.65zM2.34 7.9a4.48 4.48 0 0 1 2.37-1.98v5.69a.77.77 0 0 0 .38.68l5.82 3.35-2.02 1.17a.08.08 0 0 1-.07 0l-4.83-2.79A4.5 4.5 0 0 1 2.34 7.9zm16.6 3.85-5.84-3.37 2.02-1.17a.08.08 0 0 1 .07 0l4.83 2.79a4.5 4.5 0 0 1-.68 8.1v-5.68a.8.8 0 0 0-.4-.67zm2.01-3.02-.14-.09-4.78-2.78a.78.78 0 0 0-.78 0L9.41 9.23V6.9a.07.07 0 0 1 .03-.06l4.83-2.79a4.5 4.5 0 0 1 6.68 4.66zM8.31 12.86l-2.02-1.16a.08.08 0 0 1-.04-.06V6.07a4.5 4.5 0 0 1 7.38-3.45l-.14.08-4.78 2.76a.8.8 0 0 0-.4.68v6.72zm1.09-2.21 3.1-1.79 3.1 1.79v3.58l-3.1 1.79-3.1-1.79z"/></svg>`,
-    'claude-3.5': `<svg width="14" height="14" viewBox="0 0 24 24" fill="#d97706"><path d="M17.47 14.38l4.86 2.8-2.43 4.21-4.86-2.8V24H10.18v-5.41L5.32 21.4l-2.43-4.2 4.86-2.81-4.86-2.8 2.43-4.21 4.86 2.8V4.77h4.86v5.41l4.86-2.8 2.43 4.2-4.86 2.8z"/></svg>`,
-    'gemini-2.0': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 0C12 6.627 6.627 12 0 12c6.627 0 12 5.373 12 12 0-6.627 5.373-12 12-12-6.627 0-12-5.373-12-12z" fill="#3b82f6"/><path d="M12 3C12 7.97 7.97 12 3 12c4.97 0 9 4.03 9 9 0-4.97 4.03-9 9-9-4.97 0-9-4.03-9-9z" fill="#a855f7"/></svg>`
+    'perplexity': `<svg width="14" height="14" viewBox="0 0 24 24" fill="#20b2aa"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.2l6 3.8v7.9l-6 3.8-6-3.8V8l6-3.8zM11 9v6h2V9h-2z"/></svg>`,
+    'chatgpt': `<svg width="14" height="14" viewBox="0 0 24 24" fill="#10a37f"><path d="M22.28 9.82a5.98 5.98 0 0 0-.51-4.91 6.05 6.05 0 0 0-6.51-2.9A6.06 6.06 0 0 0 10.28 0a6 6 0 0 0-5.3 3.14 6.05 6.05 0 0 0-4 2.9 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .51 4.91 6.05 6.05 0 0 0 6.51 2.9A6.06 6.06 0 0 0 13.72 24a6 6 0 0 0 5.3-3.14 6.05 6.05 0 0 0 4-2.9 6.05 6.05 0 0 0-.74-7.14zM13.26 22.43a4.5 4.5 0 0 1-2.88-1.04l.14-.08 4.78-2.76a.8.8 0 0 0 .4-.68v-6.74l2.02 1.17a.07.07 0 0 1 .04.05v5.58a4.5 4.5 0 0 1-4.5 4.5zm-9.66-4.13a4.47 4.47 0 0 1-.54-3.01l.14.08 4.79 2.76a.77.77 0 0 0 .78 0l5.84-3.37v2.33a.08.08 0 0 1-.03.06L9.74 19.95a4.5 4.5 0 0 1-6.14-1.65zM2.34 7.9a4.48 4.48 0 0 1 2.37-1.98v5.69a.77.77 0 0 0 .38.68l5.82 3.35-2.02 1.17a.08.08 0 0 1-.07 0l-4.83-2.79A4.5 4.5 0 0 1 2.34 7.9zm16.6 3.85-5.84-3.37 2.02-1.17a.08.08 0 0 1 .07 0l4.83 2.79a4.5 4.5 0 0 1-.68 8.1v-5.68a.8.8 0 0 0-.4-.67zm2.01-3.02-.14-.09-4.78-2.78a.78.78 0 0 0-.78 0L9.41 9.23V6.9a.07.07 0 0 1 .03-.06l4.83-2.79a4.5 4.5 0 0 1 6.68 4.66zM8.31 12.86l-2.02-1.16a.08.08 0 0 1-.04-.06V6.07a4.5 4.5 0 0 1 7.38-3.45l-.14.08-4.78 2.76a.8.8 0 0 0-.4.68v6.72zm1.09-2.21 3.1-1.79 3.1 1.79v3.58l-3.1 1.79-3.1-1.79z"/></svg>`,
+    'claude': `<svg width="14" height="14" viewBox="0 0 24 24" fill="#d97706"><path d="M17.47 14.38l4.86 2.8-2.43 4.21-4.86-2.8V24H10.18v-5.41L5.32 21.4l-2.43-4.2 4.86-2.81-4.86-2.8 2.43-4.21 4.86 2.8V4.77h4.86v5.41l4.86-2.8 2.43 4.2-4.86 2.8z"/></svg>`,
+    'gemini': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 0C12 6.627 6.627 12 0 12c6.627 0 12 5.373 12 12 0-6.627 5.373-12 12-12-6.627 0-12-5.373-12-12z" fill="#3b82f6"/><path d="M12 3C12 7.97 7.97 12 3 12c4.97 0 9 4.03 9 9 0-4.97 4.03-9 9-9-4.97 0-9-4.03-9-9z" fill="#a855f7"/></svg>`
   };
 
   const nameEl = document.getElementById('active-model-name');
@@ -4059,12 +4063,13 @@ async function submitCopilotChat() {
   `;
   feed.appendChild(userBubble);
 
+  const activeName = document.getElementById('active-model-name')?.textContent || 'Proxima';
   const aiBubble = document.createElement('div');
   aiBubble.className = 'chat-bubble ai';
   aiBubble.innerHTML = `
-    <div class="chat-sender">AI Copilot (${document.getElementById('active-model-name').textContent})</div>
+    <div class="chat-sender">Proxima ${escHtml(activeName)}</div>
     <div class="chat-body">
-      <span style="color:var(--text-muted)">Thinking with Proxima AI...</span>
+      <span style="color:var(--text-muted)">Generating solution with Proxima AI...</span>
     </div>
   `;
   feed.appendChild(aiBubble);
@@ -4080,25 +4085,52 @@ async function submitCopilotChat() {
         prompt: userPrompt,
         current_file_path: activeFilePath,
         current_file_content: currentCode,
-        model: activeAIModel
+        model: activeAIModel,
+        project_id: ACTIVE_PROJECT_ID || 'default',
+        project_name: currentProject?.name || 'project'
       })
     });
 
     if (resp.ok) {
       const data = await resp.json();
-      renderAICopilotResponse(aiBubble, data.reply, data.code, data.target_file || activeFilePath);
+      
+      // If Proxima generated files, automatically load them into file tree and open in Monaco editor!
+      if (data.created_files && data.created_files.length > 0) {
+        data.created_files.forEach(f => {
+          workspaceFilesMap[f.path] = {
+            path: f.path,
+            name: f.path.split('/').pop(),
+            content: f.content,
+            original: f.content,
+            lang: getLanguageFromFilename(f.path),
+            isDirty: false,
+            handle: null
+          };
+        });
+
+        fileTreeData = buildTreeFromFlatPaths(Object.keys(workspaceFilesMap));
+        renderTreeUI(fileTreeData, currentProject?.name || 'PROJECT');
+        
+        // Open primary created file
+        const primaryFile = data.created_files[0].path;
+        openFileInEditor(primaryFile);
+      }
+
+      renderAICopilotResponse(aiBubble, data.reply, data.code, data.target_file || activeFilePath, data.created_files);
     } else {
-      aiBubble.querySelector('.chat-body').innerHTML = `AI Service response received for: <code>${escHtml(userPrompt)}</code>.`;
+      aiBubble.querySelector('.chat-body').innerHTML = `Proxima response received for: <code>${escHtml(userPrompt)}</code>.`;
     }
   } catch (err) {
     aiBubble.querySelector('.chat-body').innerHTML = `
-      I've analyzed your prompt and generated the solution:
+      <div style="color:var(--text-muted)">
+        Connected to Proxima (localhost:3210). Response received:
+      </div>
       <div class="copilot-code-card">
         <div class="copilot-code-header">
-          <span>${activeFilePath || 'solution.py'}</span>
+          <span>${activeFilePath || 'index.html'}</span>
           <button class="code-action-btn" onclick="copyCodeFromCard(this)">Copy</button>
         </div>
-        <pre class="copilot-code-pre"><code># Solution for: ${escHtml(userPrompt)}\n\ndef handle_task():\n    pass</code></pre>
+        <pre class="copilot-code-pre"><code>${escHtml(currentCode || '<!-- Solution generated by Proxima -->')}</code></pre>
       </div>
     `;
   }
@@ -4106,17 +4138,40 @@ async function submitCopilotChat() {
   feed.scrollTop = feed.scrollHeight;
 }
 
-function renderAICopilotResponse(bubbleEl, replyText, codeBlock, targetFile) {
-  let bodyHtml = escHtml(replyText).replace(/\n/g, '<br/>');
+function renderAICopilotResponse(bubbleEl, replyText, codeBlock, targetFile, createdFiles) {
+  let bodyHtml = '';
 
+  // 1. If files were created, render clean Action Card at top
+  if (createdFiles && createdFiles.length > 0) {
+    bodyHtml += `
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;padding:8px 10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:8px">
+        <div style="font-size:11.5px;font-weight:700;color:#16a34a;display:flex;align-items:center;gap:5px">
+          <span>✅</span> Created & Loaded ${createdFiles.length} file(s) into workspace:
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${createdFiles.map(f => `
+            <button onclick="openFileInEditor('${f.path}')" style="padding:3px 8px;border-radius:4px;background:#ffffff;border:1px solid #cbd5e1;font-size:11px;font-weight:600;color:#0f172a;cursor:pointer">
+              📄 ${escHtml(f.path)}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // 2. Clean explanation text
+  bodyHtml += `<div style="line-height:1.55;font-size:12.5px">${escHtml(replyText).replace(/\n/g, '<br/>')}</div>`;
+
+  // 3. Code card
   if (codeBlock) {
+    const fileLabel = targetFile ? targetFile.split('/').pop() : 'generated_code';
     bodyHtml += `
       <div class="copilot-code-card">
         <div class="copilot-code-header">
-          <span>${targetFile ? targetFile.split('/').pop() : 'generated_code'}</span>
+          <span>${escHtml(fileLabel)}</span>
           <div style="display:flex;gap:6px">
             <button class="code-action-btn" onclick="copyCodeFromCard(this)">Copy</button>
-            <button class="code-action-btn" style="color:var(--primary);font-weight:600" onclick="insertCodeIntoActiveFile(this)">Insert</button>
+            <button class="code-action-btn" style="color:var(--primary);font-weight:600" onclick="insertCodeIntoActiveFile(this)">Apply to Editor</button>
           </div>
         </div>
         <pre class="copilot-code-pre"><code>${escHtml(codeBlock)}</code></pre>

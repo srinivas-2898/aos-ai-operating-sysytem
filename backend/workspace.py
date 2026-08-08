@@ -147,152 +147,87 @@ def is_command_safe(cmd: str) -> bool:
     return True
 
 
-# ── AI Provider Caller with Proxima / Multi-Model Support ──
+# ── Proxima AI Provider Connection (http://localhost:3210) ──
+PROXIMA_SERVER_URL = os.getenv("PROXIMA_SERVER_URL", "http://localhost:3210")
 
-MODEL_MAPPINGS = {
-    "claude": "anthropic/claude-3.7-sonnet",
-    "claude-3.7": "anthropic/claude-3.7-sonnet",
-    "claude-3.5": "anthropic/claude-3.5-sonnet",
-    "chatgpt": "openai/gpt-4o",
-    "gpt-4o": "openai/gpt-4o",
-    "gpt-4o-mini": "openai/gpt-4o-mini",
-    "gemini": "google/gemini-2.0-flash-001",
-    "gemini-2.0": "google/gemini-2.0-flash-001",
-    "deepseek": "deepseek/deepseek-chat",
-    "deepseek-r1": "deepseek/deepseek-r1",
-    "perplexity": "perplexity/sonar",
-    "auto": "openrouter/auto",
+PROXIMA_MODEL_MAPPINGS = {
+    "perplexity": "perplexity",
+    "pplx": "perplexity",
+    "sonar": "perplexity",
+    "chatgpt": "chatgpt",
+    "gpt-4o": "chatgpt",
+    "gpt-4": "chatgpt",
+    "openai": "chatgpt",
+    "claude": "claude",
+    "claude-3.5": "claude",
+    "claude-3.7": "claude",
+    "anthropic": "claude",
+    "gemini": "gemini",
+    "gemini-1.5": "gemini",
+    "gemini-2.0": "gemini",
+    "google": "gemini",
+    "auto": "perplexity",
 }
 
 
-def call_ai_copilot(system_prompt: str, user_prompt: str, requested_model: str = "auto") -> Dict[str, Any]:
-    """Routes Copilot prompts to Proxima MCP or configured multi-AI providers."""
-    model_key = requested_model.lower().strip()
-    target_or_model = MODEL_MAPPINGS.get(model_key, "openrouter/auto")
-    errors = []
+def call_ai_copilot(system_prompt: str, user_prompt: str, requested_model: str = "perplexity") -> Dict[str, Any]:
+    """Exclusively routes Copilot prompts to the local Proxima server (http://localhost:3210)."""
+    model_key = (requested_model or "perplexity").lower().strip()
+    proxima_model = PROXIMA_MODEL_MAPPINGS.get(model_key, "perplexity")
 
-    # 1. If Proxima MCP URL or Proxima API is explicitly configured
-    if PROXIMA_MCP_URL and PROXIMA_API_KEY:
-        try:
-            resp = requests.post(
-                f"{PROXIMA_MCP_URL.rstrip('/')}/v1/chat/completions",
-                headers={"Authorization": f"Bearer {PROXIMA_API_KEY}", "Content-Type": "application/json"},
-                json={
-                    "model": requested_model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    "temperature": 0.2
-                },
-                timeout=60
-            )
-            if resp.ok:
-                data = resp.json()
-                content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-                if content:
-                    return {"content": content, "provider": "Proxima MCP", "model": requested_model}
-        except Exception as e:
-            errors.append(f"Proxima: {str(e)}")
-
-    # 2. Direct Gemini provider (Fast and reliable)
-    if GEMINI_API_KEY and (model_key in ("auto", "gemini", "gemini-2.0") or not OPENROUTER_API_KEY):
-        try:
-            resp = requests.post(
-                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}",
-                json={
-                    "system_instruction": {"parts": [{"text": system_prompt}]},
-                    "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
-                    "generationConfig": {"temperature": 0.2, "maxOutputTokens": 4096}
-                },
-                timeout=60
-            )
-            if resp.ok:
-                text = resp.json()["candidates"][0]["content"]["parts"][0]["text"]
-                if text:
-                    return {"content": text, "provider": "Gemini (Proxima Engine)", "model": "gemini-2.0-flash"}
-        except Exception as e:
-            errors.append(f"Gemini: {str(e)}")
-
-    # 3. Direct Groq provider (Ultra fast Llama 3.3 70B)
-    if GROQ_API_KEY and (model_key in ("auto", "groq") or model_key not in ("claude", "claude-3.7", "gpt-4o")):
-        try:
-            resp = requests.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
-                json={
-                    "model": "llama-3.3-70b-versatile",
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    "temperature": 0.2,
-                    "max_tokens": 4096
-                },
-                timeout=45
-            )
-            if resp.ok:
-                content = resp.json()["choices"][0]["message"]["content"]
-                if content:
-                    return {"content": content, "provider": "Groq Llama-3.3 (Proxima Engine)", "model": "llama-3.3-70b-versatile"}
-        except Exception as e:
-            errors.append(f"Groq: {str(e)}")
-
-    # 4. OpenRouter provider (Claude, GPT-4o, Perplexity, DeepSeek)
-    if OPENROUTER_API_KEY:
-        try:
-            resp = requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-                    "Content-Type": "application/json",
-                    "HTTP-Referer": "https://aos.dev",
-                    "X-Title": "AOS Development Studio"
-                },
-                json={
-                    "model": target_or_model,
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    "temperature": 0.2,
-                    "max_tokens": 2048
-                },
-                timeout=60
-            )
-            if resp.ok:
-                content = resp.json()["choices"][0]["message"]["content"]
-                if content:
-                    return {"content": content, "provider": "OpenRouter (Proxima)", "model": target_or_model}
-        except Exception as e:
-            errors.append(f"OpenRouter: {str(e)}")
-
-    # 5. Direct DeepSeek provider
-    if DEEPSEEK_API_KEY:
-        try:
-            resp = requests.post(
-                "https://api.deepseek.com/v1/chat/completions",
-                headers={"Authorization": f"Bearer {DEEPSEEK_API_KEY}", "Content-Type": "application/json"},
-                json={
-                    "model": "deepseek-chat",
-                    "messages": [
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt}
-                    ],
-                    "temperature": 0.2,
-                    "max_tokens": 4096
-                },
-                timeout=60
-            )
-            if resp.ok:
-                content = resp.json()["choices"][0]["message"]["content"]
-                if content:
-                    return {"content": content, "provider": "DeepSeek (Proxima Engine)", "model": "deepseek-chat"}
-        except Exception as e:
-            errors.append(f"DeepSeek: {str(e)}")
-
-    raise HTTPException(status_code=503, detail=f"AI Copilot failed. ({'; '.join(errors)})")
-
+    try:
+        resp = requests.post(
+            f"{PROXIMA_SERVER_URL.rstrip('/')}/v1/chat/completions",
+            headers={"Content-Type": "application/json"},
+            json={
+                "model": proxima_model,
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                "temperature": 0.2
+            },
+            timeout=60
+        )
+        if resp.ok:
+            data = resp.json()
+            content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+            if content:
+                provider_info = data.get("proxima", {}).get("provider", proxima_model)
+                return {
+                    "content": content,
+                    "provider": f"Proxima ({provider_info.title()})",
+                    "model": proxima_model,
+                    "success": True
+                }
+            else:
+                return {
+                    "content": "Proxima processed the request but returned an empty response. Please verify your logged-in provider in Proxima.",
+                    "provider": "Proxima",
+                    "model": proxima_model,
+                    "success": False
+                }
+        else:
+            return {
+                "content": f"Proxima error ({resp.status_code}): {resp.text}",
+                "provider": "Proxima",
+                "model": proxima_model,
+                "success": False
+            }
+    except requests.exceptions.ConnectionError:
+        return {
+            "content": f"Could not connect to Proxima server at {PROXIMA_SERVER_URL}. Please verify that the Proxima app is open with REST API enabled.",
+            "provider": "Proxima (Offline)",
+            "model": proxima_model,
+            "success": False
+        }
+    except Exception as e:
+        return {
+            "content": f"Error communicating with Proxima: {str(e)}",
+            "provider": "Proxima",
+            "model": proxima_model,
+            "success": False
+        }
 
 def extract_code_block(text: str) -> Optional[str]:
     """Extracts code from markdown triple backticks if present."""
@@ -300,6 +235,51 @@ def extract_code_block(text: str) -> Optional[str]:
     if match:
         return match.group(1)
     return None
+
+
+def extract_generated_files(text: str, default_filename: Optional[str] = None, prompt_hint: Optional[str] = None) -> List[Dict[str, str]]:
+    """Extracts multiple files with paths and contents from Proxima AI response text."""
+    files = []
+    
+    # Check if prompt specifies a target filename like "create index.html" or "create a main.py"
+    inferred_filename = default_filename
+    if not inferred_filename and prompt_hint:
+        fn_match = re.search(r'([a-zA-Z0-9_\-\.\/]+\.(?:html|css|js|ts|jsx|tsx|py|json|md|sql|sh|yaml|yml|rs|go|cpp|c|java))', prompt_hint, re.IGNORECASE)
+        if fn_match:
+            inferred_filename = fn_match.group(1).strip()
+
+    # Pattern 1: ```language filename="path/file.ext" or ```html index.html
+    fence_pattern = re.compile(
+        r'```(?:[\w\.\-]+)?\s*(?:filename=["\']?([\w\.\-\/]+)["\']?|file:\s*([\w\.\-\/]+)|([\w\.\-\/]+\.[a-zA-Z0-9]+))?\s*\n(.*?)```',
+        re.DOTALL
+    )
+    for match in fence_pattern.finditer(text):
+        fn = match.group(1) or match.group(2) or match.group(3)
+        content = match.group(4).strip()
+        if fn and content:
+            files.append({"path": fn.strip(), "content": content})
+        elif content and inferred_filename and not files:
+            files.append({"path": inferred_filename, "content": content})
+
+    # Pattern 2: Header markers like "FILE: index.html" or "### index.html" before a code fence
+    if not files:
+        header_pattern = re.compile(
+            r'(?:FILE:|File:|###|\*\*)\s*([a-zA-Z0-9_\-\.\/]+\.[a-zA-Z0-9]+)[\*\:]?\s*\n+```(?:[\w\.\-]+)?\s*\n(.*?)```',
+            re.DOTALL
+        )
+        for m in header_pattern.finditer(text):
+            fn = m.group(1).strip()
+            content = m.group(2).strip()
+            if fn and content:
+                files.append({"path": fn, "content": content})
+
+    # Pattern 3: Fallback single code block
+    if not files:
+        single = extract_code_block(text)
+        if single and inferred_filename:
+            files.append({"path": inferred_filename, "content": single.strip()})
+
+    return files
 
 
 def generate_diff(original: str, modified: str, filename: str = "file") -> str:
@@ -809,6 +789,30 @@ def copilot_service(body: CopilotRequest):
 
     response_text = ai_result.get("content", "")
     extracted_code = extract_code_block(response_text)
+    generated_files = extract_generated_files(response_text, body.current_file_path, prompt_hint=body.prompt)
+
+    # Automatically save generated files to project directory on disk
+    created_files_info = []
+    if generated_files:
+        proj_name = body.project_name or body.project_id or "default"
+        clean_proj = re.sub(r'[^a-zA-Z0-9_\-]', '_', proj_name)
+        proj_dir = WORKSPACES_ROOT / clean_proj
+        proj_dir.mkdir(parents=True, exist_ok=True)
+
+        for gf in generated_files:
+            file_rel = gf.get("path", "").lstrip("/\\")
+            content = gf.get("content", "")
+            if not file_rel:
+                continue
+            dest_file = proj_dir / file_rel
+            dest_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(dest_file, "w", encoding="utf-8") as fp:
+                fp.write(content)
+            created_files_info.append({
+                "path": file_rel,
+                "content": content,
+                "local_path": str(dest_file.resolve())
+            })
 
     # Compute diff if original file content or selected code is available and code was extracted
     diff_text = None
@@ -820,10 +824,11 @@ def copilot_service(body: CopilotRequest):
     return {
         "reply": response_text,
         "code": extracted_code,
+        "created_files": created_files_info,
         "diff": diff_text,
         "action": action,
         "model": ai_result.get("model", body.model),
-        "provider": ai_result.get("provider", "Proxima AI"),
+        "provider": ai_result.get("provider", "Proxima"),
         "target_file": body.current_file_path
     }
 
