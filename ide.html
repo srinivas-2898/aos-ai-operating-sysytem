@@ -1228,8 +1228,29 @@ body.dark-theme .model-chip.active {
 .welcome-msg {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding-bottom: 4px;
+  gap: 12px;
+  padding: 8px 4px;
+}
+.welcome-msg-brand-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+.copilot-sparkle-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #2563eb, #8b5cf6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 .welcome-msg-title {
   font-size: 13px;
@@ -1237,8 +1258,38 @@ body.dark-theme .model-chip.active {
   color: var(--text-primary);
 }
 .welcome-msg-sub {
-  font-size: 12.5px;
+  font-size: 11px;
   color: var(--text-muted);
+}
+.welcome-prompt-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+.copilot-action-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+.copilot-action-chip:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateX(2px);
+}
+.copilot-action-chip span {
+  font-size: 14px;
 }
 
 .chat-bubble {
@@ -2063,35 +2114,67 @@ body.dark-theme .opt-card-icon.outside {
         <span class="copilot-title">AI Copilot</span>
       </div>
       <div class="copilot-hdr-actions">
-        <button class="new-chat-btn" onclick="startNewAIChat()">+ New Chat</button>
-        <button class="copilot-icon-btn" title="Chat History" onclick="toast('Chat history ready')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <button class="new-chat-btn" onclick="startNewAIChat()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Chat
         </button>
-        <button class="copilot-icon-btn" title="Copilot Settings" onclick="toast('Proxima multi-model AI routing active')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <button class="copilot-icon-btn" title="Recent History" onclick="showChatHistoryModal()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </button>
+        <button class="copilot-icon-btn" title="AI Model Settings" onclick="showAISettingsModal()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
         </button>
         <button class="copilot-icon-btn" title="Close Copilot" onclick="toggleCopilotPanel()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
     </div>
 
-    <!-- Multi-Model Selector Bar -->
+    <!-- Multi-Model Selector Bar with Official Authentic Brand Logos -->
     <div class="model-pills-bar">
+      <!-- ChatGPT / OpenAI Official Swirl Logo -->
       <button class="model-chip active" id="chip-gpt4o" onclick="selectAIModel('gpt-4o')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
-        GPT-4o
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color:#10a37f">
+          <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1683a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4947zM3.6 18.3047a4.4708 4.4708 0 0 1-.535-3.0141l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.14-1.6455zM2.3401 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1683a.0757.0757 0 0 1-.071 0l-4.8303-2.7866A4.504 4.504 0 0 1 2.34 7.8956zm16.5966 3.8558L13.1038 8.364 15.124 7.1957a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.6626zm2.0107-3.0236l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1635a.0804.0804 0 0 1-.038-.0567V6.0748a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4598a.7948.7948 0 0 0-.3927.6813v6.7219zm1.0933-2.2155l3.0999-1.7891 3.0999 1.7891v3.5783l-3.0999 1.7891-3.0999-1.7891z"/>
+        </svg>
+        ChatGPT-4o
       </button>
+
+      <!-- Claude (Anthropic) Official Burst Logo -->
       <button class="model-chip" id="chip-claude" onclick="selectAIModel('claude-3.5')">
-        <span style="font-weight:800;font-size:12px;color:#d97706">A</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color:#d97706">
+          <path d="M17.472 14.382l4.856 2.804-2.428 4.205-4.856-2.804v5.608h-4.856v-5.608l-4.856 2.804-2.428-4.205 4.856-2.804-4.856-2.804 2.428-4.205 4.856 2.804v-5.608h4.856v5.608l4.856-2.804 2.428 4.205-4.856 2.804z"/>
+        </svg>
         Claude 3.5
       </button>
+
+      <!-- Gemini (Google) Official Radiant Sparkle Star Logo -->
       <button class="model-chip" id="chip-gemini" onclick="selectAIModel('gemini-2.0')">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="#2563eb"><path d="M12 2L15 9L22 12L15 15L12 22L9 15L2 12L9 9L12 2Z"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C12 7.523 7.523 12 2 12C7.523 12 12 16.477 12 22C12 16.477 16.477 12 22 12C16.477 12 12 7.523 12 2Z" fill="url(#gemini-chip-grad)"/>
+          <defs>
+            <linearGradient id="gemini-chip-grad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#2563eb"/>
+              <stop offset="50%" stop-color="#8b5cf6"/>
+              <stop offset="100%" stop-color="#ec4899"/>
+            </linearGradient>
+          </defs>
+        </svg>
         Gemini 1.5
       </button>
+
+      <!-- More Models -->
       <button class="model-chip" id="chip-more" onclick="showMoreModels()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2v4m0 12v4M2 12h4m12 0h4"/>
+        </svg>
         More
       </button>
     </div>
@@ -2099,8 +2182,36 @@ body.dark-theme .opt-card-icon.outside {
     <!-- Chat Message Feed -->
     <div class="copilot-feed" id="copilot-messages-feed">
       <div class="welcome-msg">
-        <div class="welcome-msg-title" id="copilot-greeting-title">👋 Hi there!</div>
-        <div class="welcome-msg-sub">How can I help you today? Ask Copilot to write code, debug issues, or architect modules.</div>
+        <div class="welcome-msg-brand-badge">
+          <div class="copilot-sparkle-avatar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </div>
+          <div>
+            <div class="welcome-msg-title">AOS Intelligence Assistant</div>
+            <div class="welcome-msg-sub">Enterprise Multi-Model Copilot</div>
+          </div>
+        </div>
+
+        <div class="welcome-prompt-actions">
+          <button class="copilot-action-chip" onclick="sendQuickPrompt('Explain what the active code does line by line and identify optimizations.')">
+            <span>⚡</span>
+            <div><strong>Explain Code</strong> — Line-by-line architecture walkthrough</div>
+          </button>
+          <button class="copilot-action-chip" onclick="sendQuickPrompt('Analyze the current file for bugs, syntax errors, and edge case failures.')">
+            <span>🛠️</span>
+            <div><strong>Fix Bugs</strong> — Detect issues and generate clean fixes</div>
+          </button>
+          <button class="copilot-action-chip" onclick="sendQuickPrompt('Refactor this module to modern production standards and optimize performance.')">
+            <span>✨</span>
+            <div><strong>Refactor Code</strong> — Clean architecture and performance tuning</div>
+          </button>
+          <button class="copilot-action-chip" onclick="sendQuickPrompt('Generate comprehensive unit tests and assertions for this codebase.')">
+            <span>🧪</span>
+            <div><strong>Write Unit Tests</strong> — Automated test cases & assertions</div>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -2108,18 +2219,20 @@ body.dark-theme .opt-card-icon.outside {
     <div class="copilot-input-box">
       <div class="input-sub-row">
         <div class="input-model-selector" id="selected-model-pill" onclick="showMoreModels()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
-          <span id="active-model-name">GPT-4o</span>
+          <span id="active-model-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="color:#10a37f"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1683a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4947zM3.6 18.3047a4.4708 4.4708 0 0 1-.535-3.0141l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.14-1.6455zM2.3401 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1683a.0757.0757 0 0 1-.071 0l-4.8303-2.7866A4.504 4.504 0 0 1 2.34 7.8956zm16.5966 3.8558L13.1038 8.364 15.124 7.1957a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.6626zm2.0107-3.0236l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1635a.0804.0804 0 0 1-.038-.0567V6.0748a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4598a.7948.7948 0 0 0-.3927.6813v6.7219zm1.0933-2.2155l3.0999-1.7891 3.0999 1.7891v3.5783l-3.0999 1.7891-3.0999-1.7891z"/></svg>
+          </span>
+          <span id="active-model-name">ChatGPT-4o</span>
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
       </div>
       <div class="copilot-textarea-row">
-        <textarea class="copilot-textarea" id="copilot-input-textarea" rows="1" placeholder="Ask anything..." onkeydown="handleCopilotInputKey(event)"></textarea>
-        <button class="editor-act-btn" title="Attach context" onclick="toast('Context attached: active workspace')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        <textarea class="copilot-textarea" id="copilot-input-textarea" rows="1" placeholder="Ask AI Copilot to code, debug, refactor..." onkeydown="handleCopilotInputKey(event)"></textarea>
+        <button class="editor-act-btn" title="Attach active workspace context" onclick="toast('Attached active file context to prompt')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
         </button>
-        <button class="copilot-send-btn" title="Send message" onclick="submitCopilotChat()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        <button class="copilot-send-btn" title="Send message (Enter)" onclick="submitCopilotChat()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
         </button>
       </div>
     </div>
@@ -3824,6 +3937,22 @@ async function refreshWorkspaceFiles() {
 }
 
 /* ── AI COPILOT INTEGRATION ── */
+function sendQuickPrompt(promptText) {
+  const input = document.getElementById('copilot-input-textarea');
+  if (input) {
+    input.value = promptText;
+    submitCopilotChat();
+  }
+}
+
+function showChatHistoryModal() {
+  toast('Recent AI Chat History: No archived sessions in active workspace');
+}
+
+function showAISettingsModal() {
+  toast('AI Engine: Multi-Model Routing via Proxima AI (GPT-4o, Claude 3.5, Gemini 1.5)');
+}
+
 function selectAIModel(modelId) {
   activeAIModel = modelId;
   document.querySelectorAll('.model-chip').forEach(c => c.classList.remove('active'));
@@ -3837,11 +3966,23 @@ function selectAIModel(modelId) {
   if (targetChip) targetChip.classList.add('active');
 
   const names = {
-    'gpt-4o': 'GPT-4o',
+    'gpt-4o': 'ChatGPT-4o',
     'claude-3.5': 'Claude 3.5',
     'gemini-2.0': 'Gemini 1.5'
   };
-  document.getElementById('active-model-name').textContent = names[modelId] || modelId;
+
+  const icons = {
+    'gpt-4o': `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="color:#10a37f"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1683a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4947zM3.6 18.3047a4.4708 4.4708 0 0 1-.535-3.0141l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.14-1.6455zM2.3401 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1683a.0757.0757 0 0 1-.071 0l-4.8303-2.7866A4.504 4.504 0 0 1 2.34 7.8956zm16.5966 3.8558L13.1038 8.364 15.124 7.1957a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.6626zm2.0107-3.0236l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1635a.0804.0804 0 0 1-.038-.0567V6.0748a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.4598a.7948.7948 0 0 0-.3927.6813v6.7219zm1.0933-2.2155l3.0999-1.7891 3.0999 1.7891v3.5783l-3.0999 1.7891-3.0999-1.7891z"/></svg>`,
+    'claude-3.5': `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="color:#d97706"><path d="M17.472 14.382l4.856 2.804-2.428 4.205-4.856-2.804v5.608h-4.856v-5.608l-4.856 2.804-2.428-4.205 4.856-2.804-4.856-2.804 2.428-4.205 4.856 2.804v-5.608h4.856v5.608l4.856-2.804 2.428 4.205-4.856 2.804z"/></svg>`,
+    'gemini-2.0': `<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2C12 7.523 7.523 12 2 12C7.523 12 12 16.477 12 22C12 16.477 16.477 12 22 12C16.477 12 12 7.523 12 2Z" fill="url(#gemini-chip-grad)"/></svg>`
+  };
+
+  const nameEl = document.getElementById('active-model-name');
+  if (nameEl) nameEl.textContent = names[modelId] || modelId;
+
+  const iconEl = document.getElementById('active-model-icon');
+  if (iconEl && icons[modelId]) iconEl.innerHTML = icons[modelId];
+
   toast(`AI Model: ${names[modelId] || modelId}`);
 }
 
@@ -3856,12 +3997,39 @@ function showMoreModels() {
 }
 
 function startNewAIChat() {
-  const userName = currentUser ? (currentUser.user_metadata?.full_name || currentUser.email.split('@')[0]) : 'there';
   const feed = document.getElementById('copilot-messages-feed');
   feed.innerHTML = `
     <div class="welcome-msg">
-      <div class="welcome-msg-title">👋 Hi ${userName}!</div>
-      <div class="welcome-msg-sub">Started a new conversation. What would you like to build?</div>
+      <div class="welcome-msg-brand-badge">
+        <div class="copilot-sparkle-avatar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </div>
+        <div>
+          <div class="welcome-msg-title">AOS Intelligence Assistant</div>
+          <div class="welcome-msg-sub">Enterprise Multi-Model Copilot</div>
+        </div>
+      </div>
+
+      <div class="welcome-prompt-actions">
+        <button class="copilot-action-chip" onclick="sendQuickPrompt('Explain what the active code does line by line and identify optimizations.')">
+          <span>⚡</span>
+          <div><strong>Explain Code</strong> — Line-by-line architecture walkthrough</div>
+        </button>
+        <button class="copilot-action-chip" onclick="sendQuickPrompt('Analyze the current file for bugs, syntax errors, and edge case failures.')">
+          <span>🛠️</span>
+          <div><strong>Fix Bugs</strong> — Detect issues and generate clean fixes</div>
+        </button>
+        <button class="copilot-action-chip" onclick="sendQuickPrompt('Refactor this module to modern production standards and optimize performance.')">
+          <span>✨</span>
+          <div><strong>Refactor Code</strong> — Clean architecture and performance tuning</div>
+        </button>
+        <button class="copilot-action-chip" onclick="sendQuickPrompt('Generate comprehensive unit tests and assertions for this codebase.')">
+          <span>🧪</span>
+          <div><strong>Write Unit Tests</strong> — Automated test cases & assertions</div>
+        </button>
+      </div>
     </div>
   `;
   toast('New AI conversation started');
