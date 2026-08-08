@@ -4045,6 +4045,133 @@ function handleCopilotInputKey(e) {
   }
 }
 
+async function callProximaChat(userPrompt, modelId, contextFiles = {}) {
+  const proximaModels = {
+    'perplexity': 'perplexity',
+    'chatgpt': 'chatgpt',
+    'claude': 'claude',
+    'gemini': 'gemini'
+  };
+  const model = proximaModels[modelId] || 'perplexity';
+
+  const systemPrompt = `You are AOS Copilot, an expert AI programming assistant embedded directly inside the AOS Development Studio.
+You write clean, modular, production-ready, idiomatic code adhering to modern standards.
+When creating or modifying files, provide the complete code inside markdown code fences with filename header (e.g. \`\`\`html index.html).`;
+
+  let contextText = '';
+  if (contextFiles.filePath) {
+    contextText += `\nActive File: ${contextFiles.filePath}`;
+  }
+  if (contextFiles.fileContent) {
+    contextText += `\nCurrent File Content:\n\`\`\`\n${contextFiles.fileContent.slice(0, 4000)}\n\`\`\``;
+  }
+
+  const payload = {
+    model: model,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt + contextText }
+    ],
+    temperature: 0.2
+  };
+
+  // Direct endpoints to local Proxima server on user's laptop
+  const endpoints = [
+    'http://localhost:3210/v1/chat/completions',
+    'http://127.0.0.1:3210/v1/chat/completions',
+    'http://localhost:8000/api/workspace/copilot',
+    'http://127.0.0.1:8000/api/workspace/copilot'
+  ];
+
+  for (const ep of endpoints) {
+    try {
+      if (ep.includes(':8000')) {
+        const resp = await fetch(ep, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt: userPrompt,
+            current_file_path: contextFiles.filePath,
+            current_file_content: contextFiles.fileContent,
+            model: modelId,
+            project_name: currentProject?.name || 'project'
+          })
+        });
+        if (resp.ok) return await resp.json();
+      } else {
+        const resp = await fetch(ep, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          const reply = data.choices?.[0]?.message?.content || '';
+          return {
+            reply: reply,
+            provider: data.proxima?.provider || model,
+            model: model
+          };
+        }
+      }
+    } catch (e) {}
+  }
+
+  throw new Error('Could not connect to Proxima server');
+}
+
+function extractFilesFromResponse(replyText, defaultFile, userPrompt) {
+  const files = [];
+  if (!replyText) return files;
+  
+  let inferredFilename = defaultFile;
+  if (!inferredFilename && userPrompt) {
+    const m = userPrompt.match(/([a-zA-Z0-9_\-\.\/]+\.(?:html|css|js|ts|jsx|tsx|py|json|md|sql|sh|yaml|yml|rs|go|cpp|c|java))/i);
+    if (m) inferredFilename = m[1];
+  }
+
+  // Pattern 1: ```language filename="foo.html" or ```html index.html
+  const fenceRegex = /```(?:[\w\.\-]+)?\s*(?:filename=["']?([\w\.\-\/]+)["']?|file:\s*([\w\.\-\/]+)|([\w\.\-\/]+\.[a-zA-Z0-9]+))?\s*\n([\s\S]*?)```/g;
+  let match;
+  while ((match = fenceRegex.exec(replyText)) !== null) {
+    const fn = match[1] || match[2] || match[3];
+    const content = match[4].trim();
+    if (fn && content) {
+      files.push({ path: fn.trim(), content: content });
+    } else if (content && inferredFilename && files.length === 0) {
+      files.push({ path: inferredFilename, content: content });
+    }
+  }
+
+  // Pattern 2: Header before fence
+  if (files.length === 0) {
+    const headerRegex = /(?:FILE:|File:|###|\*\*)\s*([a-zA-Z0-9_\-\.\/]+\.[a-zA-Z0-9]+)[\*\:]?\s*\n+```(?:[\w\.\-]+)?\s*\n([\s\S]*?)```/g;
+    while ((match = headerRegex.exec(replyText)) !== null) {
+      const fn = match[1].trim();
+      const content = match[2].trim();
+      if (fn && content) {
+        files.push({ path: fn, content: content });
+      }
+    }
+  }
+
+  // Pattern 3: Fallback single fence
+  if (files.length === 0) {
+    const single = replyText.match(/```(?:[\w\.\-]+)?\s*\n([\s\S]*?)```/);
+    if (single && (inferredFilename || defaultFile)) {
+      files.push({ path: inferredFilename || defaultFile, content: single[1].trim() });
+    }
+  }
+
+  return files;
+}
+
+function extractCodeBlock(text) {
+  if (!text) return null;
+  const match = text.match(/```(?:\w+)?\n([\s\S]*?)```/);
+  return match ? match[1].trim() : null;
+}
+
 async function submitCopilotChat() {
   const input = document.getElementById('copilot-input-textarea');
   const userPrompt = input.value.trim();
@@ -4061,7 +4188,7 @@ async function submitCopilotChat() {
   `;
   feed.appendChild(userBubble);
 
-  const activeName = document.getElementById('active-model-name')?.textContent || 'Proxima';
+  const activeName = document.getElementById('active-model-name')?.textContent || 'Perplexity';
   const aiBubble = document.createElement('div');
   aiBubble.className = 'chat-bubble ai';
   aiBubble.innerHTML = `
@@ -4076,59 +4203,53 @@ async function submitCopilotChat() {
   const currentCode = monacoEditorInstance ? monacoEditorInstance.getValue() : '';
 
   try {
-    const resp = await fetch(`${BACKEND_BASE}/api/workspace/copilot`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt: userPrompt,
-        current_file_path: activeFilePath,
-        current_file_content: currentCode,
-        model: activeAIModel,
-        project_id: ACTIVE_PROJECT_ID || 'default',
-        project_name: currentProject?.name || 'project'
-      })
+    const data = await callProximaChat(userPrompt, activeAIModel, {
+      filePath: activeFilePath,
+      fileContent: currentCode
     });
 
-    if (resp.ok) {
-      const data = await resp.json();
-      
-      // If Proxima generated files, automatically load them into file tree and open in Monaco editor!
-      if (data.created_files && data.created_files.length > 0) {
-        data.created_files.forEach(f => {
-          workspaceFilesMap[f.path] = {
-            path: f.path,
-            name: f.path.split('/').pop(),
-            content: f.content,
-            original: f.content,
-            lang: getLanguageFromFilename(f.path),
-            isDirty: false,
-            handle: null
-          };
-        });
+    const replyText = data.reply || '';
+    const extractedFiles = extractFilesFromResponse(replyText, activeFilePath, userPrompt);
+    const codeBlock = data.code || (extractedFiles.length > 0 ? extractedFiles[0].content : extractCodeBlock(replyText));
 
-        fileTreeData = buildTreeFromFlatPaths(Object.keys(workspaceFilesMap));
-        renderTreeUI(fileTreeData, currentProject?.name || 'PROJECT');
-        
-        // Open primary created file
-        const primaryFile = data.created_files[0].path;
-        openFileInEditor(primaryFile);
+    // If files were generated, automatically load into workspace & Monaco
+    if (extractedFiles.length > 0) {
+      for (const f of extractedFiles) {
+        workspaceFilesMap[f.path] = {
+          path: f.path,
+          name: f.path.split('/').pop(),
+          content: f.content,
+          original: f.content,
+          lang: getLanguageFromFilename(f.path),
+          isDirty: false,
+          handle: null
+        };
+
+        if (ACTIVE_PROJECT_ID) {
+          try {
+            await supabaseClient.from('project_files').upsert({
+              project_id: ACTIVE_PROJECT_ID,
+              path: f.path,
+              content: f.content,
+              language: workspaceFilesMap[f.path].lang
+            });
+          } catch (e) {}
+        }
       }
 
-      renderAICopilotResponse(aiBubble, data.reply, data.code, data.target_file || activeFilePath, data.created_files);
-    } else {
-      aiBubble.querySelector('.chat-body').innerHTML = `Proxima response received for: <code>${escHtml(userPrompt)}</code>.`;
+      fileTreeData = buildTreeFromFlatPaths(Object.keys(workspaceFilesMap));
+      renderTreeUI(fileTreeData, currentProject?.name || 'PROJECT');
+      openFileInEditor(extractedFiles[0].path);
     }
+
+    renderAICopilotResponse(aiBubble, replyText, codeBlock, activeFilePath, extractedFiles);
+
   } catch (err) {
     aiBubble.querySelector('.chat-body').innerHTML = `
-      <div style="color:var(--text-muted)">
-        Connected to Proxima (localhost:3210). Response received:
-      </div>
-      <div class="copilot-code-card">
-        <div class="copilot-code-header">
-          <span>${activeFilePath || 'index.html'}</span>
-          <button class="code-action-btn" onclick="copyCodeFromCard(this)">Copy</button>
-        </div>
-        <pre class="copilot-code-pre"><code>${escHtml(currentCode || '<!-- Solution generated by Proxima -->')}</code></pre>
+      <div style="color:#ef4444;font-weight:600;margin-bottom:6px">⚠️ Proxima Connection Notice</div>
+      <div style="color:var(--text-muted);font-size:12px;line-height:1.5">
+        Could not connect to Proxima at <code>http://localhost:3210</code>.<br/>
+        Please ensure the <strong>Proxima app</strong> is running on your laptop with <strong>REST API (port 3210)</strong> enabled in Settings.
       </div>
     `;
   }
