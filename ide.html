@@ -4264,6 +4264,9 @@ async function callProximaChat(userPrompt, modelId, contextFiles = {}) {
   const systemPrompt = `You are AOS Copilot, an expert AI programming assistant embedded directly inside the AOS Development Studio.
 You write clean, modular, production-ready, idiomatic code adhering to modern standards.
 You have full access to create new files, edit/update existing files, or delete files in the user's workspace.
+
+CRITICAL REQUIREMENT: When modifying an existing file, you MUST ALWAYS provide the FULL, COMPLETE content of the file. NEVER output partial code snippets, diffs, or placeholders like "// rest of the code remains the same". The developer environment overwrites the target file entirely with your output, so sending partial code will erase the user's existing code. Always output the full file from start to finish.
+
 When creating or modifying files, provide the complete code inside markdown code fences with the filename header (e.g. \`\`\`html index.html).
 If you decide a file should be deleted, explicitly respond with a message containing exactly: DELETE FILE <filename>.`;
 
@@ -4551,6 +4554,16 @@ async function submitCopilotChat() {
     // Automatically load into workspaceFilesMap and Monaco editor!
     if (extractedFiles.length > 0) {
       for (const f of extractedFiles) {
+        if (workspaceFilesMap[f.path]) {
+          const originalContent = workspaceFilesMap[f.path].content || '';
+          const containsPlaceholder = /(\/\/|\/\*|#)\s*(rest of the code|existing code|remains the same|\.\.\.|\/\*)/i.test(f.content);
+          if (containsPlaceholder && f.content.length < originalContent.length * 0.5) {
+            console.log(`Smart Guard: Blocked partial file update for ${f.path} to protect original code.`);
+            toast(`Warning: Blocked partial update for ${f.path} to protect existing code.`);
+            continue;
+          }
+        }
+
         const lang = getLanguageFromFilename(f.path);
         workspaceFilesMap[f.path] = {
           path: f.path,
