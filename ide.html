@@ -1325,6 +1325,103 @@ body.dark-theme .model-chip.active {
   box-shadow: var(--shadow-sm);
 }
 
+/* Professional File Created & Synced Card */
+.pro-file-card {
+  margin-top: 10px;
+  background: var(--bg-card);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+.pro-file-card:hover {
+  border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.12);
+}
+.pro-file-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.pro-file-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #059669;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+body.dark-theme .pro-file-badge {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.2);
+}
+.pro-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.pro-file-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.pro-file-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pro-file-meta {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+.pro-file-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.pro-file-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+.pro-file-btn.secondary {
+  background: var(--bg-chip);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+.pro-file-btn.secondary:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+
 /* Code block inside chat */
 .copilot-code-card {
   margin: 10px 0 6px;
@@ -1393,13 +1490,38 @@ body.dark-theme .copilot-code-pre {
   justify-content: space-between;
 }
 .input-model-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.input-model-selector-select {
+  font-family: inherit;
   font-size: 11.5px;
   font-weight: 600;
   color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  background: var(--bg-chip);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px 20px 3px 8px;
+  outline: none;
   cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-size: 10px;
+  transition: all 0.15s ease;
+}
+.input-model-selector-select:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--primary);
+}
+body.dark-theme .input-model-selector-select {
+  background-color: var(--bg-chip);
+  color: var(--text-secondary);
+  border-color: var(--border);
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
 }
 .copilot-textarea-row {
   display: flex;
@@ -2136,42 +2258,6 @@ body.dark-theme .opt-card-icon.outside {
       </div>
     </div>
 
-    <!-- Multi-Model Selector Bar with Official Proxima Brand Logos -->
-    <div class="model-pills-bar">
-      <!-- Perplexity (Active Provider in Proxima) -->
-      <button class="model-chip active" id="chip-perplexity" onclick="selectAIModel('perplexity')">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="#20b2aa">
-          <path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.2l6 3.8v7.9l-6 3.8-6-3.8V8l6-3.8zM11 9v6h2V9h-2z"/>
-        </svg>
-        Perplexity
-      </button>
-
-      <!-- ChatGPT / OpenAI Official Logo -->
-      <button class="model-chip" id="chip-chatgpt" onclick="selectAIModel('chatgpt')">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="#10a37f">
-          <path d="M22.28 9.82a5.98 5.98 0 0 0-.51-4.91 6.05 6.05 0 0 0-6.51-2.9A6.06 6.06 0 0 0 10.28 0a6 6 0 0 0-5.3 3.14 6.05 6.05 0 0 0-4 2.9 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .51 4.91 6.05 6.05 0 0 0 6.51 2.9A6.06 6.06 0 0 0 13.72 24a6 6 0 0 0 5.3-3.14 6.05 6.05 0 0 0 4-2.9 6.05 6.05 0 0 0-.74-7.14zM13.26 22.43a4.5 4.5 0 0 1-2.88-1.04l.14-.08 4.78-2.76a.8.8 0 0 0 .4-.68v-6.74l2.02 1.17a.07.07 0 0 1 .04.05v5.58a4.5 4.5 0 0 1-4.5 4.5zm-9.66-4.13a4.47 4.47 0 0 1-.54-3.01l.14.08 4.79 2.76a.77.77 0 0 0 .78 0l5.84-3.37v2.33a.08.08 0 0 1-.03.06L9.74 19.95a4.5 4.5 0 0 1-6.14-1.65zM2.34 7.9a4.48 4.48 0 0 1 2.37-1.98v5.69a.77.77 0 0 0 .38.68l5.82 3.35-2.02 1.17a.08.08 0 0 1-.07 0l-4.83-2.79A4.5 4.5 0 0 1 2.34 7.9zm16.6 3.85-5.84-3.37 2.02-1.17a.08.08 0 0 1 .07 0l4.83 2.79a4.5 4.5 0 0 1-.68 8.1v-5.68a.8.8 0 0 0-.4-.67zm2.01-3.02-.14-.09-4.78-2.78a.78.78 0 0 0-.78 0L9.41 9.23V6.9a.07.07 0 0 1 .03-.06l4.83-2.79a4.5 4.5 0 0 1 6.68 4.66zM8.31 12.86l-2.02-1.16a.08.08 0 0 1-.04-.06V6.07a4.5 4.5 0 0 1 7.38-3.45l-.14.08-4.78 2.76a.8.8 0 0 0-.4.68v6.72zm1.09-2.21 3.1-1.79 3.1 1.79v3.58l-3.1 1.79-3.1-1.79z"/>
-        </svg>
-        ChatGPT
-      </button>
-
-      <!-- Claude (Anthropic) Official Logo -->
-      <button class="model-chip" id="chip-claude" onclick="selectAIModel('claude')">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="#d97706">
-          <path d="M17.47 14.38l4.86 2.8-2.43 4.21-4.86-2.8V24H10.18v-5.41L5.32 21.4l-2.43-4.2 4.86-2.81-4.86-2.8 2.43-4.21 4.86 2.8V4.77h4.86v5.41l4.86-2.8 2.43 4.2-4.86 2.8z"/>
-        </svg>
-        Claude
-      </button>
-
-      <!-- Gemini (Google) Official Sparkle Logo -->
-      <button class="model-chip" id="chip-gemini" onclick="selectAIModel('gemini')">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-          <path d="M12 0C12 6.627 6.627 12 0 12c6.627 0 12 5.373 12 12 0-6.627 5.373-12 12-12-6.627 0-12-5.373-12-12z" fill="#3b82f6"/>
-          <path d="M12 3C12 7.97 7.97 12 3 12c4.97 0 9 4.03 9 9 0-4.97 4.03-9 9-9-4.97 0-9-4.03-9-9z" fill="#a855f7"/>
-        </svg>
-        Gemini
-      </button>
-    </div>
-
     <!-- Chat Message Feed -->
     <div class="copilot-feed" id="copilot-messages-feed">
       <div class="welcome-msg">
@@ -2186,37 +2272,23 @@ body.dark-theme .opt-card-icon.outside {
             <div class="welcome-msg-sub">Enterprise Multi-Model Copilot</div>
           </div>
         </div>
-
-        <div class="welcome-prompt-actions">
-          <button class="copilot-action-chip" onclick="sendQuickPrompt('Explain what the active code does line by line and identify optimizations.')">
-            <span>⚡</span>
-            <div><strong>Explain Code</strong> — Line-by-line architecture walkthrough</div>
-          </button>
-          <button class="copilot-action-chip" onclick="sendQuickPrompt('Analyze the current file for bugs, syntax errors, and edge case failures.')">
-            <span>🛠️</span>
-            <div><strong>Fix Bugs</strong> — Detect issues and generate clean fixes</div>
-          </button>
-          <button class="copilot-action-chip" onclick="sendQuickPrompt('Refactor this module to modern production standards and optimize performance.')">
-            <span>✨</span>
-            <div><strong>Refactor Code</strong> — Clean architecture and performance tuning</div>
-          </button>
-          <button class="copilot-action-chip" onclick="sendQuickPrompt('Generate comprehensive unit tests and assertions for this codebase.')">
-            <span>🧪</span>
-            <div><strong>Write Unit Tests</strong> — Automated test cases & assertions</div>
-          </button>
-        </div>
       </div>
     </div>
 
     <!-- Copilot Input Box -->
     <div class="copilot-input-box">
       <div class="input-sub-row">
-        <div class="input-model-selector" id="selected-model-pill" onclick="showMoreModels()">
-          <span id="active-model-icon">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="#20b2aa"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.2l6 3.8v7.9l-6 3.8-6-3.8V8l6-3.8zM11 9v6h2V9h-2z"/></svg>
-          </span>
-          <span id="active-model-name">Perplexity</span>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        <div class="input-model-selector">
+          <span style="font-weight: 500; font-size: 11px; margin-right: 4px; color: var(--text-muted);">Model:</span>
+          <select class="input-model-selector-select" id="model-select-dropdown" onchange="selectAIModel(this.value)">
+            <option value="perplexity">Perplexity</option>
+            <option value="chatgpt">ChatGPT</option>
+            <option value="claude">Claude</option>
+            <option value="gemini">Gemini</option>
+            <option value="deepseek">DeepSeek V3</option>
+            <option value="llama">Llama 3.3 70B</option>
+            <option value="mistral">Mistral Large</option>
+          </select>
         </div>
       </div>
       <div class="copilot-textarea-row">
@@ -3560,10 +3632,15 @@ async function openFileInEditor(path) {
   if (monacoEditorInstance) {
     let model = monacoModelsMap[path];
     if (!model) {
-      model = monaco.editor.createModel(fileData.content || '', fileData.lang);
+      model = monaco.editor.createModel(fileData.content || '', fileData.lang || getLanguageFromFilename(path));
       monacoModelsMap[path] = model;
+    } else {
+      if (fileData.content !== undefined && fileData.content !== null && model.getValue() !== fileData.content) {
+        model.setValue(fileData.content);
+      }
     }
     monacoEditorInstance.setModel(model);
+    monacoEditorInstance.layout();
   }
 
   document.getElementById('editor-welcome-screen').style.display = 'none';
@@ -3580,6 +3657,16 @@ async function openFileInEditor(path) {
 
   renderTabList();
   highlightActiveTreeItem();
+}
+
+function openFileInBrowser(path) {
+  let baseUrl = window.location.origin;
+  if (!baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1')) {
+    baseUrl = 'http://localhost:3000';
+  }
+  const url = baseUrl + '/' + path;
+  window.open(url, '_blank');
+  toast(`Opening ${path} in browser...`);
 }
 
 function renderTabList() {
@@ -3948,46 +4035,11 @@ function showAISettingsModal() {
 
 function selectAIModel(modelId) {
   activeAIModel = modelId;
-  document.querySelectorAll('.model-chip').forEach(c => c.classList.remove('active'));
-
-  const chipMap = {
-    'perplexity': 'chip-perplexity',
-    'chatgpt': 'chip-chatgpt',
-    'claude': 'chip-claude',
-    'gemini': 'chip-gemini'
-  };
-  const targetChip = document.getElementById(chipMap[modelId]);
-  if (targetChip) targetChip.classList.add('active');
-
-  const names = {
-    'perplexity': 'Perplexity',
-    'chatgpt': 'ChatGPT',
-    'claude': 'Claude',
-    'gemini': 'Gemini'
-  };
-
-  const icons = {
-    'perplexity': `<svg width="14" height="14" viewBox="0 0 24 24" fill="#20b2aa"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5zm0 2.2l6 3.8v7.9l-6 3.8-6-3.8V8l6-3.8zM11 9v6h2V9h-2z"/></svg>`,
-    'chatgpt': `<svg width="14" height="14" viewBox="0 0 24 24" fill="#10a37f"><path d="M22.28 9.82a5.98 5.98 0 0 0-.51-4.91 6.05 6.05 0 0 0-6.51-2.9A6.06 6.06 0 0 0 10.28 0a6 6 0 0 0-5.3 3.14 6.05 6.05 0 0 0-4 2.9 6.05 6.05 0 0 0 .74 7.1 5.98 5.98 0 0 0 .51 4.91 6.05 6.05 0 0 0 6.51 2.9A6.06 6.06 0 0 0 13.72 24a6 6 0 0 0 5.3-3.14 6.05 6.05 0 0 0 4-2.9 6.05 6.05 0 0 0-.74-7.14zM13.26 22.43a4.5 4.5 0 0 1-2.88-1.04l.14-.08 4.78-2.76a.8.8 0 0 0 .4-.68v-6.74l2.02 1.17a.07.07 0 0 1 .04.05v5.58a4.5 4.5 0 0 1-4.5 4.5zm-9.66-4.13a4.47 4.47 0 0 1-.54-3.01l.14.08 4.79 2.76a.77.77 0 0 0 .78 0l5.84-3.37v2.33a.08.08 0 0 1-.03.06L9.74 19.95a4.5 4.5 0 0 1-6.14-1.65zM2.34 7.9a4.48 4.48 0 0 1 2.37-1.98v5.69a.77.77 0 0 0 .38.68l5.82 3.35-2.02 1.17a.08.08 0 0 1-.07 0l-4.83-2.79A4.5 4.5 0 0 1 2.34 7.9zm16.6 3.85-5.84-3.37 2.02-1.17a.08.08 0 0 1 .07 0l4.83 2.79a4.5 4.5 0 0 1-.68 8.1v-5.68a.8.8 0 0 0-.4-.67zm2.01-3.02-.14-.09-4.78-2.78a.78.78 0 0 0-.78 0L9.41 9.23V6.9a.07.07 0 0 1 .03-.06l4.83-2.79a4.5 4.5 0 0 1 6.68 4.66zM8.31 12.86l-2.02-1.16a.08.08 0 0 1-.04-.06V6.07a4.5 4.5 0 0 1 7.38-3.45l-.14.08-4.78 2.76a.8.8 0 0 0-.4.68v6.72zm1.09-2.21 3.1-1.79 3.1 1.79v3.58l-3.1 1.79-3.1-1.79z"/></svg>`,
-    'claude': `<svg width="14" height="14" viewBox="0 0 24 24" fill="#d97706"><path d="M17.47 14.38l4.86 2.8-2.43 4.21-4.86-2.8V24H10.18v-5.41L5.32 21.4l-2.43-4.2 4.86-2.81-4.86-2.8 2.43-4.21 4.86 2.8V4.77h4.86v5.41l4.86-2.8 2.43 4.2-4.86 2.8z"/></svg>`,
-    'gemini': `<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 0C12 6.627 6.627 12 0 12c6.627 0 12 5.373 12 12 0-6.627 5.373-12 12-12-6.627 0-12-5.373-12-12z" fill="#3b82f6"/><path d="M12 3C12 7.97 7.97 12 3 12c4.97 0 9 4.03 9 9 0-4.97 4.03-9 9-9-4.97 0-9-4.03-9-9z" fill="#a855f7"/></svg>`
-  };
-
-  const nameEl = document.getElementById('active-model-name');
-  if (nameEl) nameEl.textContent = names[modelId] || modelId;
-
-  const iconEl = document.getElementById('active-model-icon');
-  if (iconEl && icons[modelId]) iconEl.innerHTML = icons[modelId];
-}
-
-function showMoreModels() {
-  const models = ['DeepSeek V3', 'Llama 3.3 70B', 'Mistral Large', 'Perplexity Sonar'];
-  const sel = prompt(`Select model:\n${models.map((m, i) => `${i+1}. ${m}`).join('\n')}\nEnter number (1-4):`, '1');
-  if (sel && models[parseInt(sel) - 1]) {
-    const chosen = models[parseInt(sel) - 1];
-    document.getElementById('active-model-name').textContent = chosen;
-    toast(`Active Model: ${chosen}`);
+  const dropdown = document.getElementById('model-select-dropdown');
+  if (dropdown && dropdown.value !== modelId) {
+    dropdown.value = modelId;
   }
+  toast(`Selected Model: ${modelId}`);
 }
 
 function startNewAIChat() {
@@ -4004,25 +4056,6 @@ function startNewAIChat() {
           <div class="welcome-msg-title">AOS Intelligence Assistant</div>
           <div class="welcome-msg-sub">Enterprise Multi-Model Copilot</div>
         </div>
-      </div>
-
-      <div class="welcome-prompt-actions">
-        <button class="copilot-action-chip" onclick="sendQuickPrompt('Explain what the active code does line by line and identify optimizations.')">
-          <span>⚡</span>
-          <div><strong>Explain Code</strong> — Line-by-line architecture walkthrough</div>
-        </button>
-        <button class="copilot-action-chip" onclick="sendQuickPrompt('Analyze the current file for bugs, syntax errors, and edge case failures.')">
-          <span>🛠️</span>
-          <div><strong>Fix Bugs</strong> — Detect issues and generate clean fixes</div>
-        </button>
-        <button class="copilot-action-chip" onclick="sendQuickPrompt('Refactor this module to modern production standards and optimize performance.')">
-          <span>✨</span>
-          <div><strong>Refactor Code</strong> — Clean architecture and performance tuning</div>
-        </button>
-        <button class="copilot-action-chip" onclick="sendQuickPrompt('Generate comprehensive unit tests and assertions for this codebase.')">
-          <span>🧪</span>
-          <div><strong>Write Unit Tests</strong> — Automated test cases & assertions</div>
-        </button>
       </div>
     </div>
   `;
@@ -4188,7 +4221,8 @@ async function submitCopilotChat() {
   `;
   feed.appendChild(userBubble);
 
-  const activeName = document.getElementById('active-model-name')?.textContent || 'Perplexity';
+  const activeDropdown = document.getElementById('model-select-dropdown');
+  const activeName = activeDropdown ? activeDropdown.options[activeDropdown.selectedIndex].text : 'Perplexity';
   const aiBubble = document.createElement('div');
   aiBubble.className = 'chat-bubble ai';
   aiBubble.innerHTML = `
@@ -4209,21 +4243,49 @@ async function submitCopilotChat() {
     });
 
     const replyText = data.reply || '';
-    const extractedFiles = extractFilesFromResponse(replyText, activeFilePath, userPrompt);
-    const codeBlock = data.code || (extractedFiles.length > 0 ? extractedFiles[0].content : extractCodeBlock(replyText));
+    let extractedFiles = extractFilesFromResponse(replyText, null, userPrompt);
 
-    // If files were generated, automatically load into workspace & Monaco
+    // Fallback code block extraction if no named fences
+    if (extractedFiles.length === 0) {
+      const code = extractCodeBlock(replyText);
+      if (code) {
+        let fn = null;
+        const promptLower = userPrompt.toLowerCase();
+        const fnMatch = userPrompt.match(/([a-zA-Z0-9_\-\.]+\.(?:html|css|js|ts|jsx|tsx|py|json|md|sql|c|cpp|java))/i);
+        if (fnMatch) {
+          fn = fnMatch[1];
+        } else if (promptLower.includes('html') || promptLower.includes('ui') || promptLower.includes('login') || promptLower.includes('page') || promptLower.includes('design') || code.includes('<!DOCTYPE') || code.includes('<html')) {
+          fn = 'index.html';
+        } else if (promptLower.includes('css') || promptLower.includes('style')) {
+          fn = 'style.css';
+        } else if (promptLower.includes('py') || promptLower.includes('python')) {
+          fn = 'app.py';
+        } else if (promptLower.includes('js') || promptLower.includes('javascript')) {
+          fn = 'script.js';
+        } else {
+          fn = activeFilePath || 'solution.txt';
+        }
+        extractedFiles.push({ path: fn, content: code });
+      }
+    }
+
+    // Automatically load into workspaceFilesMap and Monaco editor!
     if (extractedFiles.length > 0) {
       for (const f of extractedFiles) {
+        const lang = getLanguageFromFilename(f.path);
         workspaceFilesMap[f.path] = {
           path: f.path,
           name: f.path.split('/').pop(),
           content: f.content,
           original: f.content,
-          lang: getLanguageFromFilename(f.path),
+          lang: lang,
           isDirty: false,
           handle: null
         };
+
+        if (monacoModelsMap[f.path]) {
+          monacoModelsMap[f.path].setValue(f.content);
+        }
 
         if (ACTIVE_PROJECT_ID) {
           try {
@@ -4231,7 +4293,7 @@ async function submitCopilotChat() {
               project_id: ACTIVE_PROJECT_ID,
               path: f.path,
               content: f.content,
-              language: workspaceFilesMap[f.path].lang
+              language: lang
             });
           } catch (e) {}
         }
@@ -4239,10 +4301,25 @@ async function submitCopilotChat() {
 
       fileTreeData = buildTreeFromFlatPaths(Object.keys(workspaceFilesMap));
       renderTreeUI(fileTreeData, currentProject?.name || 'PROJECT');
-      openFileInEditor(extractedFiles[0].path);
+
+      const primaryFile = extractedFiles[0].path;
+      await openFileInEditor(primaryFile);
+
+      // Force Monaco to refresh model and layout
+      if (monacoEditorInstance && workspaceFilesMap[primaryFile]) {
+        let model = monacoModelsMap[primaryFile];
+        if (!model) {
+          model = monaco.editor.createModel(workspaceFilesMap[primaryFile].content, workspaceFilesMap[primaryFile].lang);
+          monacoModelsMap[primaryFile] = model;
+        } else {
+          model.setValue(workspaceFilesMap[primaryFile].content);
+        }
+        monacoEditorInstance.setModel(model);
+        monacoEditorInstance.layout();
+      }
     }
 
-    renderAICopilotResponse(aiBubble, replyText, codeBlock, activeFilePath, extractedFiles);
+    renderAICopilotResponse(aiBubble, replyText, extractedFiles);
 
   } catch (err) {
     aiBubble.querySelector('.chat-body').innerHTML = `
@@ -4257,43 +4334,54 @@ async function submitCopilotChat() {
   feed.scrollTop = feed.scrollHeight;
 }
 
-function renderAICopilotResponse(bubbleEl, replyText, codeBlock, targetFile, createdFiles) {
+function renderAICopilotResponse(bubbleEl, replyText, createdFiles) {
   let bodyHtml = '';
 
-  // 1. If files were created, render clean Action Card at top
-  if (createdFiles && createdFiles.length > 0) {
-    bodyHtml += `
-      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;padding:8px 10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:8px">
-        <div style="font-size:11.5px;font-weight:700;color:#16a34a;display:flex;align-items:center;gap:5px">
-          <span>✅</span> Created & Loaded ${createdFiles.length} file(s) into workspace:
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">
-          ${createdFiles.map(f => `
-            <button onclick="openFileInEditor('${f.path}')" style="padding:3px 8px;border-radius:4px;background:#ffffff;border:1px solid #cbd5e1;font-size:11px;font-weight:600;color:#0f172a;cursor:pointer">
-              📄 ${escHtml(f.path)}
-            </button>
-          `).join('')}
-        </div>
-      </div>
-    `;
+  // 1. Clean explanation text (removes code blocks so chat box stays clean & professional)
+  let cleanText = (replyText || '')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`([^`]+)`/g, '$1')
+    .trim();
+
+  if (!cleanText) {
+    cleanText = (createdFiles && createdFiles.length > 0)
+      ? `I've generated the requested file and loaded it directly into the Monaco Editor.`
+      : `Task completed successfully.`;
   }
 
-  // 2. Clean explanation text
-  bodyHtml += `<div style="line-height:1.55;font-size:12.5px">${escHtml(replyText).replace(/\n/g, '<br/>')}</div>`;
+  bodyHtml += `<div style="line-height:1.55;font-size:12.5px">${escHtml(cleanText).replace(/\n/g, '<br/>')}</div>`;
 
-  // 3. Code card
-  if (codeBlock) {
-    const fileLabel = targetFile ? targetFile.split('/').pop() : 'generated_code';
+  // 2. If files were created, render clean Professional File Action Card (without code clutter)
+  if (createdFiles && createdFiles.length > 0) {
     bodyHtml += `
-      <div class="copilot-code-card">
-        <div class="copilot-code-header">
-          <span>${escHtml(fileLabel)}</span>
-          <div style="display:flex;gap:6px">
-            <button class="code-action-btn" onclick="copyCodeFromCard(this)">Copy</button>
-            <button class="code-action-btn" style="color:var(--primary);font-weight:600" onclick="insertCodeIntoActiveFile(this)">Apply to Editor</button>
-          </div>
+      <div class="pro-file-card">
+        <div class="pro-file-header">
+          <span class="pro-file-badge">✨ File Created & Ready</span>
         </div>
-        <pre class="copilot-code-pre"><code>${escHtml(codeBlock)}</code></pre>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${createdFiles.map(f => {
+            const lines = (f.content || '').split('\n').length;
+            return `
+              <div class="pro-file-item">
+                <div class="pro-file-left">
+                  <span style="font-size:16px">📄</span>
+                  <div>
+                    <div class="pro-file-name">${escHtml(f.path)}</div>
+                    <div class="pro-file-meta">${lines} lines • Ready in Editor</div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:6px">
+                  <button class="pro-file-btn" onclick="openFileInEditor('${escHtml(f.path)}')">
+                    Open in Editor →
+                  </button>
+                  <button class="pro-file-btn secondary" onclick="openFileInBrowser('${escHtml(f.path)}')">
+                    Open in Browser 🌐
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
       </div>
     `;
   }
