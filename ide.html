@@ -3753,7 +3753,31 @@ function openFileInBrowser(path) {
   const ext = path.split('.').pop().toLowerCase();
   if (ext === 'html' || ext === 'htm') {
     try {
-      const blob = new Blob([fileData.content || ''], { type: 'text/html' });
+      let htmlContent = fileData.content || '';
+      
+      // Inline workspace CSS links
+      const linkRegex = /<link\s+[^>]*href=["']([^"']+\.css)["'][^>]*>/g;
+      htmlContent = htmlContent.replace(linkRegex, (match, cssPath) => {
+        const cleanPath = cssPath.replace(/^\.\//, '');
+        const cssFile = workspaceFilesMap[cleanPath];
+        if (cssFile) {
+          return `<style>${cssFile.content}</style>`;
+        }
+        return match;
+      });
+
+      // Inline workspace JS scripts
+      const scriptRegex = /<script\s+[^>]*src=["']([^"']+\.js)["'][^>]*><\/script>/g;
+      htmlContent = htmlContent.replace(scriptRegex, (match, jsPath) => {
+        const cleanPath = jsPath.replace(/^\.\//, '');
+        const jsFile = workspaceFilesMap[cleanPath];
+        if (jsFile) {
+          return `<script>${jsFile.content}</script>`;
+        }
+        return match;
+      });
+
+      const blob = new Blob([htmlContent], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
       toast(`Previewing ${path} in browser...`);
@@ -3772,10 +3796,11 @@ function openFileInBrowser(path) {
   toast(`Opening ${path} in browser...`);
 }
 
-function previewActiveFileInBrowser() {
+async function previewActiveFileInBrowser() {
   if (!activeFilePath) {
     return toast('No active file open to preview');
   }
+  await saveActiveFile();
   openFileInBrowser(activeFilePath);
 }
 
