@@ -3767,12 +3767,12 @@ function openFileInBrowser(path) {
       });
 
       // Inline workspace JS scripts
-      const scriptRegex = /<script\s+[^>]*src=["']([^"']+\.js)["'][^>]*><\/script>/g;
+      const scriptRegex = new RegExp('<script\\s+[^>]*src=["\']([^"\']+\\.js)["\'][^>]*><\\/script>', 'g');
       htmlContent = htmlContent.replace(scriptRegex, (match, jsPath) => {
         const cleanPath = jsPath.replace(/^\.\//, '');
         const jsFile = workspaceFilesMap[cleanPath];
         if (jsFile) {
-          return `<script>${jsFile.content}</script>`;
+          return '<script>' + jsFile.content + '</' + 'script>';
         }
         return match;
       });
