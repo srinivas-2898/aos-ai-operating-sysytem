@@ -576,6 +576,30 @@ body.dark-theme .user-avatar-btn {
   background: var(--bg-hover);
   color: var(--text-primary);
 }
+.tree-node:hover .tree-node-actions {
+  display: flex !important;
+}
+.tree-act-btn-inline {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  font-size: 10px;
+  font-weight: bold;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  line-height: 1;
+}
+.tree-act-btn-inline:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--accent-red);
+}
+
 .tree-node.active {
   background: var(--bg-selected);
   color: var(--primary);
@@ -3616,6 +3640,11 @@ function renderTreeUI(nodes, rootTitle) {
             ${getFileIconSvg(node.name)}
             <span>${node.name}</span>
           </div>
+          <div class="tree-node-actions" style="display:none; gap:4px; align-items:center; margin-left:auto; padding-right:6px;">
+            <button class="tree-act-btn-inline" title="Delete File" onclick="deleteFileFromWorkspace(event, '${escHtml(node.path)}')">
+              ✕
+            </button>
+          </div>
           ${isMod ? '<span class="tree-badge-m">M</span>' : ''}
         `;
 
@@ -3748,6 +3777,45 @@ function previewActiveFileInBrowser() {
     return toast('No active file open to preview');
   }
   openFileInBrowser(activeFilePath);
+}
+
+async function deleteFileFromWorkspace(event, path) {
+  if (event) event.stopPropagation();
+  
+  if (!confirm(`Are you sure you want to delete ${path}?`)) return;
+  
+  const fileData = workspaceFilesMap[path];
+  if (fileData && fileData.handle) {
+    try {
+      toast(`Deleting local file: ${path}`);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  
+  if (ACTIVE_PROJECT_ID) {
+    try {
+      await supabaseClient.from('project_files').delete().eq('project_id', ACTIVE_PROJECT_ID).eq('path', path);
+      toast(`Deleted: ${path}`);
+    } catch (e) {
+      toast(`Error deleting from database: ${e.message}`);
+    }
+  }
+  
+  delete workspaceFilesMap[path];
+  
+  openTabs = openTabs.filter(t => t !== path);
+  if (activeFilePath === path) {
+    if (openTabs.length > 0) {
+      openFileInEditor(openTabs[openTabs.length - 1]);
+    } else {
+      showEmptyWorkspaceState();
+    }
+  }
+  
+  fileTreeData = buildTreeFromFlatPaths(Object.keys(workspaceFilesMap));
+  renderTreeUI(fileTreeData, currentProject?.name || 'PROJECT');
+  renderTabList();
 }
 
 function renderTabList() {
@@ -4170,7 +4238,9 @@ async function callProximaChat(userPrompt, modelId, contextFiles = {}) {
 
   const systemPrompt = `You are AOS Copilot, an expert AI programming assistant embedded directly inside the AOS Development Studio.
 You write clean, modular, production-ready, idiomatic code adhering to modern standards.
-When creating or modifying files, provide the complete code inside markdown code fences with filename header (e.g. \`\`\`html index.html).`;
+You have full access to create new files, edit/update existing files, or delete files in the user's workspace.
+When creating or modifying files, provide the complete code inside markdown code fences with the filename header (e.g. \`\`\`html index.html).
+If you decide a file should be deleted, explicitly respond with a message containing exactly: DELETE FILE <filename>.`;
 
   let contextText = '';
   if (contextFiles.filePath) {
@@ -4504,6 +4574,16 @@ async function submitCopilotChat() {
     }
 
     renderAICopilotResponse(aiBubble, replyText, extractedFiles);
+
+    const deleteMatch = replyText.match(/DELETE FILE\s+([a-zA-Z0-9_\-\.\/]+\.[a-zA-Z0-9]+)/i);
+    if (deleteMatch) {
+      const fileToDelete = deleteMatch[1].trim();
+      if (workspaceFilesMap[fileToDelete]) {
+        setTimeout(() => {
+          deleteFileFromWorkspace(null, fileToDelete);
+        }, 1000);
+      }
+    }
 
   } catch (err) {
     aiBubble.querySelector('.chat-body').innerHTML = `
