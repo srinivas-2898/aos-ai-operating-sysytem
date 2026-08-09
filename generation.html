@@ -1235,6 +1235,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         
         let genName = 'UI Screens';
+        if (hash === 'images') genName = 'Images';
         if (hash === 'videos') genName = 'Videos';
         if (hash === 'documents') genName = 'Documents';
         if (hash === 'presentations') genName = 'Presentations';
@@ -1312,6 +1313,12 @@ document.addEventListener('DOMContentLoaded', () => {
           if (promptInput) promptInput.value = autoPrompt;
           setTimeout(() => {
             if (typeof generatePresentation === 'function') generatePresentation();
+          }, 800);
+        } else if (hash === 'images') {
+          const promptInput = document.getElementById('img-prompt');
+          if (promptInput) promptInput.value = autoPrompt;
+          setTimeout(() => {
+            if (typeof generateImage === 'function') generateImage();
           }, 800);
         }
       }

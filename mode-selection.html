@@ -1637,6 +1637,45 @@ body.dark-mode #topbar {
         </div>
       </div>
 
+      <!-- AOS AI Assistant Settings -->
+      <div class="profile-settings-card" style="margin-top: 24px;">
+        <div class="profile-card-header">
+          <h3>AOS AI Assistant Settings</h3>
+          <p>Configure the assistant's voice, speech synthesis, and welcome greeting preferences</p>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 20px;">
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <label style="display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; color: var(--text-primary); cursor: pointer;">
+              <input type="checkbox" id="settings-assistant-voice" style="width: 18px; height: 18px;">
+              <span>Enable Microphone Input (Speech Recognition)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; color: var(--text-primary); cursor: pointer;">
+              <input type="checkbox" id="settings-assistant-speech" style="width: 18px; height: 18px;">
+              <span>Enable Speech Output (Speech Synthesis)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 600; color: var(--text-primary); cursor: pointer;">
+              <input type="checkbox" id="settings-assistant-welcome" style="width: 18px; height: 18px;">
+              <span>Enable Welcome Greeting on Login</span>
+            </label>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label for="settings-assistant-lang" style="font-size: 13px; font-weight: 700; color: var(--text-primary);">Assistant Language</label>
+            <select id="settings-assistant-lang" style="box-sizing: border-box; width: 100%; padding: 10px 12px; border: 1.5px solid #dbe3ef; border-radius: 8px; background: #f8fafc; font-size: 14px; outline: none; color: #0f172a;">
+              <option value="en-US">English (United States)</option>
+              <option value="en-GB">English (United Kingdom)</option>
+              <option value="es-ES">Spanish (Spain)</option>
+              <option value="fr-FR">French (France)</option>
+              <option value="de-DE">German (Germany)</option>
+              <option value="ja-JP">Japanese (Japan)</option>
+            </select>
+            <p style="font-size: 12px; color: #64748b; margin-top: 4px;">Choose the preferred accent/dialect for the speech synthesis.</p>
+          </div>
+        </div>
+        <div class="profile-card-footer" style="margin-top: 24px;">
+          <button class="btn-primary" id="btn-save-assistant-settings">Save Assistant Preferences</button>
+        </div>
+      </div>
+
       <!-- Bottom columns (My Projects & My Deployments) -->
       <div class="settings-bottom-grid">
         <!-- My Projects -->
@@ -2606,6 +2645,8 @@ document.addEventListener('DOMContentLoaded', () => {
  </script>
 <script src="project-dashboard.js?v=project-r9"></script>
 <script src="settings-dashboard.js?v=3"></script>
+<script src="public-config.js"></script>
+<script src="aos-assistant.js"></script>
 
 <!-- USER DROPDOWN -->
 <div id="user-dropdown">

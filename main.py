@@ -198,6 +198,7 @@ from video_generator import router as video_router
 from github_oauth import router as github_router
 from ui_generator import router as ui_router
 from workspace import router as workspace_router
+from assistant import router as assistant_router
 
 app.include_router(pdf_router)
 app.include_router(ppt_router)
@@ -207,6 +208,8 @@ app.include_router(video_router)
 app.include_router(github_router)
 app.include_router(ui_router)
 app.include_router(workspace_router)
+app.include_router(assistant_router)
+
 
 # Preserve the existing AOS chat, image, document, and presentation API routes.
 from app import app as aos_api
