@@ -18,9 +18,21 @@ def cfg(name):
     value = os.getenv(name)
     if not value: raise HTTPException(503, f"{name} is not configured on the server.")
     return value
-def service_headers(): return {"apikey": cfg("SUPABASE_SERVICE_ROLE_KEY"), "Authorization": f"Bearer {cfg('SUPABASE_SERVICE_ROLE_KEY')}", "Content-Type":"application/json"}
-def rest(path, method="GET", payload=None, params=None, extra_headers=None):
-    headers=service_headers(); headers.update(extra_headers or {})
+def service_headers(token=None):
+    service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    if service_key:
+        return {"apikey": service_key, "Authorization": f"Bearer {service_key}", "Content-Type":"application/json"}
+    
+    anon_key = cfg("SUPABASE_ANON_KEY")
+    headers = {"apikey": anon_key, "Content-Type":"application/json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    else:
+        headers["Authorization"] = f"Bearer {anon_key}"
+    return headers
+
+def rest(path, method="GET", payload=None, params=None, extra_headers=None, token=None):
+    headers=service_headers(token); headers.update(extra_headers or {})
     response = requests.request(method, f"{cfg('SUPABASE_URL').rstrip('/')}/rest/v1/{path}", headers=headers, json=payload, params=params, timeout=30)
     if not response.ok:
         try: detail = response.json().get("message") or response.json().get("hint") or response.text
@@ -56,23 +68,24 @@ def current_user(request: Request):
     response=requests.get(f"{cfg('SUPABASE_URL').rstrip('/')}/auth/v1/user",headers={"Authorization":f"Bearer {token}","apikey":cfg('SUPABASE_ANON_KEY')},timeout=20)
     if not response.ok: raise HTTPException(401,"Invalid Supabase session.")
     return response.json()["id"]
-def owned_project(user_id, project_id):
-    data=rest("projects",params={"id":f"eq.{project_id}","user_id":f"eq.{user_id}","select":"id,name"})
+def owned_project(user_id, project_id, token=None):
+    data=rest("projects",params={"id":f"eq.{project_id}","user_id":f"eq.{user_id}","select":"id,name"}, token=token)
     if not data: raise HTTPException(404,"Project not found.")
     return data[0]
-def connection(user_id):
-    rows=rest("github_connections",params={"user_id":f"eq.{user_id}","select":"*"})
+def connection(user_id, token=None):
+    rows=rest("github_connections",params={"user_id":f"eq.{user_id}","select":"*"}, token=token)
     if not rows: raise HTTPException(409,"Connect GitHub before using repositories.")
     return rows[0]
-def repository(user_id, project_id):
-    rows=rest("github_repositories",params={"project_id":f"eq.{project_id}","user_id":f"eq.{user_id}","select":"*"})
+def repository(user_id, project_id, token=None):
+    rows=rest("github_repositories",params={"project_id":f"eq.{project_id}","user_id":f"eq.{user_id}","select":"*"}, token=token)
     if not rows: raise HTTPException(404,"No GitHub repository is linked to this project.")
     return rows[0]
 
 @router.post("/connect")
 def connect(body: ConnectRequest, request: Request):
     user=current_user(request)
-    if body.project_id: owned_project(user,body.project_id)
+    token=request.headers.get("authorization","").replace("Bearer ","") or None
+    if body.project_id: owned_project(user,body.project_id,token=token)
     callback=cfg("GITHUB_OAUTH_REDIRECT_URI")
     oauth_state=state({"user":user,"project":body.project_id,"exp":time.time()+600})
     url=f"https://github.com/login/oauth/authorize?client_id={cfg('GITHUB_CLIENT_ID')}&redirect_uri={callback}&scope=read:user%20repo&state={oauth_state}"
@@ -94,14 +107,17 @@ def callback(code: str, state: str):
 
 @router.get("/status")
 def status(project_id: str, request: Request):
-    user=current_user(request); owned_project(user,project_id); conn=connection(user)
-    repo=rest("github_repositories",params={"project_id":f"eq.{project_id}","select":"*"})
+    user=current_user(request)
+    token=request.headers.get("authorization","").replace("Bearer ","") or None
+    owned_project(user,project_id,token=token); conn=connection(user,token=token)
+    repo=rest("github_repositories",params={"project_id":f"eq.{project_id}","select":"*"},token=token)
     return {"connected":True,"username":conn["github_username"],"avatar":conn.get("github_avatar"),"repository":repo[0] if repo else None}
 
 @router.get("/connection")
 def connection_details(request: Request):
     user = current_user(request)
-    conn = connection(user)
+    token=request.headers.get("authorization","").replace("Bearer ","") or None
+    conn = connection(user,token=token)
     return {
         "connected": True,
         "username": conn["github_username"],
@@ -111,35 +127,45 @@ def connection_details(request: Request):
 
 @router.post("/repositories")
 def create_repository(body: RepositoryRequest, request: Request):
-    user=current_user(request); project=owned_project(user,body.project_id); token=decrypt(connection(user)["access_token"])
+    user=current_user(request)
+    token=request.headers.get("authorization","").replace("Bearer ","") or None
+    project=owned_project(user,body.project_id,token=token); conn=connection(user,token=token); token_gh=decrypt(conn["access_token"])
     name=body.name or "-".join(char.lower() if char.isalnum() else "-" for char in project["name"]).strip("-")[:100]
-    repo=github("POST","/user/repos",token,{"name":name,"description":body.description or "","private":body.private,"auto_init":body.auto_init,"gitignore_template":body.gitignore_template,"license_template":body.license_template})
+    repo=github("POST","/user/repos",token_gh,{"name":name,"description":body.description or "","private":body.private,"auto_init":body.auto_init,"gitignore_template":body.gitignore_template,"license_template":body.license_template})
     data={"project_id":body.project_id,"user_id":user,"repository_id":repo["id"],"repository_name":repo["name"],"repository_url":repo["html_url"],"default_branch":repo.get("default_branch","main"),"clone_url":repo.get("clone_url"),"ssh_url":repo.get("ssh_url")}
-    rest("github_repositories?on_conflict=project_id","POST",data,extra_headers={"Prefer":"resolution=merge-duplicates,return=representation"}); return data
+    rest("github_repositories?on_conflict=project_id","POST",data,extra_headers={"Prefer":"resolution=merge-duplicates,return=representation"},token=token); return data
 
 @router.post("/repositories/rename")
 def rename_repository(body: RenameRequest, request: Request):
-    user=current_user(request); owned_project(user,body.project_id); repo=repository(user,body.project_id); token=decrypt(connection(user)["access_token"])
-    owner=connection(user)["github_username"]; updated=github("PATCH",f"/repos/{owner}/{repo['repository_name']}",token,{"name":body.name})
-    rest("github_repositories", "PATCH", {"repository_name":updated["name"],"repository_url":updated["html_url"]}, {"id":f"eq.{repo['id']}"}); return {"name":updated["name"],"url":updated["html_url"]}
+    user=current_user(request)
+    token=request.headers.get("authorization","").replace("Bearer ","") or None
+    owned_project(user,body.project_id,token=token); repo=repository(user,body.project_id,token=token); conn=connection(user,token=token); token_gh=decrypt(conn["access_token"])
+    owner=conn["github_username"]; updated=github("PATCH",f"/repos/{owner}/{repo['repository_name']}",token_gh,{"name":body.name})
+    rest("github_repositories", "PATCH", {"repository_name":updated["name"],"repository_url":updated["html_url"]}, {"id":f"eq.{repo['id']}"}, token=token); return {"name":updated["name"],"url":updated["html_url"]}
 
 @router.delete("/repositories")
 def delete_repository(project_id: str, request: Request):
-    user=current_user(request); owned_project(user,project_id); repo=repository(user,project_id); token=decrypt(connection(user)["access_token"]); owner=connection(user)["github_username"]
-    github("DELETE",f"/repos/{owner}/{repo['repository_name']}",token); rest("github_repositories","DELETE",params={"id":f"eq.{repo['id']}"}); return {"ok":True}
+    user=current_user(request)
+    token=request.headers.get("authorization","").replace("Bearer ","") or None
+    owned_project(user,project_id,token=token); repo=repository(user,project_id,token=token); conn=connection(user,token=token); token_gh=decrypt(conn["access_token"]); owner=conn["github_username"]
+    github("DELETE",f"/repos/{owner}/{repo['repository_name']}",token_gh); rest("github_repositories","DELETE",params={"id":f"eq.{repo['id']}"},token=token); return {"ok":True}
 
 @router.post("/push")
 def push_changes(body: CommitRequest, request: Request):
-    user=current_user(request); owned_project(user,body.project_id); repo=repository(user,body.project_id); token=decrypt(connection(user)["access_token"]); owner=connection(user)["github_username"]
-    files=rest("project_files",params={"project_id":f"eq.{body.project_id}","select":"path,content"})
+    user=current_user(request)
+    token=request.headers.get("authorization","").replace("Bearer ","") or None
+    owned_project(user,body.project_id,token=token); repo=repository(user,body.project_id,token=token); conn=connection(user,token=token); token_gh=decrypt(conn["access_token"]); owner=conn["github_username"]
+    files=rest("project_files",params={"project_id":f"eq.{body.project_id}","select":"path,content"},token=token)
     pushed=0
     for file in files:
-        path=file["path"].lstrip("/"); existing=requests.get(f"{GH_API}/repos/{owner}/{repo['repository_name']}/contents/{path}",headers={"Authorization":f"Bearer {token}","Accept":"application/vnd.github+json"},timeout=30)
+        path=file["path"].lstrip("/"); existing=requests.get(f"{GH_API}/repos/{owner}/{repo['repository_name']}/contents/{path}",headers={"Authorization":f"Bearer {token_gh}","Accept":"application/vnd.github+json"},timeout=30)
         payload={"message":body.message,"content":base64.b64encode(file.get("content","").encode()).decode(),"branch":repo["default_branch"]}
         if existing.ok: payload["sha"]=existing.json().get("sha")
-        github("PUT",f"/repos/{owner}/{repo['repository_name']}/contents/{path}",token,payload); pushed+=1
+        github("PUT",f"/repos/{owner}/{repo['repository_name']}/contents/{path}",token_gh,payload); pushed+=1
     return {"ok":True,"files_pushed":pushed}
 
 @router.post("/disconnect")
 def disconnect(request: Request):
-    user=current_user(request); rest("github_connections", "DELETE", params={"user_id":f"eq.{user}"}); return {"ok":True}
+    user=current_user(request)
+    token=request.headers.get("authorization","").replace("Bearer ","") or None
+    rest("github_connections", "DELETE", params={"user_id":f"eq.{user}"},token=token); return {"ok":True}

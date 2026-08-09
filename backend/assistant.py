@@ -21,16 +21,30 @@ def cfg(name: str) -> str:
     return value
 
 
-def service_headers() -> Dict[str, str]:
-    return {
-        "apikey": cfg("SUPABASE_SERVICE_ROLE_KEY"),
-        "Authorization": f"Bearer {cfg('SUPABASE_SERVICE_ROLE_KEY')}",
+def service_headers(token: Optional[str] = None) -> Dict[str, str]:
+    service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    if service_key:
+        return {
+            "apikey": service_key,
+            "Authorization": f"Bearer {service_key}",
+            "Content-Type": "application/json"
+        }
+    
+    # Fallback to user session token and anon key
+    anon_key = cfg("SUPABASE_ANON_KEY")
+    headers = {
+        "apikey": anon_key,
         "Content-Type": "application/json"
     }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    else:
+        headers["Authorization"] = f"Bearer {anon_key}"
+    return headers
 
 
-def rest(path: str, method: str = "GET", payload: Any = None, params: Any = None, extra_headers: Any = None) -> Any:
-    headers = service_headers()
+def rest(path: str, method: str = "GET", payload: Any = None, params: Any = None, extra_headers: Any = None, token: Optional[str] = None) -> Any:
+    headers = service_headers(token)
     if extra_headers:
         headers.update(extra_headers)
     
@@ -66,8 +80,8 @@ def current_user(request: Request) -> str:
     return response.json()["id"]
 
 
-def verify_project_ownership(user_id: str, project_id: str) -> Dict[str, Any]:
-    rows = rest("projects", params={"id": f"eq.{project_id}", "user_id": f"eq.{user_id}", "select": "*"})
+def verify_project_ownership(user_id: str, project_id: str, token: Optional[str] = None) -> Dict[str, Any]:
+    rows = rest("projects", params={"id": f"eq.{project_id}", "user_id": f"eq.{user_id}", "select": "*"}, token=token)
     if not rows:
         raise HTTPException(403, "Access denied. You do not own this project workspace.")
     return rows[0]
@@ -187,6 +201,7 @@ class AssistantActionRequest(BaseModel):
 @router.post("/message")
 async def assistant_message(body: AssistantMessageRequest, request: Request):
     user_id = current_user(request)
+    token = request.headers.get("authorization", "").replace("Bearer ", "") or None
     
     # 1. Collect Project context if project_id is active
     project_ctx = None
@@ -196,7 +211,7 @@ async def assistant_message(body: AssistantMessageRequest, request: Request):
     
     if body.project_id:
         try:
-            project_info = verify_project_ownership(user_id, body.project_id)
+            project_info = verify_project_ownership(user_id, body.project_id, token=token)
             project_ctx = {
                 "id": project_info["id"],
                 "name": project_info["name"],
@@ -213,7 +228,8 @@ async def assistant_message(body: AssistantMessageRequest, request: Request):
                         "session_id": f"eq.{body.chat_id}",
                         "order": "created_at.desc",
                         "limit": "10"
-                    }
+                    },
+                    token=token
                 )
             
             # Fetch project deployments
@@ -223,7 +239,8 @@ async def assistant_message(body: AssistantMessageRequest, request: Request):
                     "project_id": f"eq.{body.project_id}",
                     "order": "updated_at.desc",
                     "limit": "2"
-                }
+                },
+                token=token
             )
 
             # Fetch project unified generations
@@ -233,7 +250,8 @@ async def assistant_message(body: AssistantMessageRequest, request: Request):
                     "project_id": f"eq.{body.project_id}",
                     "order": "created_at.desc",
                     "limit": "5"
-                }
+                },
+                token=token
             )
         except HTTPException as e:
             # If ownership query fails, we continue without project context to allow normal conversation
@@ -351,7 +369,7 @@ User Prompt: "{body.message}"
         action = response_json.get("action")
         if action and action.get("project_id"):
             # Ensure the user actually owns the project they are targeting
-            verify_project_ownership(user_id, action["project_id"])
+            verify_project_ownership(user_id, action["project_id"], token=token)
         
         # Auto-set project_required if action needs a project but none is active
         if action and action.get("type") in PROJECT_SCOPED_INTENTS and not body.project_id:
@@ -372,6 +390,7 @@ User Prompt: "{body.message}"
 async def assistant_action(body: AssistantActionRequest, request: Request):
     """Executes a backed action requested by the assistant (e.g., project modifications)."""
     user_id = current_user(request)
+    token = request.headers.get("authorization", "").replace("Bearer ", "") or None
     
     # 1. Project creation
     if body.action_type == "CREATE_PROJECT":
@@ -390,7 +409,8 @@ async def assistant_action(body: AssistantActionRequest, request: Request):
                 "programming_language": body.payload.get("language") or "Python",
                 "framework": body.payload.get("framework") or "FastAPI"
             },
-            extra_headers={"Prefer": "return=representation"}
+            extra_headers={"Prefer": "return=representation"},
+            token=token
         )
         return {"success": True, "project": new_project[0] if new_project else {}}
         
@@ -400,13 +420,14 @@ async def assistant_action(body: AssistantActionRequest, request: Request):
             raise HTTPException(400, "Project ID is required for deletion.")
         
         # Verify ownership
-        verify_project_ownership(user_id, body.project_id)
+        verify_project_ownership(user_id, body.project_id, token=token)
         
         # Perform deletion
         rest(
             "projects",
             method="DELETE",
-            params={"id": f"eq.{body.project_id}"}
+            params={"id": f"eq.{body.project_id}"},
+            token=token
         )
         return {"success": True, "message": "Project deleted successfully."}
         
@@ -417,13 +438,15 @@ async def assistant_action(body: AssistantActionRequest, request: Request):
 async def list_user_projects(request: Request):
     """Returns all projects belonging to the authenticated user, for voice readout."""
     user_id = current_user(request)
+    token = request.headers.get("authorization", "").replace("Bearer ", "") or None
     rows = rest(
         "projects",
         params={
             "user_id": f"eq.{user_id}",
             "select": "id,name,description",
             "order": "last_opened_at.desc.nullslast"
-        }
+        },
+        token=token
     )
     # Filter out soft-deleted projects
     projects = [r for r in (rows or []) if not (r.get("description") or "").startswith("[DELETED]")]
@@ -433,7 +456,8 @@ async def list_user_projects(request: Request):
 @router.get("/preferences")
 async def get_preferences(request: Request):
     user_id = current_user(request)
-    rows = rest("assistant_preferences", params={"user_id": f"eq.{user_id}", "select": "*"})
+    token = request.headers.get("authorization", "").replace("Bearer ", "") or None
+    rows = rest("assistant_preferences", params={"user_id": f"eq.{user_id}", "select": "*"}, token=token)
     if not rows:
         # Create default
         new_row = rest(
@@ -446,7 +470,8 @@ async def get_preferences(request: Request):
                 "welcome_enabled": True,
                 "preferred_language": "en-US"
             },
-            extra_headers={"Prefer": "return=representation"}
+            extra_headers={"Prefer": "return=representation"},
+            token=token
         )
         return new_row[0] if new_row else {}
     return rows[0]
@@ -455,6 +480,7 @@ async def get_preferences(request: Request):
 @router.put("/preferences")
 async def update_preferences(body: PreferencesRequest, request: Request):
     user_id = current_user(request)
+    token = request.headers.get("authorization", "").replace("Bearer ", "") or None
     rows = rest(
         "assistant_preferences",
         method="POST",
@@ -465,6 +491,7 @@ async def update_preferences(body: PreferencesRequest, request: Request):
             "welcome_enabled": body.welcome_enabled,
             "preferred_language": body.preferred_language
         },
-        extra_headers={"Prefer": "resolution=merge-duplicates,return=representation"}
+        extra_headers={"Prefer": "resolution=merge-duplicates,return=representation"},
+        token=token
     )
     return rows[0] if rows else {}
