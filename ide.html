@@ -757,6 +757,13 @@ body.dark-theme .user-avatar-btn {
 .editor-act-btn.run-btn:hover {
   background: var(--primary-light);
 }
+.editor-act-btn.preview-btn {
+  color: var(--accent-green);
+}
+.editor-act-btn.preview-btn:hover {
+  background: rgba(16, 185, 129, 0.12);
+}
+
 
 /* Breadcrumbs */
 .breadcrumbs-bar {
@@ -2101,6 +2108,9 @@ body.dark-theme .opt-card-icon.outside {
       <div class="editor-top-actions">
         <button class="editor-act-btn run-btn" title="Run Current File (F5)" onclick="runCode()">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </button>
+        <button class="editor-act-btn preview-btn" title="Preview in Browser" onclick="previewActiveFileInBrowser()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         </button>
         <button class="editor-act-btn" title="Split Editor" onclick="toast('Editor split side-by-side')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
@@ -3660,6 +3670,22 @@ async function openFileInEditor(path) {
 }
 
 function openFileInBrowser(path) {
+  const fileData = workspaceFilesMap[path];
+  if (!fileData) return toast('File not found in workspace');
+
+  const ext = path.split('.').pop().toLowerCase();
+  if (ext === 'html' || ext === 'htm') {
+    try {
+      const blob = new Blob([fileData.content || ''], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      toast(`Previewing ${path} in browser...`);
+      return;
+    } catch (e) {
+      console.error('Blob preview failed:', e);
+    }
+  }
+
   let baseUrl = window.location.origin;
   if (!baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1')) {
     baseUrl = 'http://localhost:3000';
@@ -3667,6 +3693,13 @@ function openFileInBrowser(path) {
   const url = baseUrl + '/' + path;
   window.open(url, '_blank');
   toast(`Opening ${path} in browser...`);
+}
+
+function previewActiveFileInBrowser() {
+  if (!activeFilePath) {
+    return toast('No active file open to preview');
+  }
+  openFileInBrowser(activeFilePath);
 }
 
 function renderTabList() {
