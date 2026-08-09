@@ -2532,6 +2532,7 @@ let workspaceFilesMap = {}; // { 'path': { path, name, content, lang, isDirty, h
 let fileTreeData = [];
 let openTabs = [];
 let activeFilePath = null;
+let fileHistoryBackup = {};
 
 /* ── MULTI-SESSION XTERM.JS TERMINAL ENGINE ── */
 let terminalSessions = [];
@@ -3843,6 +3844,50 @@ async function deleteFileFromWorkspace(event, path) {
   renderTabList();
 }
 
+async function restorePreviousFileContent(path, cardId) {
+  const backup = fileHistoryBackup[cardId]?.[path];
+  if (backup === undefined) {
+    return toast('No backup found to restore');
+  }
+  
+  workspaceFilesMap[path].content = backup;
+  workspaceFilesMap[path].original = backup;
+  workspaceFilesMap[path].isDirty = false;
+  
+  if (monacoModelsMap[path]) {
+    monacoModelsMap[path].setValue(backup);
+  }
+  
+  if (ACTIVE_PROJECT_ID) {
+    try {
+      await supabaseClient.from('project_files').upsert({
+        project_id: ACTIVE_PROJECT_ID,
+        path: path,
+        content: backup,
+        language: workspaceFilesMap[path].lang
+      });
+    } catch (e) {
+      console.error('Database restore error:', e);
+    }
+  }
+  
+  toast(`Restored previous version of ${path}`);
+  
+  const btnId = `restore-btn-${cardId}-${btoa(path).replace(/=/g, '')}`;
+  const btn = document.getElementById(btnId);
+  if (btn) {
+    btn.textContent = 'Restored ✓';
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+    btn.style.cursor = 'default';
+  }
+  
+  renderTabList();
+  fileTreeData = buildTreeFromFlatPaths(Object.keys(workspaceFilesMap));
+  renderTreeUI(fileTreeData, currentProject?.name || 'PROJECT');
+}
+
+
 function renderTabList() {
   const list = document.getElementById('editor-tab-list');
   list.innerHTML = '';
@@ -4491,6 +4536,8 @@ async function submitCopilotChat() {
   const activeDropdown = document.getElementById('model-select-dropdown');
   const activeName = activeDropdown ? activeDropdown.options[activeDropdown.selectedIndex].text : 'Perplexity';
   const aiBubble = document.createElement('div');
+  const cardId = `ai-card-${Date.now()}`;
+  aiBubble.id = cardId;
   aiBubble.className = 'chat-bubble ai';
   aiBubble.innerHTML = `
     <div class="chat-sender">Proxima ${escHtml(activeName)}</div>
@@ -4553,9 +4600,12 @@ async function submitCopilotChat() {
 
     // Automatically load into workspaceFilesMap and Monaco editor!
     if (extractedFiles.length > 0) {
+      fileHistoryBackup[cardId] = {};
       for (const f of extractedFiles) {
         if (workspaceFilesMap[f.path]) {
           const originalContent = workspaceFilesMap[f.path].content || '';
+          fileHistoryBackup[cardId][f.path] = originalContent;
+
           const containsPlaceholder = /(\/\/|\/\*|#)\s*(rest of the code|existing code|remains the same|\.\.\.|\/\*)/i.test(f.content);
           if (containsPlaceholder && f.content.length < originalContent.length * 0.5) {
             console.log(`Smart Guard: Blocked partial file update for ${f.path} to protect original code.`);
@@ -4637,9 +4687,9 @@ async function submitCopilotChat() {
 }
 
 function renderAICopilotResponse(bubbleEl, replyText, createdFiles) {
+  const cardId = bubbleEl.id;
   let bodyHtml = '';
 
-  // 1. Clean explanation text (removes code blocks so chat box stays clean & professional)
   let cleanText = (replyText || '')
     .replace(/```[\s\S]*?```/g, '')
     .replace(/`([^`]+)`/g, '$1')
@@ -4653,7 +4703,6 @@ function renderAICopilotResponse(bubbleEl, replyText, createdFiles) {
 
   bodyHtml += `<div style="line-height:1.55;font-size:12.5px">${escHtml(cleanText).replace(/\n/g, '<br/>')}</div>`;
 
-  // 2. If files were created, render clean Professional File Action Card (without code clutter)
   if (createdFiles && createdFiles.length > 0) {
     bodyHtml += `
       <div class="pro-file-card">
@@ -4663,6 +4712,11 @@ function renderAICopilotResponse(bubbleEl, replyText, createdFiles) {
         <div style="display:flex;flex-direction:column;gap:8px">
           ${createdFiles.map(f => {
             const lines = (f.content || '').split('\n').length;
+            const hasBackup = fileHistoryBackup[cardId] && (fileHistoryBackup[cardId][f.path] !== undefined);
+            const restoreBtnHtml = hasBackup 
+              ? `<button class="pro-file-btn secondary" id="restore-btn-${cardId}-${btoa(f.path).replace(/=/g, '')}" onclick="restorePreviousFileContent('${escHtml(f.path)}', '${cardId}')">Restore ↺</button>` 
+              : '';
+
             return `
               <div class="pro-file-item">
                 <div class="pro-file-left">
@@ -4673,6 +4727,7 @@ function renderAICopilotResponse(bubbleEl, replyText, createdFiles) {
                   </div>
                 </div>
                 <div style="display:flex;gap:6px">
+                  ${restoreBtnHtml}
                   <button class="pro-file-btn" onclick="openFileInEditor('${escHtml(f.path)}')">
                     Open in Editor →
                   </button>
