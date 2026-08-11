@@ -1,15 +1,54 @@
 {
   "name": "aos-ai-operating-system",
   "version": "1.0.0",
+  "main": "electron-main.js",
   "scripts": {
     "dev": "serve .",
     "start": "serve .",
-    "backend": "python main.py"
+    "backend": "python main.py",
+    "electron": "electron .",
+    "package": "npx @electron/packager . AOS --platform=win32 --arch=x64 --out=dist --overwrite --icon=help_icon.png --extra-resource=dist-backend/main --ignore=\"(dist-backend|dist|backend|__pycache__|scratch|\\.env|\\.git|.*\\.py$|.*\\.sql$|.*\\.txt$|Dockerfile|nixpacks\\.toml)\""
   },
   "dependencies": {
     "firebase": "^12.16.0",
     "puppeteer": "^25.4.0",
     "run": "^1.5.0",
     "serve": "^14.2.4"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.2.1",
+    "electron": "^43.3.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.aos.ai-operating-system",
+    "productName": "AOS — AI Operating System IDE",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "help_icon.png"
+    },
+    "extraResources": [
+      {
+        "from": "dist-backend/main",
+        "to": "backend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "files": [
+      "**/*",
+      "!dist-backend/**",
+      "!dist/**",
+      "!node_modules/**",
+      "!backend/**",
+      "!*.py",
+      "!requirements.txt",
+      "!Dockerfile",
+      "!*.sql"
+    ]
   }
 }

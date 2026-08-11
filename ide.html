@@ -4009,8 +4009,12 @@ async function deleteFileFromWorkspace(event, path) {
   
   if (ACTIVE_PROJECT_ID) {
     try {
-      await supabaseClient.from('project_files').delete().eq('project_id', ACTIVE_PROJECT_ID).eq('path', path);
-      toast(`Deleted: ${path}`);
+      const { error } = await supabaseClient.from('project_files').delete().eq('project_id', ACTIVE_PROJECT_ID).eq('path', path);
+      if (error) {
+        toast(`Error deleting from database: ${error.message}`);
+      } else {
+        toast(`Deleted: ${path}`);
+      }
     } catch (e) {
       toast(`Error deleting from database: ${e.message}`);
     }
@@ -4048,12 +4052,15 @@ async function restorePreviousFileContent(path, cardId) {
   
   if (ACTIVE_PROJECT_ID) {
     try {
-      await supabaseClient.from('project_files').upsert({
+      const { error } = await supabaseClient.from('project_files').upsert({
         project_id: ACTIVE_PROJECT_ID,
         path: path,
         content: backup,
         language: workspaceFilesMap[path].lang
-      });
+      }, { onConflict: 'project_id,path' });
+      if (error) {
+        console.error('Database restore error:', error);
+      }
     } catch (e) {
       console.error('Database restore error:', e);
     }
@@ -4149,13 +4156,17 @@ async function saveActiveFile() {
     }
   } else if (ACTIVE_PROJECT_ID) {
     try {
-      await supabaseClient.from('project_files').upsert({
+      const { error } = await supabaseClient.from('project_files').upsert({
         project_id: ACTIVE_PROJECT_ID,
         path: activeFilePath,
         content: content,
         language: fileData.lang
-      });
-      toast(`Saved: ${fileData.name}`);
+      }, { onConflict: 'project_id,path' });
+      if (error) {
+        toast('Cloud save error: ' + error.message);
+      } else {
+        toast(`Saved: ${fileData.name}`);
+      }
     } catch (e) {
       toast('Cloud save error: ' + e.message);
     }
@@ -4185,12 +4196,19 @@ async function promptNewFile() {
   openFileInEditor(path);
 
   if (ACTIVE_PROJECT_ID) {
-    await supabaseClient.from('project_files').upsert({
-      project_id: ACTIVE_PROJECT_ID,
-      path: path,
-      content: '',
-      language: workspaceFilesMap[path].lang
-    });
+    try {
+      const { error } = await supabaseClient.from('project_files').upsert({
+        project_id: ACTIVE_PROJECT_ID,
+        path: path,
+        content: '',
+        language: workspaceFilesMap[path].lang
+      }, { onConflict: 'project_id,path' });
+      if (error) {
+        console.error('Database create error:', error);
+      }
+    } catch (e) {
+      console.error('Database create error:', e);
+    }
   }
 
   toast(`Created: ${path}`);
@@ -5014,13 +5032,18 @@ async function submitCopilotChat() {
 
         if (ACTIVE_PROJECT_ID) {
           try {
-            await supabaseClient.from('project_files').upsert({
+            const { error } = await supabaseClient.from('project_files').upsert({
               project_id: ACTIVE_PROJECT_ID,
               path: f.path,
               content: f.content,
               language: lang
-            });
-          } catch (e) {}
+            }, { onConflict: 'project_id,path' });
+            if (error) {
+              console.error('Database save error:', error);
+            }
+          } catch (e) {
+            console.error('Database save error:', e);
+          }
         }
 
         successfulFiles.push(f);
