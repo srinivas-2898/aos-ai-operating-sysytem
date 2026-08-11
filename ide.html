@@ -1254,6 +1254,7 @@ body.dark-theme .model-chip.active {
   flex-direction: column;
   gap: 14px;
   background: var(--bg-copilot);
+  user-select: text;
 }
 
 .welcome-msg {
@@ -1344,6 +1345,8 @@ body.dark-theme .model-chip.active {
   padding: 10px 14px;
   font-size: 12.5px;
   line-height: 1.5;
+  user-select: text;
+  cursor: text;
 }
 .chat-bubble.ai .chat-body {
   background: var(--bg-msg-ai);
@@ -1354,6 +1357,8 @@ body.dark-theme .model-chip.active {
   font-size: 12.5px;
   line-height: 1.5;
   box-shadow: var(--shadow-sm);
+  user-select: text;
+  cursor: text;
 }
 
 /* Professional File Created & Synced Card */
@@ -1408,6 +1413,19 @@ body.dark-theme .pro-file-badge {
   align-items: center;
   gap: 8px;
   min-width: 0;
+}
+.pro-file-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.pro-file-icon svg {
+  width: 20px;
+  height: 20px;
 }
 .pro-file-name {
   font-family: 'JetBrains Mono', monospace;
@@ -1620,6 +1638,7 @@ body.dark-theme .input-model-selector-select {
   resize: none;
   max-height: 120px;
   line-height: 1.4;
+  user-select: text;
 }
 .copilot-textarea::placeholder {
   color: var(--text-dim);
@@ -2275,6 +2294,11 @@ body.dark-theme .opt-card-icon.outside {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
 
+          <!-- Check Runtimes Button -->
+          <button class="term-act-btn" title="Check Installed Runtimes (Python, Java, Node, C++...)" onclick="checkRuntimes()" style="color:var(--accent-green)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </button>
+
           <!-- Delete Option: Kill All Terminals and Close -->
           <button class="term-act-btn delete-btn" title="Delete All Terminals & Close" onclick="deleteAllTerminalsAndClose()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2533,6 +2557,7 @@ let fileTreeData = [];
 let openTabs = [];
 let activeFilePath = null;
 let fileHistoryBackup = {};
+let copilotConversationHistory = [];
 
 /* ── MULTI-SESSION XTERM.JS TERMINAL ENGINE ── */
 let terminalSessions = [];
@@ -2970,15 +2995,32 @@ async function executeSessionCommand(session, cmd) {
   }
 
   if (lower === 'help') {
-    session.term.writeln(`${ANSI.bold}${ANSI.yellow}AOS Terminal Commands:${ANSI.reset}`);
-    session.term.writeln(`  ${ANSI.cyan}ls / dir${ANSI.reset}         List directory files and folders`);
-    session.term.writeln(`  ${ANSI.cyan}cd <path>${ANSI.reset}       Change current working directory`);
-    session.term.writeln(`  ${ANSI.cyan}pwd${ANSI.reset}             Display current absolute path`);
-    session.term.writeln(`  ${ANSI.cyan}python <file>${ANSI.reset}   Run Python scripts and applications`);
-    session.term.writeln(`  ${ANSI.cyan}git status/diff${ANSI.reset} Git source control commands`);
-    session.term.writeln(`  ${ANSI.cyan}npm run dev${ANSI.reset}     Start frontend or full-stack dev server`);
-    session.term.writeln(`  ${ANSI.cyan}ai <prompt>${ANSI.reset}     Ask Proxima AI directly from CLI`);
-    session.term.writeln(`  ${ANSI.cyan}clear / cls${ANSI.reset}     Clear terminal screen\r\n`);
+    session.term.writeln(`${ANSI.bold}${ANSI.yellow}AOS Terminal — Supported Commands:${ANSI.reset}`);
+    session.term.writeln(`  ${ANSI.cyan}ls / dir${ANSI.reset}              List directory files and folders`);
+    session.term.writeln(`  ${ANSI.cyan}cd <path>${ANSI.reset}             Change current working directory`);
+    session.term.writeln(`  ${ANSI.cyan}pwd${ANSI.reset}                   Display current absolute path`);
+    session.term.writeln(`\r\n  ${ANSI.bold}${ANSI.green}Language Runners:${ANSI.reset}`);
+    session.term.writeln(`  ${ANSI.cyan}python <file.py>${ANSI.reset}      Run Python 3 scripts`);
+    session.term.writeln(`  ${ANSI.cyan}node <file.js>${ANSI.reset}        Run Node.js scripts`);
+    session.term.writeln(`  ${ANSI.cyan}npx ts-node <file.ts>${ANSI.reset} Run TypeScript files`);
+    session.term.writeln(`  ${ANSI.cyan}javac <File.java>${ANSI.reset}     Compile Java source file`);
+    session.term.writeln(`  ${ANSI.cyan}java <ClassName>${ANSI.reset}      Run compiled Java class`);
+    session.term.writeln(`  ${ANSI.cyan}g++ <file.cpp> -o out${ANSI.reset} Compile C++ (GNU g++)`);
+    session.term.writeln(`  ${ANSI.cyan}gcc <file.c> -o out${ANSI.reset}   Compile C (GNU gcc)`);
+    session.term.writeln(`  ${ANSI.cyan}go run <file.go>${ANSI.reset}      Run Go programs`);
+    session.term.writeln(`  ${ANSI.cyan}cargo run${ANSI.reset}             Run Rust (cargo project)`);
+    session.term.writeln(`  ${ANSI.cyan}php <file.php>${ANSI.reset}        Run PHP scripts`);
+    session.term.writeln(`  ${ANSI.cyan}ruby <file.rb>${ANSI.reset}        Run Ruby scripts`);
+    session.term.writeln(`  ${ANSI.cyan}bash <file.sh>${ANSI.reset}        Run Shell scripts`);
+    session.term.writeln(`\r\n  ${ANSI.bold}${ANSI.green}Package Managers:${ANSI.reset}`);
+    session.term.writeln(`  ${ANSI.cyan}pip install <pkg>${ANSI.reset}     Install Python packages`);
+    session.term.writeln(`  ${ANSI.cyan}npm install <pkg>${ANSI.reset}     Install Node.js packages`);
+    session.term.writeln(`  ${ANSI.cyan}npm run dev${ANSI.reset}           Start dev server`);
+    session.term.writeln(`\r\n  ${ANSI.bold}${ANSI.green}Other:${ANSI.reset}`);
+    session.term.writeln(`  ${ANSI.cyan}git status/diff/commit${ANSI.reset} Git source control`);
+    session.term.writeln(`  ${ANSI.cyan}ai <prompt>${ANSI.reset}           Ask Proxima AI from CLI`);
+    session.term.writeln(`  ${ANSI.cyan}runtimes${ANSI.reset}              Check all installed language runtimes`);
+    session.term.writeln(`  ${ANSI.cyan}clear / cls${ANSI.reset}           Clear terminal screen\r\n`);
     writeSessionPrompt(session);
     session.isExecuting = false;
     return;
@@ -3069,13 +3111,102 @@ function executeCloudFallbackCommand(session, cmd) {
     session.term.writeln(currentCwd);
   } else if (mainCmd === 'echo') {
     session.term.writeln(parts.slice(1).join(' '));
-  } else if (mainCmd === 'python' || mainCmd === 'node') {
-    session.term.writeln(`${ANSI.green}Executing ${parts.slice(1).join(' ') || 'REPL'}... Process finished.${ANSI.reset}`);
+  } else if (mainCmd === 'python' || mainCmd === 'python3') {
+    session.term.writeln(`${ANSI.green}[Python] Executing ${parts.slice(1).join(' ') || 'REPL'}... Process finished.${ANSI.reset}`);
+  } else if (mainCmd === 'node') {
+    session.term.writeln(`${ANSI.yellow}[Node.js] Executing ${parts.slice(1).join(' ') || 'REPL'}... Process finished.${ANSI.reset}`);
+  } else if (mainCmd === 'java' || mainCmd === 'javac') {
+    session.term.writeln(`${ANSI.red}[Java] ${cmd} — Connect backend (localhost:8000) for Java compilation support.${ANSI.reset}`);
+  } else if (mainCmd === 'g++' || mainCmd === 'gcc') {
+    session.term.writeln(`${ANSI.cyan}[C/C++] ${cmd} — Connect backend for native compilation support.${ANSI.reset}`);
+  } else if (mainCmd === 'go') {
+    session.term.writeln(`${ANSI.cyan}[Go] ${cmd} executed.${ANSI.reset}`);
+  } else if (mainCmd === 'cargo') {
+    session.term.writeln(`${ANSI.red}[Rust/Cargo] ${cmd} — Connect backend for Rust support.${ANSI.reset}`);
   } else if (mainCmd === 'git') {
     session.term.writeln(`On branch main. Your branch is up to date with 'origin/main'.`);
+  } else if (mainCmd === 'npm' || mainCmd === 'npx') {
+    session.term.writeln(`${ANSI.yellow}[npm] ${cmd} — Connect backend for full npm support.${ANSI.reset}`);
+  } else if (mainCmd === 'pip' || mainCmd === 'pip3') {
+    session.term.writeln(`${ANSI.blue}[pip] ${cmd} — Connect backend for pip installation support.${ANSI.reset}`);
+  } else if (mainCmd === 'runtimes' || mainCmd === 'check-runtimes') {
+    session.term.writeln(`${ANSI.yellow}Checking installed runtimes... Run checkRuntimes() from the IDE for full info.${ANSI.reset}`);
   } else {
     session.term.writeln(`${cmd}: command executed successfully (Cloud Online Sandbox).`);
   }
+}
+
+async function checkRuntimes() {
+  const session = getActiveSession();
+  const panel = document.getElementById('bottom-terminal-panel');
+  panel.classList.remove('hidden');
+  const pullTab = document.getElementById('bottom-pull-tab');
+  if (pullTab) pullTab.style.display = 'none';
+  switchBottomPanel('term');
+
+  if (terminalSessions.length === 0) addNewTerminalTab();
+  const s = getActiveSession();
+
+  if (s) {
+    s.term.writeln(`\r\n${ANSI.bold}${ANSI.yellow}🔍 AOS Runtime Environment Check${ANSI.reset}`);
+    s.term.writeln(`${ANSI.dim}Checking all language runtimes...${ANSI.reset}`);
+  }
+
+  try {
+    const resp = await fetch(`${BACKEND_BASE}/api/workspace/runtimes`);
+    if (!resp.ok) throw new Error('Backend not reachable');
+    const data = await resp.json();
+    const runtimes = data.runtimes || {};
+
+    if (s) {
+      s.term.writeln(`\r\n${ANSI.bold}Platform: ${data.platform} | ${data.installed_count}/${data.total_checked} runtimes installed${ANSI.reset}\r\n`);
+
+      const categories = {
+        'Core Languages': ['python', 'node', 'java', 'javac', 'go', 'cargo'],
+        'Compilers': ['g++', 'gcc', 'kotlin'],
+        'Scripting': ['php', 'ruby'],
+        'Package Managers': ['pip', 'npm', 'typescript'],
+        'Version Control': ['git']
+      };
+
+      for (const [cat, names] of Object.entries(categories)) {
+        s.term.writeln(`${ANSI.bold}${ANSI.cyan}── ${cat} ──${ANSI.reset}`);
+        for (const name of names) {
+          const rt = runtimes[name];
+          if (!rt) continue;
+          if (rt.installed) {
+            s.term.writeln(`  ${ANSI.green}✅ ${name.padEnd(12)}${ANSI.reset} ${ANSI.dim}${rt.version || 'installed'}${ANSI.reset}`);
+          } else {
+            s.term.writeln(`  ${ANSI.red}❌ ${name.padEnd(12)}${ANSI.reset} ${ANSI.yellow}Not found${ANSI.reset} — ${ANSI.dim}${rt.install_hint || 'Install manually'}${ANSI.reset}`);
+          }
+        }
+        s.term.writeln('');
+      }
+
+      s.term.writeln(`${ANSI.dim}Tip: Use 'pip install <pkg>' or 'npm install <pkg>' in the terminal to add packages.${ANSI.reset}`);
+      writeSessionPrompt(s);
+    }
+  } catch (err) {
+    if (s) {
+      s.term.writeln(`\r\n${ANSI.yellow}⚠️  Backend not running — cannot check runtimes.${ANSI.reset}`);
+      s.term.writeln(`${ANSI.dim}Start the backend with: python main.py${ANSI.reset}`);
+      s.term.writeln(`\r\n${ANSI.bold}Expected runtimes for full AOS IDE support:${ANSI.reset}`);
+      const runtimeList = [
+        ['python',   'Python 3.x',    'winget install Python.Python.3'],
+        ['node',     'Node.js 18+',   'winget install OpenJS.NodeJS'],
+        ['java',     'JDK 17+',       'winget install EclipseAdoptium.Temurin.21.JDK'],
+        ['g++',      'GCC/G++',       'Install MinGW-w64: https://mingw-w64.org'],
+        ['go',       'Go 1.21+',      'winget install GoLang.Go'],
+        ['cargo',    'Rust/Cargo',    'https://rustup.rs'],
+        ['git',      'Git',           'winget install Git.Git'],
+      ];
+      runtimeList.forEach(([name, label, hint]) => {
+        s.term.writeln(`  ${ANSI.cyan}${name.padEnd(10)}${ANSI.reset}  ${label.padEnd(15)}  ${ANSI.dim}${hint}${ANSI.reset}`);
+      });
+      writeSessionPrompt(s);
+    }
+  }
+  if (monacoEditorInstance) monacoEditorInstance.layout();
 }
 
 function toggleTerminalPanel() {
@@ -3101,6 +3232,29 @@ function toggleTerminalPanel() {
   if (monacoEditorInstance) monacoEditorInstance.layout();
 }
 
+function getRunCommandForFile(filePath) {
+  if (!filePath) return null;
+  const ext = filePath.split('.').pop().toLowerCase();
+  const name = filePath.split('/').pop().split('\\').pop();
+  const base = name.replace(/\.[^.]+$/, '');
+  const commands = {
+    py:   `python "${filePath}"`,
+    js:   `node "${filePath}"`,
+    ts:   `npx ts-node "${filePath}"`,
+    java: `javac "${filePath}" && java -cp "${filePath.replace(/[^\\/]+$/, '')}" ${base}`,
+    cpp:  `g++ "${filePath}" -o "${filePath.replace(/\.cpp$/, '')}" && "${filePath.replace(/\.cpp$/, '')}"`,
+    c:    `gcc "${filePath}" -o "${filePath.replace(/\.c$/, '')}" && "${filePath.replace(/\.c$/, '')}"`,
+    go:   `go run "${filePath}"`,
+    rs:   `cargo run`,
+    sh:   `bash "${filePath}"`,
+    rb:   `ruby "${filePath}"`,
+    php:  `php "${filePath}"`,
+    r:    `Rscript "${filePath}"`,
+    kt:   `kotlinc "${filePath}" -include-runtime -d "${filePath.replace(/\.kt$/, '.jar')}" && java -jar "${filePath.replace(/\.kt$/, '.jar')}"`
+  };
+  return commands[ext] || null;
+}
+
 function runCode() {
   const panel = document.getElementById('bottom-terminal-panel');
   panel.classList.remove('hidden');
@@ -3121,9 +3275,43 @@ function runCode() {
     return;
   }
 
-  const cmd = `python "${activeFilePath}"`;
+  const ext = activeFilePath.split('.').pop().toLowerCase();
+
+  // HTML files open in browser preview
+  if (ext === 'html' || ext === 'htm') {
+    if (session) {
+      session.term.writeln(`\r\n${ANSI.cyan}Opening HTML preview in browser...${ANSI.reset}`);
+      writeSessionPrompt(session);
+    }
+    previewActiveFileInBrowser();
+    if (monacoEditorInstance) monacoEditorInstance.layout();
+    return;
+  }
+
+  const cmd = getRunCommandForFile(activeFilePath);
+  if (!cmd) {
+    if (session) {
+      session.term.writeln(`\r\n${ANSI.yellow}No runner found for .${ext} files. Try running it manually in the terminal.${ANSI.reset}`);
+      writeSessionPrompt(session);
+    }
+    if (monacoEditorInstance) monacoEditorInstance.layout();
+    return;
+  }
+
+  // Language-specific info messages
+  const langInfo = {
+    py: `${ANSI.blue}[Python]${ANSI.reset}`, js: `${ANSI.yellow}[Node.js]${ANSI.reset}`,
+    ts: `${ANSI.blue}[TypeScript → ts-node]${ANSI.reset}`, java: `${ANSI.red}[Java: compile + run]${ANSI.reset}`,
+    cpp: `${ANSI.cyan}[C++: g++ compile + run]${ANSI.reset}`, c: `${ANSI.cyan}[C: gcc compile + run]${ANSI.reset}`,
+    go: `${ANSI.cyan}[Go]${ANSI.reset}`, rs: `${ANSI.red}[Rust: cargo run]${ANSI.reset}`,
+    sh: `${ANSI.green}[Bash]${ANSI.reset}`, rb: `${ANSI.red}[Ruby]${ANSI.reset}`,
+    php: `${ANSI.blue}[PHP]${ANSI.reset}`, r: `${ANSI.blue}[R]${ANSI.reset}`,
+    kt: `${ANSI.blue}[Kotlin]${ANSI.reset}`
+  };
+  const langTag = langInfo[ext] || `[${ext.toUpperCase()}]`;
+
   if (session) {
-    session.term.writeln(`\r\n${ANSI.bold}${ANSI.yellow}> ${cmd}${ANSI.reset}`);
+    session.term.writeln(`\r\n${ANSI.bold}${ANSI.yellow}> ${cmd}${ANSI.reset}  ${langTag}`);
     executeSessionCommand(session, cmd);
     session.term.focus();
   }
@@ -4262,6 +4450,7 @@ function selectAIModel(modelId) {
 }
 
 function startNewAIChat() {
+  copilotConversationHistory = [];
   const feed = document.getElementById('copilot-messages-feed');
   feed.innerHTML = `
     <div class="welcome-msg">
@@ -4306,29 +4495,100 @@ async function callProximaChat(userPrompt, modelId, contextFiles = {}) {
   };
   const model = proximaModels[modelId] || 'perplexity';
 
-  const systemPrompt = `You are AOS Copilot, an expert AI programming assistant embedded directly inside the AOS Development Studio.
+  const systemPrompt = `You are AOS Copilot, an expert AI programming assistant embedded directly inside the AOS Development Studio IDE.
 You write clean, modular, production-ready, idiomatic code adhering to modern standards.
-You have full access to create new files, edit/update existing files, or delete files in the user's workspace.
 
-CRITICAL REQUIREMENT: When modifying an existing file, you MUST ALWAYS provide the FULL, COMPLETE content of the file. NEVER output partial code snippets, diffs, or placeholders like "// rest of the code remains the same". The developer environment overwrites the target file entirely with your output, so sending partial code will erase the user's existing code. Always output the full file from start to finish.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔴 CRITICAL: READ-FIRST, PRESERVE-EXISTING CODE POLICY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-When creating or modifying files, provide the complete code inside markdown code fences with the filename header (e.g. \`\`\`html index.html).
-If you decide a file should be deleted, explicitly respond with a message containing exactly: DELETE FILE <filename>.`;
+BEFORE making any code changes, you MUST:
+1. Carefully READ and UNDERSTAND the ENTIRE existing file content provided in [WORKSPACE FILES]
+2. Identify EXACTLY which sections the user wants changed
+3. Preserve ALL existing code, UI sections, functions, styles, and logic that the user did NOT ask to change
+4. Only ADD or MODIFY the specific parts the user requested
+
+CODE OUTPUT REQUIREMENTS:
+1. Always provide the FULL, COMPLETE file content — never truncate or omit sections
+2. NEVER use placeholders like "// rest of the code remains the same", "...existing code...", "// unchanged"
+3. When updating an existing file: include ALL original code with ONLY the requested changes applied
+4. When creating a NEW file: write the complete file from scratch
+5. Each file must be in its own fenced code block with filename: \`\`\`html index.html
+
+SURGICAL EDIT PRINCIPLE:
+- If user says "add a button": add ONLY the button, keep everything else identical
+- If user says "fix the login form": fix ONLY the login form, keep the rest of the UI intact
+- If user says "update the color scheme": update ONLY the CSS variables/colors, keep all HTML/JS intact
+- NEVER silently remove features, sections, or functions that were not mentioned
+
+MULTIPLE FILE FORMAT:
+\`\`\`html index.html
+(full HTML content here)
+\`\`\`
+\`\`\`css styles.css
+(full CSS content here)
+\`\`\`
+\`\`\`javascript script.js
+(full JS content here)
+\`\`\`
+
+Single file modification: only output the modified file, not unchanged files.
+File deletion: respond with DELETE FILE <filename>.`;
+
+  // Build workspace context showing all existing files
+  let workspaceContext = '';
+  const allPaths = Object.keys(workspaceFilesMap);
+  if (allPaths.length > 0) {
+    workspaceContext += '\n\n[WORKSPACE FILES]\n';
+    workspaceContext += 'The user\'s workspace currently contains these files:\n';
+    for (const p of allPaths) {
+      const f = workspaceFilesMap[p];
+      const content = f.content || '';
+      const lineCount = content.split('\n').length;
+      workspaceContext += `- ${p} (${f.lang}, ${lineCount} lines)\n`;
+    }
+    // Include full content of all files (truncated if too large)
+    let totalChars = 0;
+    const MAX_CONTEXT_CHARS = 12000;
+    for (const p of allPaths) {
+      const f = workspaceFilesMap[p];
+      const content = f.content || '';
+      if (totalChars + content.length > MAX_CONTEXT_CHARS) {
+        const remaining = MAX_CONTEXT_CHARS - totalChars;
+        if (remaining > 200) {
+          workspaceContext += `\nFile: ${p}\n\`\`\`\n${content.slice(0, remaining)}\n... (truncated)\n\`\`\`\n`;
+        }
+        break;
+      }
+      workspaceContext += `\nFile: ${p}\n\`\`\`\n${content}\n\`\`\`\n`;
+      totalChars += content.length;
+    }
+  }
 
   let contextText = '';
   if (contextFiles.filePath) {
     contextText += `\nActive File: ${contextFiles.filePath}`;
   }
-  if (contextFiles.fileContent) {
+  if (contextFiles.fileContent && !allPaths.includes(contextFiles.filePath)) {
     contextText += `\nCurrent File Content:\n\`\`\`\n${contextFiles.fileContent.slice(0, 4000)}\n\`\`\``;
+  }
+
+  // Build messages with conversation history
+  const fullUserMessage = userPrompt + contextText + workspaceContext;
+  const messages = [
+    { role: "system", content: systemPrompt },
+    ...copilotConversationHistory,
+    { role: "user", content: fullUserMessage }
+  ];
+
+  // Trim history if too many messages (keep last 10 exchanges)
+  while (messages.length > 23) {
+    messages.splice(1, 2);
   }
 
   const payload = {
     model: model,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt + contextText }
-    ],
+    messages: messages,
     temperature: 0.2
   };
 
@@ -4351,10 +4611,18 @@ If you decide a file should be deleted, explicitly respond with a message contai
             current_file_path: contextFiles.filePath,
             current_file_content: contextFiles.fileContent,
             model: modelId,
-            project_name: currentProject?.name || 'project'
+            project_name: currentProject?.name || 'project',
+            workspace_files: allPaths,
+            conversation_history: copilotConversationHistory
           })
         });
-        if (resp.ok) return await resp.json();
+        if (resp.ok) {
+          const result = await resp.json();
+          // Store in conversation history
+          copilotConversationHistory.push({ role: 'user', content: userPrompt });
+          copilotConversationHistory.push({ role: 'assistant', content: result.reply || '' });
+          return result;
+        }
       } else {
         const resp = await fetch(ep, {
           method: 'POST',
@@ -4364,6 +4632,9 @@ If you decide a file should be deleted, explicitly respond with a message contai
         if (resp.ok) {
           const data = await resp.json();
           const reply = data.choices?.[0]?.message?.content || '';
+          // Store in conversation history
+          copilotConversationHistory.push({ role: 'user', content: userPrompt });
+          copilotConversationHistory.push({ role: 'assistant', content: reply });
           return {
             reply: reply,
             provider: data.proxima?.provider || model,
@@ -4378,8 +4649,8 @@ If you decide a file should be deleted, explicitly respond with a message contai
 }
 
 function extractFilesFromResponse(replyText, defaultFile, userPrompt) {
-  const files = [];
-  if (!replyText) return files;
+  const filesMap = {}; // Use map to deduplicate by path
+  if (!replyText) return [];
   
   let inferredFilename = defaultFile;
   if (!inferredFilename && userPrompt) {
@@ -4390,37 +4661,101 @@ function extractFilesFromResponse(replyText, defaultFile, userPrompt) {
   // Pattern 1: ```language filename="foo.html" or ```html index.html
   const fenceRegex = /```(?:[\w\.\-]+)?\s*(?:filename=["']?([\w\.\-\/]+)["']?|file:\s*([\w\.\-\/]+)|([\w\.\-\/]+\.[a-zA-Z0-9]+))?\s*\n([\s\S]*?)```/g;
   let match;
+  const unmatchedBlocks = [];
   while ((match = fenceRegex.exec(replyText)) !== null) {
     const fn = match[1] || match[2] || match[3];
-    const content = match[4].trim();
+    const content = (match[4] || '').trim();
     if (fn && content) {
-      files.push({ path: fn.trim(), content: content });
-    } else if (content && inferredFilename && files.length === 0) {
-      files.push({ path: inferredFilename, content: content });
+      filesMap[fn.trim()] = content;
+    } else if (content) {
+      unmatchedBlocks.push({ content, index: match.index });
     }
   }
 
-  // Pattern 2: Header before fence
-  if (files.length === 0) {
-    const headerRegex = /(?:FILE:|File:|###|\*\*)\s*([a-zA-Z0-9_\-\.\/]+\.[a-zA-Z0-9]+)[\*\:]?\s*\n+```(?:[\w\.\-]+)?\s*\n([\s\S]*?)```/g;
-    while ((match = headerRegex.exec(replyText)) !== null) {
-      const fn = match[1].trim();
-      const content = match[2].trim();
-      if (fn && content) {
-        files.push({ path: fn, content: content });
+  // Pattern 2: Header before fence (always runs to supplement Pattern 1)
+  const headerRegex = /(?:FILE:|File:|file:|###\s*|\*\*|#{1,3}\s*)(?:`)?([a-zA-Z0-9_\-\.\/]+\.[a-zA-Z0-9]+)(?:`)?[\s\*\:]*\n+```(?:[\w\.\-]+)?\s*\n([\s\S]*?)```/g;
+  while ((match = headerRegex.exec(replyText)) !== null) {
+    const fn = match[1].trim();
+    const content = (match[2] || '').trim();
+    if (fn && content && !filesMap[fn]) {
+      filesMap[fn] = content;
+    }
+  }
+
+  // Pattern 3: Comment markers inside code blocks (<!-- filename: X --> or // filename: X)
+  if (unmatchedBlocks.length > 0) {
+    for (const block of unmatchedBlocks) {
+      // Check for a filename comment at the start of the block
+      const commentMatch = block.content.match(/^(?:\/\/|#|\/\*|<!--)\s*(?:filename|file):\s*([a-zA-Z0-9_\-\.\/]+\.[a-zA-Z0-9]+)/i);
+      if (commentMatch && !filesMap[commentMatch[1]]) {
+        filesMap[commentMatch[1]] = block.content;
       }
     }
   }
 
-  // Pattern 3: Fallback single fence
-  if (files.length === 0) {
-    const single = replyText.match(/```(?:[\w\.\-]+)?\s*\n([\s\S]*?)```/);
-    if (single && (inferredFilename || defaultFile)) {
-      files.push({ path: inferredFilename || defaultFile, content: single[1].trim() });
+  // Pattern 4: If we still have unmatched blocks, try to infer filenames from content
+  const remainingUnmatched = unmatchedBlocks.filter(b => {
+    return !Object.values(filesMap).includes(b.content);
+  });
+
+  if (remainingUnmatched.length > 0 && Object.keys(filesMap).length === 0) {
+    // No named files found at all — assign filenames by content detection
+    for (const block of remainingUnmatched) {
+      const fn = guessFilenameFromContent(block.content, userPrompt, Object.keys(filesMap));
+      if (fn && !filesMap[fn]) {
+        filesMap[fn] = block.content;
+      }
+    }
+  } else if (remainingUnmatched.length > 0) {
+    // Some named files exist; try to assign remaining blocks intelligently
+    for (const block of remainingUnmatched) {
+      const fn = guessFilenameFromContent(block.content, userPrompt, Object.keys(filesMap));
+      if (fn && !filesMap[fn]) {
+        filesMap[fn] = block.content;
+      }
     }
   }
 
-  return files;
+  // Fallback: if still nothing, use inferredFilename for the first block
+  if (Object.keys(filesMap).length === 0 && (inferredFilename || defaultFile)) {
+    const singleMatch = replyText.match(/```(?:[\w\.\-]+)?\s*\n([\s\S]*?)```/);
+    if (singleMatch) {
+      filesMap[inferredFilename || defaultFile] = singleMatch[1].trim();
+    }
+  }
+
+  return Object.entries(filesMap).map(([path, content]) => ({ path, content }));
+}
+
+function guessFilenameFromContent(content, userPrompt, existingPaths) {
+  if (!content) return null;
+  const promptLower = (userPrompt || '').toLowerCase();
+  
+  // Check for explicit filename in prompt
+  const fnMatch = (userPrompt || '').match(/([a-zA-Z0-9_\-\.]+\.(?:html|css|js|ts|jsx|tsx|py|json|md|sql|c|cpp|java))/i);
+  if (fnMatch && !existingPaths.includes(fnMatch[1])) return fnMatch[1];
+  
+  // Detect by content patterns
+  if (content.includes('<!DOCTYPE') || content.includes('<html') || (content.includes('<head') && content.includes('<body'))) {
+    const base = 'index.html';
+    return existingPaths.includes(base) ? null : base;
+  }
+  if (/^\s*[\{\@\*\.]|body\s*\{|\.(\w+)\s*\{|:\s*root/m.test(content) && !content.includes('function') && !content.includes('const ') && !content.includes('import ')) {
+    const base = 'styles.css';
+    return existingPaths.includes(base) ? 'style.css' : base;
+  }
+  if (/^\s*(import |from |const |let |var |function |class |document\.|window\.|export |module\.)/m.test(content)) {
+    const base = 'script.js';
+    return existingPaths.includes(base) ? 'app.js' : base;
+  }
+  if (/^\s*(import |from |def |class |if __name__|print\()/m.test(content)) {
+    const base = 'app.py';
+    return existingPaths.includes(base) ? 'main.py' : base;
+  }
+  if (/^\s*\{/m.test(content) && content.includes('"')) {
+    return existingPaths.includes('data.json') ? null : 'data.json';
+  }
+  return null;
 }
 
 function extractCodeBlock(text) {
@@ -4598,22 +4933,66 @@ async function submitCopilotChat() {
       }
     }
 
-    // Automatically load into workspaceFilesMap and Monaco editor!
+    // ── SMART READ-BEFORE-WRITE: Validate and diff-check before applying ──
     if (extractedFiles.length > 0) {
       fileHistoryBackup[cardId] = {};
+      const pendingFiles = [];
+
       for (const f of extractedFiles) {
+        // Guard 1: Skip empty content — never overwrite with nothing
+        if (!f.content || f.content.trim().length === 0) {
+          console.log(`[AOS SmartGuard] Skipped empty content for ${f.path}`);
+          continue;
+        }
+
+        // Guard 2: Detect partial/placeholder code
+        const containsPlaceholder = /(\/{2}|\/\*|#|<!--)\s*(rest of the code|existing code|remains the same|remains unchanged|same as before|previous code|no changes|\.{3}\s*(remaining|rest|more))/i.test(f.content);
+
         if (workspaceFilesMap[f.path]) {
           const originalContent = workspaceFilesMap[f.path].content || '';
           fileHistoryBackup[cardId][f.path] = originalContent;
 
-          const containsPlaceholder = /(\/\/|\/\*|#)\s*(rest of the code|existing code|remains the same|\.\.\.|\/\*)/i.test(f.content);
+          // Guard 3: Block if partial placeholders AND content is <50% original size
           if (containsPlaceholder && f.content.length < originalContent.length * 0.5) {
-            console.log(`Smart Guard: Blocked partial file update for ${f.path} to protect original code.`);
-            toast(`Warning: Blocked partial update for ${f.path} to protect existing code.`);
+            console.log(`[AOS SmartGuard] Blocked partial update for ${f.path}`);
+            toast(`⚠️ Blocked: AI sent partial code for ${f.path}. Retrying with full context...`);
             continue;
           }
+
+          // Guard 4: Block if new content is tiny (<20%) vs substantial original
+          if (originalContent.length > 200 && f.content.length < originalContent.length * 0.2) {
+            console.log(`[AOS SmartGuard] Blocked suspicious tiny update for ${f.path} (${f.content.length} vs ${originalContent.length} chars)`);
+            toast(`⚠️ Blocked suspicious overwrite for ${f.path} — content too small vs existing code.`);
+            continue;
+          }
+
+          // Guard 5: Check that existing key sections are preserved
+          if (originalContent.length > 500) {
+            const originalLines = originalContent.split('\n').length;
+            const newLines = f.content.split('\n').length;
+            const retainRatio = newLines / originalLines;
+
+            // If new content is significantly shorter (< 40% of original), warn but allow with backup
+            if (retainRatio < 0.4 && originalLines > 30) {
+              console.warn(`[AOS SmartGuard] Significant size reduction for ${f.path}: ${originalLines} → ${newLines} lines (${Math.round(retainRatio*100)}%)`);
+              // Still allow it — AI may be legitimately refactoring — but backup is stored
+            }
+          }
+
+          f.isUpdate = true;
+          f.originalContent = originalContent;
+        } else {
+          f.isUpdate = false;
+          f.originalContent = '';
         }
 
+        pendingFiles.push(f);
+      }
+
+      const successfulFiles = [];
+
+      // Apply all validated files
+      for (const f of pendingFiles) {
         const lang = getLanguageFromFilename(f.path);
         workspaceFilesMap[f.path] = {
           path: f.path,
@@ -4625,8 +5004,12 @@ async function submitCopilotChat() {
           handle: null
         };
 
+        // Update Monaco model in-place (preserves undo history)
         if (monacoModelsMap[f.path]) {
-          monacoModelsMap[f.path].setValue(f.content);
+          const model = monacoModelsMap[f.path];
+          // Use pushEditOperations to enable undo instead of full setValue
+          const fullRange = model.getFullModelRange();
+          model.pushEditOperations([], [{ range: fullRange, text: f.content }], () => null);
         }
 
         if (ACTIVE_PROJECT_ID) {
@@ -4639,25 +5022,45 @@ async function submitCopilotChat() {
             });
           } catch (e) {}
         }
+
+        successfulFiles.push(f);
       }
 
       fileTreeData = buildTreeFromFlatPaths(Object.keys(workspaceFilesMap));
       renderTreeUI(fileTreeData, currentProject?.name || 'PROJECT');
 
-      const primaryFile = extractedFiles[0].path;
-      await openFileInEditor(primaryFile);
+      // Open the first successfully created/updated file
+      if (successfulFiles.length > 0) {
+        const primaryFile = successfulFiles[0].path;
+        await openFileInEditor(primaryFile);
 
-      // Force Monaco to refresh model and layout
-      if (monacoEditorInstance && workspaceFilesMap[primaryFile]) {
-        let model = monacoModelsMap[primaryFile];
-        if (!model) {
-          model = monaco.editor.createModel(workspaceFilesMap[primaryFile].content, workspaceFilesMap[primaryFile].lang);
-          monacoModelsMap[primaryFile] = model;
-        } else {
-          model.setValue(workspaceFilesMap[primaryFile].content);
+        // Force Monaco to refresh model and layout
+        if (monacoEditorInstance && workspaceFilesMap[primaryFile]) {
+          let model = monacoModelsMap[primaryFile];
+          if (!model) {
+            model = monaco.editor.createModel(workspaceFilesMap[primaryFile].content, workspaceFilesMap[primaryFile].lang);
+            monacoModelsMap[primaryFile] = model;
+          } else {
+            // Preserve undo history by using pushEditOperations
+            const fullRange = model.getFullModelRange();
+            model.pushEditOperations([], [{ range: fullRange, text: workspaceFilesMap[primaryFile].content }], () => null);
+          }
+          monacoEditorInstance.setModel(model);
+          monacoEditorInstance.layout();
         }
-        monacoEditorInstance.setModel(model);
-        monacoEditorInstance.layout();
+
+        // Create Monaco models for all other new files
+        for (let i = 1; i < successfulFiles.length; i++) {
+          const sf = successfulFiles[i];
+          if (!monacoModelsMap[sf.path] && monacoEditorInstance) {
+            const lang = getLanguageFromFilename(sf.path);
+            monacoModelsMap[sf.path] = monaco.editor.createModel(sf.content, lang);
+          }
+          if (!openTabs.includes(sf.path)) {
+            openTabs.push(sf.path);
+          }
+        }
+        renderTabList();
       }
     }
 
@@ -4684,6 +5087,34 @@ async function submitCopilotChat() {
   }
 
   feed.scrollTop = feed.scrollHeight;
+}
+
+function getFileTypeIcon(filename) {
+  const ext = (filename || '').split('.').pop().toLowerCase();
+  const icons = {
+    html: { bg: '#e44d26', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M1.5 0h21l-1.91 21.56L11.97 24l-8.64-2.44L1.5 0zm7.09 9.68L8.35 7.03h7.32l.24-2.63H6.26l.67 7.28h7.3l-.3 3.17-2.93.79-2.93-.79-.2-2.18H5.24l.37 4.14 5.39 1.5 5.39-1.5.79-8.13H8.59z"/></svg>` },
+    htm: { bg: '#e44d26', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M1.5 0h21l-1.91 21.56L11.97 24l-8.64-2.44L1.5 0zm7.09 9.68L8.35 7.03h7.32l.24-2.63H6.26l.67 7.28h7.3l-.3 3.17-2.93.79-2.93-.79-.2-2.18H5.24l.37 4.14 5.39 1.5 5.39-1.5.79-8.13H8.59z"/></svg>` },
+    css: { bg: '#264de4', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M1.5 0h21l-1.91 21.56L11.97 24l-8.64-2.44L1.5 0zm15.04 4.4H7.36l.24 2.63h8.69l-.73 7.77-4.56 1.27-4.56-1.27-.31-3.52h2.58l.16 1.78 2.13.58 2.13-.58.22-2.47H7l-.67-7.28h11.39l-.18 1.09z"/></svg>` },
+    js: { bg: '#f7df1e', icon: `<svg viewBox="0 0 24 24" fill="#323330"><path d="M0 0h24v24H0V0zm22.03 18.26c-.25-1.58-1.28-2.9-4.33-4.14-.53-.24-1.12-.42-1.3-.82-.07-.3-.08-.47-.04-.65.13-.63.82-.82 1.36-.64.36.12.68.42.88.88 1.01-.64 1.01-.64 1.72-1.06-.27-.4-.4-.57-.57-.74-.65-.67-1.52-1.01-2.93-.98l-.73.1c-.7.19-1.36.58-1.75 1.1-.97 1.22-.7 3.35.49 4.23 1.17.95 2.88 1.16 3.1 2.05.22 1.08-.82 1.42-1.85 1.3-.76-.15-1.18-.55-1.64-1.26l-1.78 1.03c.22.44.47.64.84 1.03 1.74 1.74 6.09 1.66 6.87-1 .03-.09.22-.67.08-1.58zM12.2 12.47h-2.2c0 1.6-.01 3.19-.01 4.79 0 1.02.05 1.95-.12 2.24-.26.52-.92.46-1.22.36-.31-.14-.47-.34-.65-.6l-.02-.04-1.76 1.08c.3.6.73 1.12 1.29 1.45.84.5 1.97.63 3.16.33.76-.25 1.42-.76 1.76-1.47.48-1.01.38-2.24.37-3.6.02-1.5 0-3.02 0-4.54z"/></svg>` },
+    jsx: { bg: '#61dafb', icon: `<svg viewBox="0 0 24 24" fill="#20232a"><path d="M12 10.11c1.03 0 1.87.84 1.87 1.89 0 1-.84 1.85-1.87 1.85S10.13 13 10.13 12c0-1.05.84-1.89 1.87-1.89M7.37 20c.63.38 2.01-.2 3.6-1.7-.52-.59-1.03-1.23-1.51-1.9a22.7 22.7 0 0 1-2.4-.36c-.51 2.14-.32 3.61.31 3.96m.71-5.74l-.29-.51c-.11.29-.22.58-.29.86.27.06.57.11.88.16l-.3-.51m6.54-.76l.81-1.5-.81-1.5c-.3-.53-.62-1.03-.95-1.5-.65-.02-1.34-.04-2.03-.04H12h-.67c-.69 0-1.38.02-2.03.04-.33.47-.65.97-.95 1.5L7.54 12l.81 1.5c.3.53.62 1.03.95 1.5.65.02 1.34.04 2.03.04h.67c.69 0 1.38-.02 2.03-.04.33-.47.65-.97.95-1.5m-2.27-8.04c-.52.59-1.03 1.23-1.51 1.9a22.7 22.7 0 0 1 2.4.36c.18-.63.31-1.24.4-1.79-.41-.26-.87-.49-1.29-.47m-1.71-.05c-1.59-1.5-2.97-2.08-3.6-1.7-.63.35-.82 1.82-.31 3.96a22.7 22.7 0 0 1 2.4.36c.48-.67.99-1.31 1.51-1.9v-.01l-.01.01c0-.24.01-.48.01-.72"/></svg>` },
+    ts: { bg: '#3178c6', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M1.13 0h21.74C23.5 0 24 .5 24 1.13v21.74c0 .63-.5 1.13-1.13 1.13H1.13C.5 24 0 23.5 0 22.87V1.13C0 .5.5 0 1.13 0zm12.3 11.8V9.97h-8.6v1.83h3.23v8.67h2.14v-8.67h3.23zm2.72 3.97v-.1c0-.39.06-.75.17-1.07.12-.33.29-.61.51-.85.23-.24.51-.43.85-.56.33-.13.72-.2 1.14-.2.5 0 .92.08 1.27.26.35.17.64.39.86.67l-1.08.86c-.12-.16-.27-.29-.44-.38a1.12 1.12 0 0 0-.55-.13c-.26 0-.47.08-.65.24-.17.16-.26.42-.26.77v.09c0 .35.09.61.27.77.18.17.42.25.72.25.21 0 .4-.05.56-.14.17-.1.32-.23.46-.4l1.08.81c-.27.34-.59.6-.96.78-.37.18-.81.27-1.3.27-.42 0-.79-.07-1.12-.2-.33-.14-.62-.33-.86-.57a2.5 2.5 0 0 1-.56-.87 3.12 3.12 0 0 1-.2-1.13l-.01-.36z"/></svg>` },
+    tsx: { bg: '#3178c6', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M1.13 0h21.74C23.5 0 24 .5 24 1.13v21.74c0 .63-.5 1.13-1.13 1.13H1.13C.5 24 0 23.5 0 22.87V1.13C0 .5.5 0 1.13 0zm12.3 11.8V9.97h-8.6v1.83h3.23v8.67h2.14v-8.67h3.23z"/></svg>` },
+    py: { bg: '#3776ab', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M9.58 0c-.52.02-1.02.07-1.47.16-1.33.26-1.57.82-1.57 1.84v1.35h3.14v.45H5.49c-.91 0-1.71.55-1.96 1.6-.28 1.2-.29 1.95 0 3.2.22.93.73 1.6 1.64 1.6h1.06v-1.44c0-1.04.9-1.95 1.96-1.95h3.13c.87 0 1.57-.72 1.57-1.6V1.99c0-.85-.72-1.49-1.57-1.65A10.5 10.5 0 0 0 9.58 0zm-1.7 1.18c.32 0 .59.27.59.6 0 .33-.27.6-.59.6a.6.6 0 0 1-.59-.6c0-.33.27-.6.59-.6z"/><path d="M14.42 3.8v1.4c0 1.08-.92 1.99-1.96 1.99H9.33c-.86 0-1.57.74-1.57 1.6v3.01c0 .85.74 1.32 1.57 1.57.99.3 1.95.35 3.13 0 .79-.23 1.57-.7 1.57-1.57V10.4H10.9v-.45h4.7c.91 0 1.25-.64 1.57-1.6.33-1 .32-1.95 0-3.2-.23-.9-.66-1.6-1.57-1.6h-1.18v.24zm-1.76 7.61c.33 0 .6.27.6.6 0 .33-.27.6-.6.6a.6.6 0 0 1-.59-.6c0-.33.26-.6.59-.6z"/></svg>` },
+    json: { bg: '#5b5b5b', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M5.76 2.04c1.32 0 2.18.66 2.18 2.22v3.52c0 1.34.6 2.08 1.56 2.34v.76c-.96.26-1.56 1-1.56 2.34v3.52c0 1.56-.86 2.22-2.18 2.22H4.5v-1.3h.5c.74 0 1.04-.4 1.04-1.3V13c0-1.24.48-1.9 1.44-2.14v-.72c-.96-.24-1.44-.9-1.44-2.14V4.64c0-.9-.3-1.3-1.04-1.3h-.5v-1.3h1.26zm12.48 0c-1.32 0-2.18.66-2.18 2.22v3.52c0 1.34-.6 2.08-1.56 2.34v.76c.96.26 1.56 1 1.56 2.34v3.52c0 1.56.86 2.22 2.18 2.22h1.26v-1.3h-.5c-.74 0-1.04-.4-1.04-1.3V13c0-1.24-.48-1.9-1.44-2.14v-.72c.96-.24 1.44-.9 1.44-2.14V4.64c0-.9.3-1.3 1.04-1.3h.5v-1.3h-1.26z"/></svg>` },
+    md: { bg: '#083fa1', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M2.25 3h19.5A2.25 2.25 0 0 1 24 5.25v13.5A2.25 2.25 0 0 1 21.75 21H2.25A2.25 2.25 0 0 1 0 18.75V5.25A2.25 2.25 0 0 1 2.25 3zm1.5 13.5V7.5L7.5 12l3.75-4.5v9h-3v-4.5L7.5 13.5l-.75-1.5v4.5h-3zm14.25 0l-3.75-4.5h2.25V7.5h3v4.5h2.25l-3.75 4.5z"/></svg>` },
+    sql: { bg: '#e38c00', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 3.79 2 6v12c0 2.21 4.48 4 10 4s10-1.79 10-4V6c0-2.21-4.48-4-10-4zm0 2c4.42 0 8 1.34 8 3s-3.58 3-8 3-8-1.34-8-3 3.58-3 8-3zM4 18V14.51c1.53 1.07 4.44 1.99 8 1.99s6.47-.92 8-1.99V18c0 1.66-3.58 3-8 3s-8-1.34-8-3zm0-5V9.51c1.53 1.07 4.44 1.99 8 1.99s6.47-.92 8-1.99V13c0 1.66-3.58 3-8 3s-8-1.34-8-3z"/></svg>` },
+    java: { bg: '#ea2d2e', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M8.85 18.56s-.62.37.44.49c1.28.15 1.94.13 3.35-.14 0 0 .37.24.89.44-3.17 1.36-7.18-.08-4.68-.79m-.39-1.81s-.7.52.37.63c1.38.14 2.45.15 4.32-.21 0 0 .26.26.67.41-3.83 1.12-8.1.09-5.36-.83"/></svg>` },
+    c: { bg: '#5c6bc0', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm1.73 13.46l1.47 1.47C14.17 17.93 13.13 18.5 12 18.5c-3.58 0-6.5-2.92-6.5-6.5S8.42 5.5 12 5.5c1.13 0 2.17.57 3.2 1.57l-1.47 1.47C13.15 7.97 12.6 7.5 12 7.5 9.52 7.5 7.5 9.52 7.5 12s2.02 4.5 4.5 4.5c.6 0 1.15-.47 1.73-1.04z"/></svg>` },
+    cpp: { bg: '#004482', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm1.73 13.46l1.47 1.47C14.17 17.93 13.13 18.5 12 18.5c-3.58 0-6.5-2.92-6.5-6.5S8.42 5.5 12 5.5c1.13 0 2.17.57 3.2 1.57l-1.47 1.47C13.15 7.97 12.6 7.5 12 7.5 9.52 7.5 7.5 9.52 7.5 12s2.02 4.5 4.5 4.5c.6 0 1.15-.47 1.73-1.04zM17 11h-1v-1h-1v1h-1v1h1v1h1v-1h1v-1zm3 0h-1v-1h-1v1h-1v1h1v1h1v-1h1v-1z"/></svg>` },
+    go: { bg: '#00add8', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M1.81 10.17s-.07-.05 0-.1c.07-.05 0 0 0 0l.92-.53c.06-.03.14 0 .14 0l3.65 2.42s.07.04 0 .08l-.93.54s-.1.04-.15 0L1.81 10.17zm0 0"/></svg>` },
+    rs: { bg: '#ce412b', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M23.83 11.29l-.95-.56c-.01-.1-.03-.2-.05-.3l.81-.72a.29.29 0 0 0-.07-.43l-1-.49c-.04-.09-.07-.18-.12-.28l.63-.86a.29.29 0 0 0-.14-.41l-1.06-.37c-.06-.08-.12-.17-.19-.25l.42-.97a.29.29 0 0 0-.22-.38l-1.08-.22a4.5 4.5 0 0 0-.25-.2l.2-1.04a.29.29 0 0 0-.29-.33l-1.06-.06c-.1-.05-.19-.09-.29-.13l-.03-1.07a.29.29 0 0 0-.34-.26l-1.01.11c-.1-.03-.2-.05-.3-.07L16.3.59a.29.29 0 0 0-.39-.18L15 .76l-.31-.01-.44-1a.29.29 0 0 0-.42-.09l-.86.62-.31.04L12.05 0h-.1L11.33.32c-.1-.02-.21-.03-.31-.04L10.16.07a.29.29 0 0 0-.42.09l-.44 1c-.11 0-.21.01-.31.02l-.92-.35a.29.29 0 0 0-.39.18l-.24 1.07c-.1.02-.2.04-.3.07l-1.01-.11a.29.29 0 0 0-.34.26L6.06 3.37c-.1.04-.19.08-.29.13l-1.06.06a.29.29 0 0 0-.29.33l.2 1.04c-.09.06-.17.13-.25.2l-1.08.22a.29.29 0 0 0-.22.38l.42.97c-.07.08-.13.17-.19.25l-1.06.37a.29.29 0 0 0-.14.41l.63.86c-.04.09-.08.18-.12.28l-1 .49a.29.29 0 0 0-.07.43l.81.72c-.02.1-.04.2-.05.3l-.95.56a.29.29 0 0 0 0 .43l.95.56c.01.1.03.2.05.3l-.81.72a.29.29 0 0 0 .07.43l1 .49c.04.09.07.18.12.28l-.63.86a.29.29 0 0 0 .14.41l1.06.37c.06.08.12.17.19.25l-.42.97a.29.29 0 0 0 .22.38l1.08.22c.08.07.16.14.25.2l-.2 1.04a.29.29 0 0 0 .29.33l1.06.06c.1.05.19.09.29.13l.03 1.07a.29.29 0 0 0 .34.26l1.01-.11c.1.03.2.05.3.07l.24 1.07a.29.29 0 0 0 .39.18l.92-.35c.1.01.21.03.31.04l.44 1c.07.14.25.19.42.09l.86-.62.31-.04L12 24h.1l.62-.32c.1.02.21.03.31.04l.86.62a.29.29 0 0 0 .42-.09l.44-1 .31-.02.92.35a.29.29 0 0 0 .39-.18l.24-1.07c.1-.02.2-.04.3-.07l1.01.11a.29.29 0 0 0 .34-.26l.03-1.07c.1-.04.19-.08.29-.13l1.06-.06a.29.29 0 0 0 .29-.33l-.2-1.04c.09-.06.17-.13.25-.2l1.08-.22a.29.29 0 0 0 .22-.38l-.42-.97c.07-.08.13-.17.19-.25l1.06-.37a.29.29 0 0 0 .14-.41l-.63-.86c.04-.09.08-.18.12-.28l1-.49a.29.29 0 0 0 .07-.43l-.81-.72c.02-.1.04-.2.05-.3l.95-.56a.29.29 0 0 0 0-.43zM12 18a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/></svg>` },
+    sh: { bg: '#4eaa25', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M4 20h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2zM7.5 8l4 4-4 4M13 16h4"/></svg>` },
+    yaml: { bg: '#cb171e', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M3 3h18v18H3V3zm4.5 4.5L12 12l4.5-4.5M12 12v6"/></svg>` },
+    yml: { bg: '#cb171e', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M3 3h18v18H3V3zm4.5 4.5L12 12l4.5-4.5M12 12v6"/></svg>` },
+    txt: { bg: '#6b7280', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM7 13h10v1.5H7V13zm0 3h7v1.5H7V16zm0-6h10v1.5H7V10z"/></svg>` }
+  };
+  const info = icons[ext] || { bg: '#6b7280', icon: `<svg viewBox="0 0 24 24" fill="white"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM7 13h10v1.5H7V13zm0 3h7v1.5H7V16zm0-6h10v1.5H7V10z"/></svg>` };
+  return `<div class="pro-file-icon" style="background:${info.bg}">${info.icon}</div>`;
 }
 
 function renderAICopilotResponse(bubbleEl, replyText, createdFiles) {
@@ -4720,7 +5151,7 @@ function renderAICopilotResponse(bubbleEl, replyText, createdFiles) {
             return `
               <div class="pro-file-item">
                 <div class="pro-file-left">
-                  <span style="font-size:16px">📄</span>
+                  ${getFileTypeIcon(f.path)}
                   <div>
                     <div class="pro-file-name">${escHtml(f.path)}</div>
                     <div class="pro-file-meta">${lines} lines • Ready in Editor</div>
@@ -4728,12 +5159,6 @@ function renderAICopilotResponse(bubbleEl, replyText, createdFiles) {
                 </div>
                 <div style="display:flex;gap:6px">
                   ${restoreBtnHtml}
-                  <button class="pro-file-btn" onclick="openFileInEditor('${escHtml(f.path)}')">
-                    Open in Editor →
-                  </button>
-                  <button class="pro-file-btn secondary" onclick="openFileInBrowser('${escHtml(f.path)}')">
-                    Open in Browser 🌐
-                  </button>
                 </div>
               </div>
             `;

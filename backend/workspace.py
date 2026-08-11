@@ -866,3 +866,153 @@ def sync_local_project(req: ProjectSyncRequest):
         "project_id": req.project_id
     }
 
+
+# ── Runtime Detection & Package Installation ──
+
+LANGUAGE_RUNTIMES = {
+    "python":    {"cmd": ["python", "--version"],   "alt": ["python3", "--version"],  "install_hint": "Install from https://python.org or run: winget install Python.Python.3"},
+    "node":      {"cmd": ["node", "--version"],      "alt": ["nodejs", "--version"],   "install_hint": "Install from https://nodejs.org or run: winget install OpenJS.NodeJS"},
+    "java":      {"cmd": ["java", "-version"],       "alt": None,                      "install_hint": "Install JDK from https://adoptium.net or run: winget install EclipseAdoptium.Temurin.21.JDK"},
+    "javac":     {"cmd": ["javac", "-version"],      "alt": None,                      "install_hint": "Install JDK (includes javac) from https://adoptium.net"},
+    "g++":       {"cmd": ["g++", "--version"],       "alt": ["g++.exe", "--version"],  "install_hint": "Install MinGW-w64 from https://mingw-w64.org or run: winget install GnuWin32.gcc"},
+    "gcc":       {"cmd": ["gcc", "--version"],       "alt": ["gcc.exe", "--version"],  "install_hint": "Install MinGW-w64 from https://mingw-w64.org"},
+    "go":        {"cmd": ["go", "version"],          "alt": None,                      "install_hint": "Install from https://go.dev or run: winget install GoLang.Go"},
+    "cargo":     {"cmd": ["cargo", "--version"],     "alt": None,                      "install_hint": "Install Rust/Cargo from https://rustup.rs"},
+    "php":       {"cmd": ["php", "--version"],       "alt": None,                      "install_hint": "Install from https://windows.php.net or XAMPP: https://apachefriends.org"},
+    "ruby":      {"cmd": ["ruby", "--version"],      "alt": None,                      "install_hint": "Install from https://rubyinstaller.org"},
+    "git":       {"cmd": ["git", "--version"],       "alt": None,                      "install_hint": "Install from https://git-scm.com or run: winget install Git.Git"},
+    "npm":       {"cmd": ["npm", "--version"],       "alt": None,                      "install_hint": "Comes with Node.js. Install Node from https://nodejs.org"},
+    "pip":       {"cmd": ["pip", "--version"],       "alt": ["pip3", "--version"],     "install_hint": "Comes with Python. Install Python from https://python.org"},
+    "typescript":{"cmd": ["tsc", "--version"],       "alt": None,                      "install_hint": "Run: npm install -g typescript"},
+    "kotlin":    {"cmd": ["kotlinc", "-version"],    "alt": None,                      "install_hint": "Install from https://kotlinlang.org"},
+}
+
+
+@router.get("/runtimes")
+def check_runtimes():
+    """Check which language runtimes and tools are installed and available in PATH."""
+    results = {}
+    for name, info in LANGUAGE_RUNTIMES.items():
+        found = False
+        version_str = ""
+        cmd_to_try = [info["cmd"]]
+        if info.get("alt"):
+            cmd_to_try.append(info["alt"])
+
+        for cmd in cmd_to_try:
+            try:
+                proc = subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    timeout=5,
+                    errors="replace"
+                )
+                output = (proc.stdout or "").strip()
+                if output and (proc.returncode == 0 or proc.returncode == 1):
+                    # java -version returns on stderr, still works
+                    found = True
+                    # Extract version line
+                    version_str = output.split("\n")[0].strip()
+                    break
+            except (FileNotFoundError, subprocess.TimeoutExpired, PermissionError):
+                continue
+
+        results[name] = {
+            "installed": found,
+            "version": version_str if found else None,
+            "install_hint": info["install_hint"] if not found else None
+        }
+
+    installed_count = sum(1 for v in results.values() if v["installed"])
+    return {
+        "runtimes": results,
+        "installed_count": installed_count,
+        "total_checked": len(results),
+        "platform": sys.platform
+    }
+
+
+class PackageInstallRequest(BaseModel):
+    package: str
+    manager: str = "pip"          # pip | npm | gem | cargo | go
+    project_id: Optional[str] = "default"
+    global_install: bool = False
+
+
+@router.post("/install")
+def install_package(body: PackageInstallRequest):
+    """Install a package using pip, npm, gem, or cargo into the workspace or globally."""
+    pkg = (body.package or "").strip()
+    if not pkg:
+        raise HTTPException(status_code=400, detail="Package name is required.")
+
+    manager = (body.manager or "pip").lower().strip()
+    workspace_path = get_workspace_dir(body.project_id)
+
+    # Build install command
+    if manager == "pip":
+        cmd = ["pip", "install", pkg] if body.global_install else ["pip", "install", pkg, "--user"]
+    elif manager == "pip3":
+        cmd = ["pip3", "install", pkg]
+    elif manager == "npm":
+        if body.global_install:
+            cmd = ["npm", "install", "-g", pkg]
+        else:
+            cmd = ["npm", "install", pkg]
+    elif manager == "npx":
+        cmd = ["npx", pkg]
+    elif manager == "gem":
+        cmd = ["gem", "install", pkg]
+    elif manager == "cargo":
+        cmd = ["cargo", "install", pkg]
+    elif manager == "go":
+        cmd = ["go", "install", f"{pkg}@latest"]
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown package manager: {manager}. Use pip, npm, gem, cargo, or go.")
+
+    try:
+        proc = subprocess.run(
+            cmd,
+            cwd=str(workspace_path),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=120,
+            errors="replace"
+        )
+        success = proc.returncode == 0
+        output = (proc.stdout or "") + (proc.stderr or "")
+        return {
+            "success": success,
+            "package": pkg,
+            "manager": manager,
+            "command": " ".join(cmd),
+            "output": output.strip(),
+            "exit_code": proc.returncode
+        }
+    except FileNotFoundError:
+        return {
+            "success": False,
+            "package": pkg,
+            "manager": manager,
+            "output": f"'{manager}' is not installed or not in PATH. Please install {manager} first.",
+            "exit_code": 127
+        }
+    except subprocess.TimeoutExpired:
+        return {
+            "success": False,
+            "package": pkg,
+            "manager": manager,
+            "output": f"Package installation timed out after 120 seconds.",
+            "exit_code": 124
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "package": pkg,
+            "manager": manager,
+            "output": str(e),
+            "exit_code": 1
+        }
