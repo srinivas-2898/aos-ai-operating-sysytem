@@ -7,7 +7,7 @@
     "start": "serve .",
     "backend": "python main.py",
     "electron": "electron .",
-    "package": "npx @electron/packager . AOS --platform=win32 --arch=x64 --out=dist --overwrite --icon=help_icon.png --extra-resource=dist-backend/main --ignore=\"(dist-backend|dist|backend|__pycache__|scratch|\\.env|\\.git|.*\\.py$|.*\\.sql$|.*\\.txt$|Dockerfile|nixpacks\\.toml)\""
+    "package": "npx @electron/packager . AOS --platform=win32 --arch=x64 --out=dist --overwrite --icon=aos_logo.ico --extra-resource=dist-backend/main --ignore=\"(dist-backend|dist|backend|__pycache__|scratch|\\.env|\\.git|.*\\.py$|.*\\.sql$|.*\\.txt$|Dockerfile|nixpacks\\.toml)\""
   },
   "dependencies": {
     "firebase": "^12.16.0",
@@ -28,7 +28,7 @@
     },
     "win": {
       "target": "nsis",
-      "icon": "help_icon.png"
+      "icon": "aos_logo.png"
     },
     "extraResources": [
       {

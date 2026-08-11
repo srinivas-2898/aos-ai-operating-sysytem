@@ -23,9 +23,9 @@ if %errorlevel% neq 0 (
 
 echo Adding exclusions for AOS folders...
 
-:: Add folder exclusions
-powershell -Command "Add-MpPreference -ExclusionPath 'C:\Users\gandu\OneDrive\Desktop\ai\dist'"
-powershell -Command "Add-MpPreference -ExclusionPath 'C:\Users\gandu\OneDrive\Desktop\ai\dist-backend'"
+:: Add folder exclusions (using script's own directory)
+powershell -Command "Add-MpPreference -ExclusionPath '%~dp0dist'"
+powershell -Command "Add-MpPreference -ExclusionPath '%~dp0dist-backend'"
 
 :: Add process exclusion for the exe
 powershell -Command "Add-MpPreference -ExclusionProcess 'AOS.exe'"
@@ -35,6 +35,6 @@ echo.
 echo [SUCCESS] Windows Defender exclusions added!
 echo.
 echo You can now run AOS.exe from:
-echo   C:\Users\gandu\OneDrive\Desktop\ai\dist\AOS-win32-x64\AOS.exe
+echo   %~dp0dist\AOS-win32-x64\AOS.exe
 echo.
 pause

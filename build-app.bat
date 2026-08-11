@@ -4,6 +4,15 @@ echo   AOS - AI Operating System IDE Packaging Script
 echo ========================================================
 echo.
 
+:: Check for .env file
+if not exist ".env" (
+    echo [ERROR] .env file not found!
+    echo Please create a .env file with your API keys before building.
+    echo Copy .env.example to .env and fill in the values.
+    pause
+    exit /b 1
+)
+
 :: Check for python
 python --version >nul 2>&1
 if %errorlevel% neq 0 (
@@ -22,13 +31,13 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo [1/5] Installing Python requirements...
+echo [1/6] Installing Python requirements...
 pip install -r requirements.txt
 if %errorlevel% neq 0 (
     echo [WARNING] Failed to install some python requirements. Attempting to proceed...
 )
 
-echo [2/5] Installing PyInstaller...
+echo [2/6] Installing PyInstaller...
 pip install pyinstaller
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to install PyInstaller.
@@ -36,7 +45,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo [3/5] Compiling Python Backend to executable...
+echo [3/6] Compiling Python Backend to executable...
 python -m PyInstaller --onedir --clean --name main --distpath dist-backend --paths backend main.py
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to compile Python Backend with PyInstaller.
@@ -44,7 +53,17 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo [4/5] Installing npm dependencies...
+echo [4/6] Copying .env and creating output directory for backend...
+copy /Y ".env" "dist-backend\main\.env"
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to copy .env to dist-backend.
+    pause
+    exit /b 1
+)
+if not exist "dist-backend\main\output" mkdir "dist-backend\main\output"
+echo    .env copied and output directory created successfully.
+
+echo [5/6] Installing npm dependencies...
 call npm install
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to install npm dependencies.
@@ -52,7 +71,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo [5/5] Packaging Electron App...
+echo [6/6] Packaging Electron App...
 call npm run package
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to package Electron App.
