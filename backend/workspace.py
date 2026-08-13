@@ -6,6 +6,7 @@ and live health monitoring.
 import os
 import sys
 import re
+import json
 import time
 import uuid
 import shlex
@@ -109,18 +110,58 @@ class CopilotRequest(BaseModel):
 
 # ── Helpers ──
 
+MAPPINGS_FILE = WORKSPACES_ROOT / "project_mappings.json"
+
+def get_desktop_dir() -> Path:
+    """Returns the path to the user's Desktop folder, accounting for OneDrive."""
+    home = Path.home()
+    onedrive_desktop = home / "OneDrive" / "Desktop"
+    if onedrive_desktop.exists():
+        return onedrive_desktop
+    standard_desktop = home / "Desktop"
+    if standard_desktop.exists():
+        return standard_desktop
+    return home
+
+def get_project_name_mapping(project_id: str) -> str:
+    """Gets the project name for a given project_id from the local mapping cache."""
+    try:
+        if MAPPINGS_FILE.exists():
+            with open(MAPPINGS_FILE, "r", encoding="utf-8") as f:
+                mappings = json.load(f)
+                if project_id in mappings:
+                    return mappings[project_id]
+    except Exception as e:
+        print(f"Error reading project mapping: {e}")
+    return project_id
+
+def save_project_name_mapping(project_id: str, project_name: str):
+    """Saves the project mapping to local cache."""
+    try:
+        mappings = {}
+        if MAPPINGS_FILE.exists():
+            with open(MAPPINGS_FILE, "r", encoding="utf-8") as f:
+                mappings = json.load(f)
+        mappings[project_id] = project_name
+        with open(MAPPINGS_FILE, "w", encoding="utf-8") as f:
+            json.dump(mappings, f, indent=2)
+    except Exception as e:
+        print(f"Error saving project mapping: {e}")
+
 def get_workspace_dir(project_id: str, user_id: Optional[str] = None) -> Path:
-    """Returns safe, isolated directory path for the given project or workspace."""
+    """Returns safe, isolated directory path for the given project or workspace inside Desktop."""
     clean_pid = re.sub(r'[^a-zA-Z0-9_\-]', '', project_id or "default-project")
     if not clean_pid or clean_pid == "default-project" or clean_pid == "root":
         return BASE_DIR
 
-    if user_id:
-        clean_uid = re.sub(r'[^a-zA-Z0-9_\-]', '', user_id)
-        target = WORKSPACES_ROOT / clean_uid / clean_pid
-    else:
-        target = WORKSPACES_ROOT / clean_pid
-
+    # Retrieve mapped project name if possible
+    mapped_name = get_project_name_mapping(project_id)
+    clean_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', mapped_name or project_id)
+    
+    # Target Desktop directory directly
+    desktop = get_desktop_dir()
+    target = desktop / clean_name
+    
     target.mkdir(parents=True, exist_ok=True)
     return target
 
@@ -841,9 +882,12 @@ class ProjectSyncRequest(BaseModel):
 
 @router.post("/sync_local_project")
 def sync_local_project(req: ProjectSyncRequest):
-    """Saves/creates the project folder and files onto the user's laptop/local machine."""
+    """Saves/creates the project folder and files onto the user's Desktop."""
+    save_project_name_mapping(req.project_id, req.project_name or "aos_project")
+    
     clean_name = re.sub(r'[^a-zA-Z0-9_\-]', '_', req.project_name or req.project_id)
-    project_dir = WORKSPACES_ROOT / clean_name
+    desktop = get_desktop_dir()
+    project_dir = desktop / clean_name
     project_dir.mkdir(parents=True, exist_ok=True)
 
     saved_files = []

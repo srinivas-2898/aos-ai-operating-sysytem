@@ -15,7 +15,27 @@
 <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.11.0/lib/addon-web-links.min.js"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // Avoid conflict between Electron/Node require and Monaco AMD loader
+  if (typeof require !== 'undefined' && typeof require.config === 'undefined') {
+    window.nodeRequire = require;
+    window.nodeExports = window.exports;
+    window.nodeModule = window.module;
+    window.require = undefined;
+    window.exports = undefined;
+    window.module = undefined;
+  }
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+<script>
+  // Restore Node require immediately after loader script is loaded
+  if (window.nodeRequire) {
+    window.amdRequire = window.require;
+    window.require = window.nodeRequire;
+    window.exports = window.nodeExports;
+    window.module = window.nodeModule;
+  }
+</script>
 <script src="public-config.js"></script>
 
 <style>
@@ -911,14 +931,14 @@ body.dark-theme .user-avatar-btn {
   min-height: 90px;
   max-height: 80vh;
   border-top: 1px solid rgba(255,255,255,0.1);
-  background: #141d2e;
+  background: #082329;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
   position: relative;
 }
 body.dark-theme .bottom-terminal-panel {
-  background: #101726;
+  background: #082329;
   border-top-color: #1e293b;
 }
 .bottom-terminal-panel.hidden {
@@ -932,11 +952,11 @@ body.dark-theme .bottom-terminal-panel {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid rgba(255,255,255,0.08);
-  background: #1a2538;
+  background: #0c2b31;
   flex-shrink: 0;
 }
 body.dark-theme .panel-tab-bar {
-  background: #0d1524;
+  background: #0c2b31;
   border-bottom-color: #1e293b;
 }
 
@@ -1104,10 +1124,10 @@ body.dark-theme .panel-tab-bar {
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #141d2e;
+  background: #082329;
 }
 body.dark-theme #terminal-sessions-wrapper {
-  background: #101726;
+  background: #082329;
 }
 
 .xterm-session-pane {
@@ -2248,12 +2268,13 @@ body.dark-theme .opt-card-icon.outside {
     <div class="bottom-terminal-panel hidden" id="bottom-terminal-panel">
       <div class="panel-tab-bar">
         <div class="panel-tabs-left">
-          <button class="panel-tab-btn active" id="tab-term" onclick="switchBottomPanel('term')">TERMINAL</button>
           <button class="panel-tab-btn" id="tab-probs" onclick="switchBottomPanel('probs')">
             PROBLEMS <span class="panel-badge" id="prob-badge">0</span>
           </button>
           <button class="panel-tab-btn" id="tab-output" onclick="switchBottomPanel('output')">OUTPUT</button>
           <button class="panel-tab-btn" id="tab-debug" onclick="switchBottomPanel('debug')">DEBUG CONSOLE</button>
+          <button class="panel-tab-btn active" id="tab-term" onclick="switchBottomPanel('term')">TERMINAL</button>
+          <button class="panel-tab-btn" id="tab-ports" onclick="switchBottomPanel('ports')">PORTS</button>
 
           <div class="term-divider"></div>
 
@@ -2612,7 +2633,7 @@ function addNewTerminalTab(showToast = true) {
     fontSize: 12.5,
     lineHeight: 1.25,
     theme: {
-      background: '#141d2e',
+      background: '#082329',
       foreground: '#f8fafc',
       cursor: '#38bdf8',
       selectionBackground: 'rgba(56, 189, 248, 0.35)',
@@ -3320,7 +3341,7 @@ function runCode() {
 
 function switchBottomPanel(panelKey) {
   document.querySelectorAll('.panel-tab-btn').forEach(btn => btn.classList.remove('active'));
-  const btnMap = { term: 'tab-term', probs: 'tab-probs', output: 'tab-output', debug: 'tab-debug' };
+  const btnMap = { term: 'tab-term', probs: 'tab-probs', output: 'tab-output', debug: 'tab-debug', ports: 'tab-ports' };
   const targetBtn = document.getElementById(btnMap[panelKey]);
   if (targetBtn) targetBtn.classList.add('active');
 
@@ -3345,6 +3366,11 @@ function switchBottomPanel(panelKey) {
   } else if (panelKey === 'debug') {
     if (session) {
       session.term.writeln(`\r\n${ANSI.gray}[Debug Console] Ready for debugger attachment.${ANSI.reset}`);
+      writeSessionPrompt(session);
+    }
+  } else if (panelKey === 'ports') {
+    if (session) {
+      session.term.writeln(`\r\n${ANSI.blue}[Ports] Listening on local ports: 8000 (Backend API).${ANSI.reset}`);
       writeSessionPrompt(session);
     }
   }
@@ -3386,9 +3412,10 @@ function updateThemeIcon(isDark) {
 }
 
 /* ── INITIALIZE MONACO EDITOR ── */
-require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
+const loaderRequire = window.amdRequire || window.require;
+loaderRequire.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
 
-require(['vs/editor/editor.main'], function () {
+loaderRequire(['vs/editor/editor.main'], function () {
   monaco.editor.defineTheme('aos-light', {
     base: 'vs',
     inherit: true,

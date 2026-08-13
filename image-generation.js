@@ -37,8 +37,6 @@
     }
     viewer.querySelector('#image-viewer-preview').src = source;
     viewer.querySelector('#image-viewer-preview').alt = caption;
-    // A generation prompt can be several paragraphs long. It belongs in the
-    // image alt text, not across the fullscreen preview.
     const compactCaption = String(caption || 'Generated image')
       .replace(/\s+/g, ' ')
       .trim();
@@ -96,80 +94,93 @@
     });
   });
 
-  const generateSingleImage = async (prompt, model, rawPrompt, gallery, loadingSkeleton, layoutMode) => {
+  /** Save generated image to project history and add delete button */
+  const saveToHistory = async (item, imageUrl, rawPrompt) => {
+    const projectId = new URLSearchParams(location.search).get('project_id');
+    if (!projectId) return;
     try {
-      const response = await fetch(imageEndpoint(), {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, model, layout_mode: layoutMode })
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || !result.image_url) throw new Error(result.error || 'The image provider did not return an image.');
-
-      const item = document.createElement('figure');
-      item.className = 'gallery-img';
-      const preview = document.createElement('img');
-      preview.src = result.image_url;
-      preview.alt = rawPrompt;
-      preview.loading = 'eager';
-      preview.addEventListener('error', () => {
-        item.remove();
-        showToast('The generated image could not be displayed. Please try again.');
-      }, { once: true });
-      const caption = document.createElement('figcaption');
-      caption.textContent = `${result.provider || 'AI'} · ${result.model || 'image'}`;
-      item.append(preview, caption);
-      item.addEventListener('click', () => openViewer(result.image_url, rawPrompt));
-      item.setAttribute('title', 'Click to view full screen');
-      
-      // Replace loading skeleton with the item
-      if (loadingSkeleton && loadingSkeleton.parentNode) {
-        loadingSkeleton.replaceWith(item);
-      } else {
-        gallery.prepend(item);
-      }
-
-      const projectId = new URLSearchParams(location.search).get('project_id');
-      if (projectId) {
-        try {
-          const dataURItoBlob = (dataURI) => {
-            const parts = dataURI.split(',');
-            const byteString = atob(parts[1]);
-            const mimeString = parts[0].split(':')[1].split(';')[0];
-            const ab = new ArrayBuffer(byteString.length);
-            const ia = new Uint8Array(ab);
-            for (let i = 0; i < byteString.length; i++) {
-              ia[i] = byteString.charCodeAt(i);
-            }
-            return new Blob([ab], { type: mimeString });
-          };
-          const imageBlob = dataURItoBlob(result.image_url);
-          const filename = `generated-image-${Date.now()}-${Math.random().toString(36).substring(2, 7)}.png`;
-          if (!window.AOSGenerationStorage) throw new Error('Generation storage is not ready. Refresh and try again.');
-          const savedFile = await window.AOSGenerationStorage.saveBlob({
-            blob: imageBlob,
-            filename,
-            title: rawPrompt.slice(0, 90) || 'Generated image',
-            type: 'Image',
-            prompt: rawPrompt
-          });
-          if (savedFile && savedFile.id) {
-            addDeleteButton(item, savedFile.id);
-          }
-        } catch (storageError) {
-          console.error('Generation history storage failed:', storageError);
-          showToast(`Image created, but its project history was not saved: ${storageError.message}`);
+      const dataURItoBlob = (dataURI) => {
+        if (!dataURI || !dataURI.startsWith('data:')) return null;
+        const parts = dataURI.split(',');
+        if (parts.length < 2) return null;
+        const byteString = atob(parts[1]);
+        const mimeString = parts[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
         }
+        return new Blob([ab], { type: mimeString });
+      };
+      const imageBlob = dataURItoBlob(imageUrl);
+      if (!imageBlob) return; // Skip non-data-URI images
+      const filename = `generated-image-${Date.now()}-${Math.random().toString(36).substring(2, 7)}.png`;
+      if (!window.AOSGenerationStorage) return;
+      const savedFile = await window.AOSGenerationStorage.saveBlob({
+        blob: imageBlob,
+        filename,
+        title: rawPrompt.slice(0, 90) || 'Generated image',
+        type: 'Image',
+        prompt: rawPrompt
+      });
+      if (savedFile && savedFile.id) {
+        addDeleteButton(item, savedFile.id);
       }
-      return true;
-    } catch (error) {
-      if (loadingSkeleton && loadingSkeleton.parentNode) {
-        loadingSkeleton.remove();
-      }
-      showToast(error.message || 'Image generation failed.');
-      return false;
+    } catch (storageError) {
+      console.error('Generation history storage failed:', storageError);
     }
   };
 
+  /** Create gallery item from image URL — returns a Promise that resolves when image loads */
+  const createGalleryItem = (imageUrl, rawPrompt, loadingSkeleton, gallery) => {
+    return new Promise((resolve, reject) => {
+      const item = document.createElement('figure');
+      item.className = 'gallery-img';
+      const preview = document.createElement('img');
+      preview.alt = rawPrompt;
+      preview.loading = 'eager';
+
+      preview.addEventListener('load', () => {
+        const caption = document.createElement('figcaption');
+        caption.textContent = 'AOS · Generated Image';
+        item.append(preview, caption);
+        item.addEventListener('click', () => openViewer(imageUrl, rawPrompt));
+        item.setAttribute('title', 'Click to view full screen');
+
+        if (loadingSkeleton && loadingSkeleton.parentNode) {
+          loadingSkeleton.replaceWith(item);
+        } else {
+          gallery.prepend(item);
+        }
+        resolve(item);
+      }, { once: true });
+
+      preview.addEventListener('error', () => {
+        console.error('[AOS] Image failed to load:', imageUrl?.substring(0, 100));
+        reject(new Error('The generated image could not be displayed.'));
+      }, { once: true });
+
+      // Set src AFTER attaching listeners
+      preview.src = imageUrl;
+    });
+  };
+
+  /** Generate image via HuggingFace backend (existing flow) */
+  const generateViaHuggingFace = async (prompt, model, rawPrompt, gallery, loadingSkeleton, layoutMode) => {
+    const response = await fetch(imageEndpoint(), {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, model, layout_mode: layoutMode })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.image_url) {
+      throw new Error(result.error || result.detail || 'The image provider did not return an image.');
+    }
+
+    console.log('[AOS] HuggingFace image received, length:', result.image_url.length);
+    const item = await createGalleryItem(result.image_url, rawPrompt, loadingSkeleton, gallery);
+    await saveToHistory(item, result.image_url, rawPrompt);
+    return true;
+  };
   window.generateImage = async () => {
     const promptField = document.getElementById('img-prompt');
     const rawPrompt = promptField.value.trim();
@@ -181,39 +192,29 @@
     const prompt = [rawPrompt, stylePrompts[style], `aspect ratio ${ratio}`].filter(Boolean).join(', ');
     const button = document.getElementById('img-gen-btn');
     const gallery = document.getElementById('img-gallery');
-    
-    const layoutMode = true;
-    const count = 3;
-    
+
     button.disabled = true;
-    button.textContent = `Creating ${count} image${count > 1 ? 's' : ''}...`;
+    button.textContent = `Creating image with AI...`;
     document.getElementById('img-gallery-empty')?.remove();
 
-    // Create skeletons
-    const skeletons = [];
-    for (let i = 0; i < count; i++) {
-      const loading = document.createElement('div');
-      loading.className = 'skeleton skeleton-img';
-      loading.setAttribute('aria-label', `Generating image ${i + 1}`);
-      gallery.prepend(loading);
-      skeletons.push(loading);
-    }
+    // Create skeleton
+    const loading = document.createElement('div');
+    loading.className = 'skeleton skeleton-img';
+    loading.setAttribute('aria-label', 'Generating image');
+    gallery.prepend(loading);
 
     try {
-      // Run requests in parallel
-      await Promise.allSettled(skeletons.map(skeleton => 
-        generateSingleImage(prompt, model, rawPrompt, gallery, skeleton, layoutMode)
-      ));
-      showToast('Finished generating images.');
+      const success = await generateViaHuggingFace(prompt, model, rawPrompt, gallery, loading, true);
+      if (success) {
+        showToast('Image generated successfully.');
+      }
     } catch (err) {
-      showToast('Image generation failed.');
+      console.error('[AOS] Image generation error:', err);
+      showToast(err.message || 'Image generation failed.');
     } finally {
-      // Clean up any remaining skeletons
-      skeletons.forEach(skel => {
-        if (skel && skel.parentNode) skel.remove();
-      });
+      if (loading && loading.parentNode) loading.remove();
       button.disabled = false;
-      button.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate Images';
+      button.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Generate Image';
       document.dispatchEvent(new CustomEvent('aos-generation-finished'));
     }
   };

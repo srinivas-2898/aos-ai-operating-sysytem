@@ -92,26 +92,41 @@ def draw_wrapped_text(draw, text, font, color, x, y, max_width):
     return current_y
 
 async def generate_illustrative_artwork(prompt: str, model: str = "black-forest-labs/FLUX.1-schnell") -> Image.Image:
-    """Generate image artwork via Hugging Face API."""
-    if not HF_TOKEN:
-        raise ValueError("HF_TOKEN is missing on server.")
-        
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            'https://router.huggingface.co/nscale/v1/images/generations',
-            headers={'Authorization': f'Bearer {HF_TOKEN}'},
-            json={'model': model, 'prompt': prompt, 'response_format': 'b64_json'},
-            timeout=120,
-        )
-        response.raise_for_status()
-        payload = response.json()
-        result = (payload.get('data') or [{}])[0]
-        encoded = result.get('b64_json')
-        if not encoded:
-            raise ValueError('Hugging Face returned no image data.')
-            
-        img_data = base64.b64decode(encoded)
-        return Image.open(BytesIO(img_data))
+    """Generate image artwork via Hugging Face API, falling back to Pollinations on failure."""
+    if HF_TOKEN:
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    'https://router.huggingface.co/nscale/v1/images/generations',
+                    headers={'Authorization': f'Bearer {HF_TOKEN}'},
+                    json={'model': model, 'prompt': prompt, 'response_format': 'b64_json'},
+                    timeout=120,
+                )
+                if response.status_code == 200:
+                    payload = response.json()
+                    result = (payload.get('data') or [{}])[0]
+                    encoded = result.get('b64_json')
+                    if encoded:
+                        img_data = base64.b64decode(encoded)
+                        return Image.open(BytesIO(img_data))
+                print(f"HF image failed (status {response.status_code}): {response.text[:200]}")
+        except Exception as hf_err:
+            print(f"HF image generation error: {hf_err}")
+
+    # Pollinations Fallback
+    print("Falling back to Pollinations for illustrative artwork...")
+    try:
+        from urllib.parse import quote
+        safe_prompt = quote(prompt)
+        poll_url = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=1024&height=1024&nologo=true"
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(poll_url, timeout=90)
+            if resp.status_code == 200 and len(resp.content) > 1000:
+                return Image.open(BytesIO(resp.content))
+            raise ValueError(f"Pollinations returned status {resp.status_code}")
+    except Exception as poll_err:
+        print(f"Pollinations fallback failed: {poll_err}")
+        raise ValueError(f"Image generation failed on both HF and Pollinations fallback: {poll_err}")
 
 async def create_layout_aware_poster(prompt: str, gemini_api_key: str, model_name: str = "black-forest-labs/FLUX.1-schnell") -> str:
     """Uses LLM to lay out the poster, generates sub-images from HF, composites and returns base64 PNG."""
