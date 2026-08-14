@@ -227,6 +227,7 @@ async def generate_image(data: dict):
             raise HTTPException(status_code=502, detail=f'Image generation failed: {str(hf_error)}')
 
 
+
 DOCUMENT_TYPES = {'PDF', 'Word', 'Excel', 'PowerPoint', 'Resume', 'Invoice', 'Business Plan', 'Research'}
 
 

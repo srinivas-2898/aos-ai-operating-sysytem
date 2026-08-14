@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /backend/
+Disallow: /output/
+Disallow: /scratch/
+Disallow: /dist/
+Disallow: /dist-backend/
+
+Sitemap: https://aos-ai-operating-systems.web.app/sitemap.xml

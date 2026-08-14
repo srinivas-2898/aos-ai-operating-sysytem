@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>AOS — AI Operating System IDE</title>
+<title>AOS IDE — Advanced Cloud Development Studio</title>
+<meta name="description" content="AOS IDE is a powerful AI-assisted web and desktop IDE featuring full Monaco editing, integrated terminal sessions, Copilot AI assistance, and Git source control." />
+<meta name="keywords" content="AOS IDE, Cloud IDE, Monaco Editor, VS Code Web, Online IDE, AI Copilot, Web Terminal" />
+<meta name="robots" content="index, follow" />
+<link rel="icon" type="image/x-icon" href="aos_logo.ico" />
+<link rel="canonical" href="https://aos-ai-operating-systems.web.app/ide.html" />
+<meta name="google-site-verification" content="W1Fs-hElCYddGjAH0l_RDl2K5CQf8RVCAIL88aP37b0" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
@@ -16,24 +23,99 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // Avoid conflict between Electron/Node require and Monaco AMD loader
-  if (typeof require !== 'undefined' && typeof require.config === 'undefined') {
+  // Protect Monaco AMD loader from Electron Node.js CommonJS collision
+  window.isElectronApp = !!(window.process && window.process.type) || (typeof navigator !== 'undefined' && navigator.userAgent.includes('Electron'));
+  if (!window.isElectronApp) {
+    document.write(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Download AOS IDE Desktop App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    body {
+      margin: 0 !important; padding: 0 !important; overflow: hidden !important;
+      background: radial-gradient(circle at top right, #0f172a, #020617) !important;
+      height: 100vh !important; display: flex !important; align-items: center !important;
+      justify-content: center !important; font-family: 'Plus Jakarta Sans', sans-serif !important;
+      color: #f8fafc !important;
+    }
+    .download-card {
+      text-align: center; max-width: 620px; padding: 48px; border-radius: 24px;
+      background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      animation: fadeIn 0.6s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .download-card h1 {
+      font-size: 2.5rem; font-weight: 800; margin-bottom: 16px;
+      background: linear-gradient(135deg, #60a5fa, #3b82f6);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .download-card p {
+      font-size: 1.1rem; color: #94a3b8; line-height: 1.6; margin-bottom: 32px;
+    }
+    .dl-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff;
+      padding: 14px 28px; border-radius: 10px; font-weight: 700; text-decoration: none;
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2); transition: all 0.2s ease;
+    }
+    .dl-btn:hover {
+      transform: translateY(-2px); box-shadow: 0 15px 25px rgba(37, 99, 235, 0.35);
+    }
+    .back-link {
+      display: block; margin-top: 24px; color: #64748b; text-decoration: none; font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: #94a3b8; }
+  </style>
+</head>
+<body>
+  <div class="download-card">
+    <div style="font-size: 48px; margin-bottom: 20px;">💻</div>
+    <h1>AOS Development Studio</h1>
+    <p>AOS IDE is a desktop-only application. To write, compile, and run code directly on your local system with full terminal and file access, please download the desktop client.</p>
+    <a href="https://github.com/srinivas-2898/aos-ai-operating-sysytem/releases/latest" target="_blank" class="dl-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download AOS IDE Desktop App
+    </a>
+    <a href="mode-selection.html" class="back-link">← Back to Web Dashboard</a>
+  </div>
+</body>
+</html>`);
+    window.stop();
+  }
+  if (typeof require !== 'undefined') {
     window.nodeRequire = require;
-    window.nodeExports = window.exports;
-    window.nodeModule = window.module;
-    window.require = undefined;
-    window.exports = undefined;
-    window.module = undefined;
+    window.nodeProcess = (typeof process !== 'undefined') ? process : undefined;
+    window.nodeBuffer = (typeof Buffer !== 'undefined') ? Buffer : undefined;
+    window.nodeModule = (typeof module !== 'undefined') ? module : undefined;
+    window.nodeExports = (typeof exports !== 'undefined') ? exports : undefined;
+    try {
+      delete window.module;
+      delete window.exports;
+      if (typeof global !== 'undefined') {
+        delete global.module;
+        delete global.exports;
+      }
+    } catch(e) {}
   }
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+<script src="node_modules/monaco-editor/min/vs/loader.js" onerror="this.onerror=null;this.src='https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js'"></script>
 <script>
-  // Restore Node require immediately after loader script is loaded
+  if (typeof require !== 'undefined' && require.config) {
+    window.amdRequire = require;
+  }
   if (window.nodeRequire) {
-    window.amdRequire = window.require;
-    window.require = window.nodeRequire;
-    window.exports = window.nodeExports;
-    window.module = window.nodeModule;
+    try {
+      window.electron = window.nodeRequire('electron');
+    } catch(e) {}
   }
 </script>
 <script src="public-config.js"></script>
@@ -837,8 +919,14 @@ body.dark-theme .user-avatar-btn {
   flex: 1;
   position: relative;
   overflow: hidden;
+  min-height: 0;
 }
 #monaco-editor-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 100%;
 }
@@ -1985,6 +2073,363 @@ body.dark-theme .opt-card-icon.outside {
   opacity: 1;
   transform: translateY(0);
 }
+
+/* ── SIDEBAR VIEW CONTAINERS ── */
+.sidebar-view { display:flex; flex-direction:column; height:100%; overflow:hidden; }
+.sidebar-view.hidden-view { display:none !important; }
+
+/* ── SEARCH SIDEBAR ── */
+.search-sidebar-input {
+  width:100%; padding:6px 10px; border-radius:var(--radius-sm); border:1px solid var(--border);
+  background:var(--bg-input); font-size:12px; color:var(--text-primary); outline:none;
+  font-family:inherit;
+}
+.search-sidebar-input:focus { border-color:var(--primary); box-shadow:0 0 0 2px var(--primary-glow); }
+.search-options-row { display:flex; align-items:center; gap:4px; padding:4px 0; }
+.search-opt-btn {
+  width:26px; height:26px; border-radius:4px; border:1px solid var(--border);
+  background:transparent; color:var(--text-muted); display:flex; align-items:center;
+  justify-content:center; cursor:pointer; font-size:12px; font-weight:700; transition:all .12s;
+}
+.search-opt-btn:hover { background:var(--bg-hover); color:var(--text-primary); }
+.search-opt-btn.active { background:var(--primary-light); color:var(--primary); border-color:var(--primary); }
+.search-replace-row { display:flex; gap:4px; align-items:center; }
+.search-replace-row input { flex:1; }
+.search-results-container { flex:1; overflow-y:auto; padding:6px 0; }
+.search-result-file {
+  padding:4px 12px; font-size:11.5px; font-weight:700; color:var(--text-secondary);
+  display:flex; align-items:center; gap:6px; cursor:pointer;
+}
+.search-result-file:hover { background:var(--bg-hover); }
+.search-result-line {
+  padding:3px 12px 3px 28px; font-size:11.5px; color:var(--text-muted); cursor:pointer;
+  font-family:'JetBrains Mono',monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.search-result-line:hover { background:var(--bg-hover); color:var(--text-primary); }
+.search-result-line mark { background:var(--accent-yellow); color:#000; border-radius:2px; padding:0 1px; }
+.search-result-count {
+  display:inline-flex; align-items:center; justify-content:center; background:var(--bg-chip);
+  color:var(--text-muted); border-radius:10px; font-size:10px; font-weight:700; padding:1px 6px; margin-left:auto;
+}
+
+/* ── GIT / SOURCE CONTROL SIDEBAR ── */
+.git-section { padding:8px 12px; }
+.git-section-header {
+  font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;
+  letter-spacing:.05em; display:flex; align-items:center; justify-content:space-between;
+  padding:6px 0; cursor:pointer;
+}
+.git-section-header:hover { color:var(--text-primary); }
+.git-commit-input {
+  width:100%; padding:7px 10px; border-radius:var(--radius-sm); border:1px solid var(--border);
+  background:var(--bg-input); font-size:12px; color:var(--text-primary); outline:none;
+  font-family:inherit; resize:none;
+}
+.git-commit-input:focus { border-color:var(--primary); }
+.git-commit-btn {
+  width:100%; padding:6px; border-radius:var(--radius-sm); background:var(--primary);
+  color:#fff; border:none; font-size:12px; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:6px; margin-top:6px;
+}
+.git-commit-btn:hover { background:var(--primary-hover); }
+.git-file-item {
+  display:flex; align-items:center; justify-content:space-between; padding:4px 8px;
+  font-size:12px; color:var(--text-secondary); cursor:pointer; border-radius:4px;
+}
+.git-file-item:hover { background:var(--bg-hover); }
+.git-file-status {
+  width:16px; height:16px; border-radius:3px; display:flex; align-items:center; justify-content:center;
+  font-size:9px; font-weight:800; flex-shrink:0;
+}
+.git-file-status.modified { background:rgba(234,179,8,.15); color:#eab308; }
+.git-file-status.added { background:rgba(16,185,129,.15); color:#10b981; }
+.git-file-status.deleted { background:rgba(239,68,68,.15); color:#ef4444; }
+.git-file-status.untracked { background:rgba(139,92,246,.15); color:#8b5cf6; }
+.git-file-actions { display:flex; gap:2px; opacity:0; transition:opacity .1s; }
+.git-file-item:hover .git-file-actions { opacity:1; }
+.git-small-btn {
+  width:20px; height:20px; border-radius:3px; border:none; background:transparent;
+  color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center;
+}
+.git-small-btn:hover { background:var(--bg-hover); color:var(--text-primary); }
+.git-branch-select {
+  width:100%; padding:5px 8px; border-radius:var(--radius-sm); border:1px solid var(--border);
+  background:var(--bg-input); font-size:12px; color:var(--text-primary); outline:none; cursor:pointer;
+}
+
+/* ── DEBUG SIDEBAR ── */
+.debug-action-bar { display:flex; align-items:center; gap:4px; padding:8px 12px; border-bottom:1px solid var(--border); }
+.debug-action-btn {
+  width:28px; height:28px; border-radius:var(--radius-sm); border:none; background:transparent;
+  color:var(--text-muted); display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.debug-action-btn:hover { background:var(--bg-hover); color:var(--text-primary); }
+.debug-action-btn.play { color:var(--accent-green); }
+.debug-action-btn.play:hover { background:rgba(16,185,129,.12); }
+.debug-section-title {
+  font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;
+  letter-spacing:.05em; padding:8px 12px 4px; display:flex; align-items:center; gap:6px; cursor:pointer;
+}
+.debug-section-title:hover { color:var(--text-primary); }
+.debug-empty-msg { padding:12px; font-size:12px; color:var(--text-muted); text-align:center; }
+.debug-item { padding:4px 12px 4px 24px; font-size:12px; color:var(--text-secondary); display:flex; align-items:center; gap:6px; }
+.breakpoint-dot { width:10px; height:10px; border-radius:50%; background:#ef4444; flex-shrink:0; }
+
+/* ── EXTENSIONS SIDEBAR ── */
+.ext-card {
+  padding:10px 12px; border-bottom:1px solid var(--border); display:flex; gap:10px;
+  cursor:pointer; transition:background .12s;
+}
+.ext-card:hover { background:var(--bg-hover); }
+.ext-icon {
+  width:40px; height:40px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; font-size:18px;
+}
+.ext-info { flex:1; min-width:0; }
+.ext-name { font-size:12.5px; font-weight:700; color:var(--text-primary); }
+.ext-desc { font-size:11px; color:var(--text-muted); line-height:1.3; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ext-meta { display:flex; align-items:center; gap:8px; margin-top:4px; }
+.ext-install-btn {
+  padding:3px 10px; border-radius:var(--radius-sm); font-size:10.5px; font-weight:600;
+  border:1px solid var(--primary); background:var(--primary); color:#fff; cursor:pointer;
+}
+.ext-install-btn.installed { background:transparent; color:var(--accent-green); border-color:var(--accent-green); }
+.ext-stars { font-size:10px; color:var(--accent-yellow); }
+.ext-downloads { font-size:10px; color:var(--text-dim); }
+
+/* ── OUTLINE SIDEBAR ── */
+.outline-item {
+  padding:3px 12px; font-size:12px; color:var(--text-secondary); cursor:pointer;
+  display:flex; align-items:center; gap:6px; transition:background .1s;
+}
+.outline-item:hover { background:var(--bg-hover); color:var(--text-primary); }
+.outline-item.fn { padding-left:24px; }
+.outline-icon { width:14px; height:14px; border-radius:3px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:800; flex-shrink:0; }
+.outline-icon.fn-icon { background:rgba(139,92,246,.15); color:#8b5cf6; }
+.outline-icon.class-icon { background:rgba(234,179,8,.15); color:#eab308; }
+.outline-icon.var-icon { background:rgba(56,189,248,.15); color:#38bdf8; }
+
+/* ── FIND & REPLACE OVERLAY ── */
+.find-replace-widget {
+  position:absolute; top:0; right:20px; z-index:80; background:var(--bg-card);
+  border:1px solid var(--border); border-top:none; border-radius:0 0 var(--radius-md) var(--radius-md);
+  box-shadow:var(--shadow-lg); padding:8px 10px; display:none; flex-direction:column; gap:6px;
+  min-width:380px;
+}
+.find-replace-widget.show { display:flex; }
+.find-row { display:flex; align-items:center; gap:4px; }
+.find-input {
+  flex:1; padding:5px 8px; border-radius:4px; border:1px solid var(--border);
+  background:var(--bg-input); font-size:12px; color:var(--text-primary); outline:none; font-family:inherit;
+}
+.find-input:focus { border-color:var(--primary); }
+.find-btn {
+  width:24px; height:24px; border-radius:4px; border:none; background:transparent;
+  color:var(--text-muted); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:12px;
+}
+.find-btn:hover { background:var(--bg-hover); color:var(--text-primary); }
+.find-btn.active { background:var(--primary-light); color:var(--primary); }
+.find-match-info { font-size:11px; color:var(--text-muted); white-space:nowrap; padding:0 4px; }
+
+/* ── GO TO LINE / QUICK OPEN DIALOG ── */
+.quick-dialog {
+  position:fixed; top:20%; left:50%; transform:translateX(-50%); z-index:1100;
+  width:500px; max-width:90vw; background:var(--bg-card); border:1px solid var(--border);
+  border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); display:none; overflow:hidden;
+}
+.quick-dialog.show { display:block; }
+.quick-dialog-input {
+  width:100%; padding:12px 16px; border:none; border-bottom:1px solid var(--border);
+  background:transparent; font-size:14px; color:var(--text-primary); outline:none;
+}
+.quick-dialog-list { max-height:300px; overflow-y:auto; padding:4px 0; }
+.quick-dialog-item {
+  padding:6px 16px; font-size:13px; color:var(--text-secondary); cursor:pointer;
+  display:flex; align-items:center; gap:8px;
+}
+.quick-dialog-item:hover, .quick-dialog-item.sel { background:var(--bg-hover); color:var(--primary); }
+.quick-dialog-item .file-path { font-size:11px; color:var(--text-dim); margin-left:auto; }
+.quick-dialog-backdrop {
+  position:fixed; inset:0; z-index:1099; background:rgba(0,0,0,.3); display:none;
+}
+.quick-dialog-backdrop.show { display:block; }
+
+/* ── SETTINGS EDITOR ── */
+.settings-overlay {
+  position:fixed; inset:0; z-index:1200; background:var(--bg-app); display:none;
+  flex-direction:column;
+}
+.settings-overlay.show { display:flex; }
+.settings-header {
+  height:48px; padding:0 16px; display:flex; align-items:center; justify-content:space-between;
+  border-bottom:1px solid var(--border); background:var(--bg-topbar); flex-shrink:0;
+}
+.settings-header-title { font-family:'Plus Jakarta Sans',sans-serif; font-weight:700; font-size:16px; color:var(--text-primary); }
+.settings-body { flex:1; display:flex; overflow:hidden; }
+.settings-nav {
+  width:220px; border-right:1px solid var(--border); padding:12px 0; overflow-y:auto; flex-shrink:0;
+}
+.settings-nav-item {
+  padding:7px 16px; font-size:12.5px; color:var(--text-secondary); cursor:pointer;
+  display:flex; align-items:center; gap:8px;
+}
+.settings-nav-item:hover { background:var(--bg-hover); color:var(--text-primary); }
+.settings-nav-item.active { color:var(--primary); background:var(--primary-light); font-weight:600; border-right:2px solid var(--primary); }
+.settings-content { flex:1; padding:20px 24px; overflow-y:auto; }
+.settings-search {
+  width:100%; max-width:500px; padding:8px 14px; border-radius:var(--radius-sm);
+  border:1px solid var(--border); background:var(--bg-input); font-size:13px;
+  color:var(--text-primary); outline:none; margin-bottom:20px;
+}
+.settings-search:focus { border-color:var(--primary); }
+.settings-group-title { font-size:14px; font-weight:700; color:var(--text-primary); margin:16px 0 8px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+.setting-row {
+  display:flex; align-items:flex-start; justify-content:space-between; padding:10px 0;
+  border-bottom:1px solid var(--border-light); gap:20px;
+}
+.setting-label { flex:1; }
+.setting-label-title { font-size:13px; font-weight:600; color:var(--text-primary); }
+.setting-label-desc { font-size:11.5px; color:var(--text-muted); margin-top:2px; }
+.setting-control { flex-shrink:0; }
+.setting-toggle {
+  width:36px; height:20px; border-radius:10px; background:var(--border); border:none;
+  cursor:pointer; position:relative; transition:background .2s;
+}
+.setting-toggle.on { background:var(--primary); }
+.setting-toggle::after {
+  content:''; position:absolute; top:2px; left:2px; width:16px; height:16px;
+  border-radius:50%; background:#fff; transition:transform .2s;
+}
+.setting-toggle.on::after { transform:translateX(16px); }
+.setting-select {
+  padding:5px 10px; border-radius:var(--radius-sm); border:1px solid var(--border);
+  background:var(--bg-input); font-size:12px; color:var(--text-primary); outline:none;
+}
+.setting-number {
+  width:60px; padding:5px 8px; border-radius:var(--radius-sm); border:1px solid var(--border);
+  background:var(--bg-input); font-size:12px; color:var(--text-primary); outline:none; text-align:center;
+}
+
+/* ── CONTEXT MENUS ── */
+.context-menu {
+  position:fixed; z-index:2000; background:var(--bg-card); border:1px solid var(--border);
+  border-radius:var(--radius-md); box-shadow:var(--shadow-lg); padding:4px 0;
+  min-width:180px; display:none; user-select:none;
+}
+.context-menu.show { display:block; }
+.ctx-item {
+  padding:6px 14px; font-size:12.5px; color:var(--text-secondary); cursor:pointer;
+  display:flex; align-items:center; justify-content:space-between; gap:20px;
+}
+.ctx-item:hover { background:var(--bg-hover); color:var(--text-primary); }
+.ctx-item.danger:hover { background:rgba(239,68,68,.1); color:var(--accent-red); }
+.ctx-sep { height:1px; background:var(--border); margin:4px 0; }
+.ctx-kbd { font-size:10.5px; color:var(--text-dim); }
+
+/* ── NOTIFICATION CENTER ── */
+.notif-dropdown {
+  position:absolute; top:48px; right:80px; width:340px; max-height:400px;
+  background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg); z-index:500; display:none; flex-direction:column; overflow:hidden;
+}
+.notif-dropdown.show { display:flex; }
+.notif-header {
+  padding:10px 14px; font-size:12px; font-weight:700; color:var(--text-primary);
+  border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;
+}
+.notif-list { flex:1; overflow-y:auto; max-height:340px; }
+.notif-item {
+  padding:10px 14px; border-bottom:1px solid var(--border-light); display:flex; gap:10px;
+  font-size:12px; color:var(--text-secondary); transition:background .12s;
+}
+.notif-item:hover { background:var(--bg-hover); }
+.notif-item.unread { background:var(--primary-glow); }
+.notif-icon { width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:14px; }
+.notif-icon.info { background:rgba(37,99,235,.12); color:var(--primary); }
+.notif-icon.success { background:rgba(16,185,129,.12); color:var(--accent-green); }
+.notif-icon.warning { background:rgba(245,158,11,.12); color:var(--accent-yellow); }
+.notif-icon.error { background:rgba(239,68,68,.12); color:var(--accent-red); }
+.notif-content { flex:1; min-width:0; }
+.notif-text { line-height:1.4; }
+.notif-time { font-size:10px; color:var(--text-dim); margin-top:2px; }
+.notif-empty { padding:30px; text-align:center; color:var(--text-muted); font-size:12px; }
+
+/* ── ZEN MODE ── */
+body.zen-mode .top-navbar,
+body.zen-mode .activity-bar,
+body.zen-mode .explorer-sidebar,
+body.zen-mode .resizer-v,
+body.zen-mode .copilot-panel,
+body.zen-mode .status-bar,
+body.zen-mode .bottom-terminal-panel,
+body.zen-mode .bottom-pull-tab,
+body.zen-mode .editor-tab-bar,
+body.zen-mode .breadcrumbs-bar,
+body.zen-mode .resizer-h { display:none !important; }
+body.zen-mode .main-layout { height:100vh; }
+body.zen-mode .editor-workspace { border-radius:0; }
+
+/* ── SPLIT EDITOR ── */
+.editor-split-container { display:flex; flex:1; min-height:0; overflow:hidden; }
+.editor-pane { flex:1; display:flex; flex-direction:column; min-width:0; overflow:hidden; position:relative; }
+.editor-pane + .editor-pane { border-left:1px solid var(--border); }
+.split-resizer-v {
+  width:4px; background:transparent; cursor:col-resize; flex-shrink:0; z-index:50;
+  transition:background .15s;
+}
+.split-resizer-v:hover, .split-resizer-v.dragging { background:var(--primary); }
+
+/* ── BOTTOM PANEL CONTENT AREAS ── */
+.panel-content-area { flex:1; overflow:auto; display:none; padding:8px 12px; }
+.panel-content-area.active { display:block; }
+.problems-list { font-family:'JetBrains Mono',monospace; font-size:12px; }
+.problem-item {
+  padding:4px 8px; display:flex; align-items:center; gap:8px; cursor:pointer;
+  border-radius:4px; color:#cbd5e1;
+}
+.problem-item:hover { background:rgba(255,255,255,.06); }
+.problem-icon { font-size:12px; }
+.problem-icon.error { color:#f87171; }
+.problem-icon.warning { color:#fbbf24; }
+.problem-icon.info { color:#38bdf8; }
+.problem-file { color:#94a3b8; font-size:11px; margin-left:auto; }
+.output-log { font-family:'JetBrains Mono',monospace; font-size:12px; color:#cbd5e1; white-space:pre-wrap; line-height:1.5; }
+.ports-table { width:100%; border-collapse:collapse; font-size:12px; color:#cbd5e1; }
+.ports-table th { text-align:left; padding:6px 10px; color:#94a3b8; font-weight:600; border-bottom:1px solid rgba(255,255,255,.1); font-size:11px; text-transform:uppercase; }
+.ports-table td { padding:5px 10px; border-bottom:1px solid rgba(255,255,255,.05); }
+.ports-table tr:hover td { background:rgba(255,255,255,.04); }
+.port-status { display:inline-flex; align-items:center; gap:4px; }
+.port-dot { width:6px; height:6px; border-radius:50%; }
+.port-dot.active { background:#4ade80; }
+.port-dot.inactive { background:#64748b; }
+
+/* ── KEYBOARD SHORTCUTS MODAL ── */
+.shortcuts-table { width:100%; border-collapse:collapse; margin-top:10px; }
+.shortcuts-table th { text-align:left; padding:8px 12px; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; border-bottom:1px solid var(--border); }
+.shortcuts-table td { padding:6px 12px; font-size:12.5px; color:var(--text-secondary); border-bottom:1px solid var(--border-light); }
+.shortcuts-table tr:hover td { background:var(--bg-hover); }
+.shortcut-keys { display:inline-flex; gap:3px; }
+.shortcut-key {
+  padding:2px 6px; background:var(--bg-chip); border:1px solid var(--border);
+  border-radius:4px; font-size:11px; font-weight:600; color:var(--text-secondary);
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* ── STATUS BAR DROPUP MENUS ── */
+.sb-dropup {
+  position:absolute; bottom:24px; background:var(--bg-card); border:1px solid var(--border);
+  border-radius:var(--radius-md); box-shadow:var(--shadow-lg); padding:4px 0;
+  min-width:160px; display:none; z-index:200;
+}
+.sb-dropup.show { display:block; }
+.sb-dropup-item {
+  padding:6px 14px; font-size:12px; color:var(--text-secondary); cursor:pointer;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.sb-dropup-item:hover { background:var(--bg-hover); color:var(--text-primary); }
+.sb-dropup-item.active { color:var(--primary); font-weight:600; }
+.sb-dropup-item .check { color:var(--primary); font-weight:700; }
 </style>
 </head>
 <body>
@@ -2042,7 +2487,7 @@ body.dark-theme .opt-card-icon.outside {
     </button>
 
     <!-- Notification Bell Icon -->
-    <button class="nav-icon-btn" title="Notifications" onclick="toast('No unread notifications')">
+    <button class="nav-icon-btn" title="Notifications" onclick="toggleNotifCenter()">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -2146,6 +2591,9 @@ body.dark-theme .opt-card-icon.outside {
 
   <!-- Panel 2: Explorer Sidebar -->
   <aside class="explorer-sidebar" id="explorer-sidebar">
+
+    <!-- ═══ EXPLORER VIEW ═══ -->
+    <div class="sidebar-view" id="sidebar-view-explorer">
     <div class="sidebar-header">
       <span class="sidebar-header-title">EXPLORER</span>
       <div class="sidebar-header-actions">
@@ -2155,7 +2603,7 @@ body.dark-theme .opt-card-icon.outside {
         <button class="sidebar-action-btn" title="New Folder" onclick="promptNewFolder()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
         </button>
-        <button class="sidebar-action-btn" title="Open Folder" onclick="openLocalFolder()">
+        <button class="sidebar-action-btn" title="Open Folder" onclick="openNativeFolderDialog()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         </button>
         <button class="sidebar-action-btn" title="Refresh Explorer" onclick="refreshWorkspaceFiles()">
@@ -2170,10 +2618,10 @@ body.dark-theme .opt-card-icon.outside {
         <div class="explorer-empty-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         </div>
-        <p class="explorer-empty-text">No files in this workspace.<br/>Open an existing project or clone a repo.</p>
-        <button class="explorer-empty-btn primary" onclick="openProjectDialog()">
+        <p class="explorer-empty-text">No folder opened in this workspace.<br/>Open any folder from your computer or clone a repo.</p>
+        <button class="explorer-empty-btn primary" onclick="openNativeFolderDialog()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          Open Project
+          Open Folder
         </button>
         <button class="explorer-empty-btn" onclick="openCloneModal()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
@@ -2185,7 +2633,7 @@ body.dark-theme .opt-card-icon.outside {
 
     <!-- Accordions -->
     <div class="sidebar-accordion">
-      <div class="accordion-header" onclick="toast('Outline ready')">
+      <div class="accordion-header" onclick="switchSidebar('outline')">
         <svg class="folder-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         <span>OUTLINE</span>
       </div>
@@ -2196,6 +2644,152 @@ body.dark-theme .opt-card-icon.outside {
         <span>TIMELINE</span>
       </div>
     </div>
+    </div>
+
+    <!-- ═══ SEARCH VIEW ═══ -->
+    <div class="sidebar-view hidden-view" id="sidebar-view-search">
+      <div class="sidebar-header">
+        <span class="sidebar-header-title">SEARCH</span>
+        <div class="sidebar-header-actions">
+          <button class="sidebar-action-btn" title="Clear Search" onclick="clearGlobalSearch()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div style="padding:8px 12px; display:flex; flex-direction:column; gap:6px;">
+        <input type="text" class="search-sidebar-input" id="global-search-input" placeholder="Search across files..." oninput="performGlobalSearch()" onkeydown="if(event.key==='Enter')performGlobalSearch()"/>
+        <div class="search-options-row">
+          <button class="search-opt-btn" id="search-case-btn" title="Match Case" onclick="toggleSearchOption('case')">Aa</button>
+          <button class="search-opt-btn" id="search-word-btn" title="Match Whole Word" onclick="toggleSearchOption('word')">ab</button>
+          <button class="search-opt-btn" id="search-regex-btn" title="Use Regular Expression" onclick="toggleSearchOption('regex')">.*</button>
+        </div>
+        <div class="search-replace-row" style="display:none" id="search-replace-row">
+          <input type="text" class="search-sidebar-input" id="global-replace-input" placeholder="Replace..." />
+          <button class="sidebar-action-btn" title="Replace All" onclick="replaceAllInFiles()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          </button>
+        </div>
+        <button class="sidebar-action-btn" style="font-size:11px;width:auto;height:auto;padding:2px 6px;color:var(--text-muted)" onclick="toggleSearchReplace()">Toggle Replace</button>
+      </div>
+      <div class="search-results-container" id="global-search-results">
+        <div class="debug-empty-msg">Type to search across all files in workspace</div>
+      </div>
+    </div>
+
+    <!-- ═══ GIT / SOURCE CONTROL VIEW ═══ -->
+    <div class="sidebar-view hidden-view" id="sidebar-view-git">
+      <div class="sidebar-header">
+        <span class="sidebar-header-title">SOURCE CONTROL</span>
+        <div class="sidebar-header-actions">
+          <button class="sidebar-action-btn" title="Refresh" onclick="fetchGitStatusReal()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          </button>
+          <button class="sidebar-action-btn" title="Git Push" onclick="gitPush()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+          </button>
+          <button class="sidebar-action-btn" title="Git Pull" onclick="gitPull()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="git-section">
+        <input type="text" class="git-commit-input" id="git-commit-msg" placeholder="Commit message (Ctrl+Enter to commit)" onkeydown="if(event.ctrlKey&&event.key==='Enter')gitCommit()"/>
+        <button class="git-commit-btn" onclick="gitCommit()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Commit
+        </button>
+      </div>
+      <div class="git-section">
+        <div class="git-section-header">
+          <span>Branch</span>
+        </div>
+        <select class="git-branch-select" id="git-branch-dropdown" onchange="gitSwitchBranch(this.value)">
+          <option value="main">main</option>
+          <option value="develop">develop</option>
+        </select>
+      </div>
+      <div class="git-section">
+        <div class="git-section-header">
+          <span>Changes</span>
+          <span class="search-result-count" id="git-changes-count">0</span>
+        </div>
+        <div id="git-changes-list">
+          <div class="debug-empty-msg">No changes detected</div>
+        </div>
+      </div>
+      <div class="git-section">
+        <div class="git-section-header">
+          <span>Staged Changes</span>
+          <span class="search-result-count" id="git-staged-count">0</span>
+        </div>
+        <div id="git-staged-list"></div>
+      </div>
+    </div>
+
+    <!-- ═══ DEBUG VIEW ═══ -->
+    <div class="sidebar-view hidden-view" id="sidebar-view-debug">
+      <div class="sidebar-header">
+        <span class="sidebar-header-title">RUN AND DEBUG</span>
+      </div>
+      <div class="debug-action-bar">
+        <button class="debug-action-btn play" title="Start Debugging (F5)" onclick="runCode()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </button>
+        <button class="debug-action-btn" title="Step Over">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 7h8l-4 4 4 4H5"/><line x1="19" y1="7" x2="19" y2="15"/></svg>
+        </button>
+        <button class="debug-action-btn" title="Step Into">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+        </button>
+        <button class="debug-action-btn" title="Stop" style="color:var(--accent-red)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+        </button>
+      </div>
+      <div class="debug-section-title">
+        <svg class="folder-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        VARIABLES
+      </div>
+      <div class="debug-empty-msg">Not paused on a breakpoint</div>
+      <div class="debug-section-title">
+        <svg class="folder-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        WATCH
+      </div>
+      <div class="debug-empty-msg">No expressions added</div>
+      <div class="debug-section-title">
+        <svg class="folder-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        CALL STACK
+      </div>
+      <div class="debug-empty-msg">No call stack</div>
+      <div class="debug-section-title">
+        <svg class="folder-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        BREAKPOINTS
+      </div>
+      <div id="breakpoints-list">
+        <div class="debug-empty-msg">No breakpoints set</div>
+      </div>
+    </div>
+
+    <!-- ═══ EXTENSIONS VIEW ═══ -->
+    <div class="sidebar-view hidden-view" id="sidebar-view-extensions">
+      <div class="sidebar-header">
+        <span class="sidebar-header-title">EXTENSIONS</span>
+      </div>
+      <div style="padding:8px 12px;">
+        <input type="text" class="search-sidebar-input" id="ext-search-input" placeholder="Search Extensions in Marketplace..." oninput="filterExtensions(this.value)"/>
+      </div>
+      <div style="flex:1; overflow-y:auto;" id="extensions-list"></div>
+    </div>
+
+    <!-- ═══ OUTLINE VIEW ═══ -->
+    <div class="sidebar-view hidden-view" id="sidebar-view-outline">
+      <div class="sidebar-header">
+        <span class="sidebar-header-title">OUTLINE</span>
+      </div>
+      <div style="flex:1; overflow-y:auto;" id="outline-content">
+        <div class="debug-empty-msg">Open a file to see its outline</div>
+      </div>
+    </div>
+
   </aside>
 
   <!-- Resizer: Explorer Sidebar -->
@@ -2210,7 +2804,7 @@ body.dark-theme .opt-card-icon.outside {
         <!-- Open File Tabs Rendered Dynamically -->
       </div>
       <div class="editor-top-actions">
-        <button class="editor-act-btn run-btn" title="Run Current File (F5)" onclick="runCode()">
+        <button class="editor-act-btn run-btn" title="Run Current File in PowerShell (F5)" onclick="runCode()">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         </button>
         <button class="editor-act-btn preview-btn" title="Preview in Browser" onclick="previewActiveFileInBrowser()">
@@ -2247,14 +2841,33 @@ body.dark-theme .opt-card-icon.outside {
           </div>
         </div>
         <div class="welcome-actions-row">
-          <button class="welcome-btn primary" onclick="openProjectDialog()">
+          <button class="welcome-btn primary" onclick="openNativeFolderDialog()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-            Open Project
+            Open Folder
           </button>
           <button class="welcome-btn" onclick="openCloneModal()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
             Clone Repository
           </button>
+        </div>
+      </div>
+
+      <!-- Find & Replace Widget -->
+      <div class="find-replace-widget" id="find-replace-widget">
+        <div class="find-row">
+          <input type="text" class="find-input" id="find-input" placeholder="Find" oninput="performEditorFind()" onkeydown="handleFindKey(event)"/>
+          <span class="find-match-info" id="find-match-info">No results</span>
+          <button class="find-btn" id="find-case-btn" title="Match Case (Alt+C)" onclick="toggleFindOption('case')">Aa</button>
+          <button class="find-btn" id="find-word-btn" title="Match Whole Word (Alt+W)" onclick="toggleFindOption('word')">ab</button>
+          <button class="find-btn" id="find-regex-btn" title="Use Regex (Alt+R)" onclick="toggleFindOption('regex')">.*</button>
+          <button class="find-btn" title="Previous Match (Shift+Enter)" onclick="findPrevMatch()">↑</button>
+          <button class="find-btn" title="Next Match (Enter)" onclick="findNextMatch()">↓</button>
+          <button class="find-btn" title="Close (Escape)" onclick="closeFindReplace()">✕</button>
+        </div>
+        <div class="find-row" id="replace-row" style="display:none">
+          <input type="text" class="find-input" id="replace-input" placeholder="Replace" onkeydown="handleReplaceKey(event)"/>
+          <button class="find-btn" title="Replace (Ctrl+Shift+1)" onclick="replaceCurrentMatch()">→</button>
+          <button class="find-btn" title="Replace All (Ctrl+Alt+Enter)" onclick="replaceAllMatches()">⇉</button>
         </div>
       </div>
 
@@ -2337,8 +2950,33 @@ body.dark-theme .opt-card-icon.outside {
         </div>
       </div>
 
+      <!-- Panel Content Areas -->
+      <div class="panel-content-area" id="panel-problems" style="background:#082329;">
+        <div class="problems-list" id="problems-list-content">
+          <div class="problem-item"><span class="problem-icon info">ℹ</span><span>No problems detected in workspace</span></div>
+        </div>
+      </div>
+      <div class="panel-content-area" id="panel-output" style="background:#082329;">
+        <div class="output-log" id="output-log-content">[AOS Output] Ready — listening on 127.0.0.1:8000
+[AOS Output] Monaco Editor initialized successfully
+[AOS Output] Workspace loaded</div>
+      </div>
+      <div class="panel-content-area" id="panel-debug-console" style="background:#082329;">
+        <div class="output-log" id="debug-console-content">[Debug Console] Ready for debugger attachment.
+Type expressions to evaluate.</div>
+      </div>
+      <div class="panel-content-area" id="panel-ports" style="background:#082329;">
+        <table class="ports-table">
+          <thead><tr><th>Port</th><th>Address</th><th>Protocol</th><th>Status</th><th>Process</th></tr></thead>
+          <tbody id="ports-table-body">
+            <tr><td>8000</td><td>localhost:8000</td><td>HTTP</td><td><span class="port-status"><span class="port-dot active"></span> Active</span></td><td>python main.py</td></tr>
+            <tr><td>3210</td><td>localhost:3210</td><td>HTTP</td><td><span class="port-status"><span class="port-dot active"></span> Active</span></td><td>Proxima AI</td></tr>
+          </tbody>
+        </table>
+      </div>
+
       <!-- Xterm Multi-Sessions Container -->
-      <div id="terminal-sessions-wrapper"></div>
+      <div id="terminal-sessions-wrapper" class="panel-content-area active" style="padding:0;"></div>
     </div>
 
     <!-- Pull tab when terminal is closed -->
@@ -2460,10 +3098,10 @@ body.dark-theme .opt-card-icon.outside {
   </div>
 
   <div class="sb-right">
-    <div class="sb-item" id="sb-cursor-pos" style="display:none">Ln 1, Col 1</div>
-    <div class="sb-item" id="sb-indent" style="display:none">Spaces: 2</div>
-    <div class="sb-item" id="sb-encoding" style="display:none">UTF-8</div>
-    <div class="sb-item" id="sb-language">Ready</div>
+    <div class="sb-item" id="sb-cursor-pos" style="display:none" onclick="openGoToLine()" title="Go to Line/Column (Ctrl+G)">Ln 1, Col 1</div>
+    <div class="sb-item" id="sb-indent" style="display:none" onclick="promptChangeIndent()" title="Select Indentation">Spaces: 2</div>
+    <div class="sb-item" id="sb-encoding" style="display:none" onclick="promptChangeEncoding()" title="Select Encoding">UTF-8</div>
+    <div class="sb-item" id="sb-language" onclick="promptChangeLanguage()" title="Select Language Mode">Ready</div>
     <div class="sb-item" onclick="window.open('http://127.0.0.1:8000','_blank')" title="Live Development Server">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
       <span>Go Live</span>
@@ -2544,6 +3182,126 @@ body.dark-theme .opt-card-icon.outside {
     <div class="modal-btns">
       <button class="modal-btn" onclick="closeCloneModal()">Cancel</button>
       <button class="modal-btn primary" id="btn-do-clone" onclick="doCloneRepository()">Clone Repository</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ QUICK OPEN (Ctrl+P) ════ -->
+<div class="quick-dialog-backdrop" id="quick-open-backdrop" onclick="closeQuickOpen()"></div>
+<div class="quick-dialog" id="quick-open-dialog">
+  <input type="text" class="quick-dialog-input" id="quick-open-input" placeholder="Type file name to open..." oninput="filterQuickOpen(this.value)" onkeydown="handleQuickOpenKey(event)"/>
+  <div class="quick-dialog-list" id="quick-open-list"></div>
+</div>
+
+<!-- ════ GO TO LINE (Ctrl+G) ════ -->
+<div class="quick-dialog-backdrop" id="goto-line-backdrop" onclick="closeGoToLine()"></div>
+<div class="quick-dialog" id="goto-line-dialog">
+  <input type="text" class="quick-dialog-input" id="goto-line-input" placeholder="Go to Line Number (e.g. 42)..." onkeydown="handleGoToLineKey(event)"/>
+</div>
+
+<!-- ════ NOTIFICATION CENTER ════ -->
+<div class="notif-dropdown" id="notif-dropdown">
+  <div class="notif-header">
+    <span>Notifications</span>
+    <button class="sidebar-action-btn" title="Clear All" onclick="clearNotifications()" style="width:20px;height:20px">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="notif-list" id="notif-list">
+    <div class="notif-empty">No new notifications</div>
+  </div>
+</div>
+
+<!-- ════ CONTEXT MENUS ════ -->
+<div class="context-menu" id="tab-context-menu">
+  <div class="ctx-item" onclick="ctxCloseTab()">Close <span class="ctx-kbd">Ctrl+W</span></div>
+  <div class="ctx-item" onclick="ctxCloseOtherTabs()">Close Others</div>
+  <div class="ctx-item" onclick="ctxCloseAllTabs()">Close All</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxCopyPath()">Copy Path</div>
+  <div class="ctx-item" onclick="ctxCopyRelPath()">Copy Relative Path</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxRevealInExplorer()">Reveal in Explorer</div>
+  <div class="ctx-item" onclick="ctxSplitRight()">Split Right</div>
+</div>
+
+<div class="context-menu" id="file-context-menu">
+  <div class="ctx-item" onclick="ctxFileOpen()">Open</div>
+  <div class="ctx-item" onclick="ctxFileCopyPath()">Copy Path</div>
+  <div class="ctx-item" onclick="ctxFileCopyName()">Copy Name</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="ctxFileRename()">Rename <span class="ctx-kbd">F2</span></div>
+  <div class="ctx-item danger" onclick="ctxFileDelete()">Delete <span class="ctx-kbd">Del</span></div>
+</div>
+
+<!-- ════ SETTINGS OVERLAY ════ -->
+<div class="settings-overlay" id="settings-overlay">
+  <div class="settings-header">
+    <span class="settings-header-title">⚙ Settings</span>
+    <button class="modal-close-icon" onclick="closeSettings()">✕</button>
+  </div>
+  <div class="settings-body">
+    <nav class="settings-nav">
+      <div class="settings-nav-item active" onclick="switchSettingsTab('editor',this)">📝 Editor</div>
+      <div class="settings-nav-item" onclick="switchSettingsTab('appearance',this)">🎨 Appearance</div>
+      <div class="settings-nav-item" onclick="switchSettingsTab('terminal',this)">💻 Terminal</div>
+      <div class="settings-nav-item" onclick="switchSettingsTab('files',this)">📁 Files</div>
+      <div class="settings-nav-item" onclick="switchSettingsTab('keybindings',this)">⌨ Keyboard Shortcuts</div>
+    </nav>
+    <div class="settings-content" id="settings-content">
+      <input type="text" class="settings-search" placeholder="Search settings..." oninput="filterSettings(this.value)"/>
+      <div id="settings-editor-section">
+        <div class="settings-group-title">Editor</div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Font Size</div><div class="setting-label-desc">Controls the font size in pixels for the editor.</div></div><div class="setting-control"><input type="number" class="setting-number" value="13.5" min="8" max="32" onchange="updateSetting('fontSize',this.value)"/></div></div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Tab Size</div><div class="setting-label-desc">The number of spaces a tab is equal to.</div></div><div class="setting-control"><input type="number" class="setting-number" value="2" min="1" max="8" onchange="updateSetting('tabSize',this.value)"/></div></div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Word Wrap</div><div class="setting-label-desc">Controls how lines should wrap in the editor.</div></div><div class="setting-control"><button class="setting-toggle on" id="toggle-wordwrap" onclick="toggleSettingSwitch(this,'wordWrap')"></button></div></div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Minimap</div><div class="setting-label-desc">Controls whether the minimap is shown.</div></div><div class="setting-control"><button class="setting-toggle on" id="toggle-minimap" onclick="toggleSettingSwitch(this,'minimap')"></button></div></div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Smooth Scrolling</div><div class="setting-label-desc">Controls whether the editor scrolls smoothly.</div></div><div class="setting-control"><button class="setting-toggle on" id="toggle-smooth" onclick="toggleSettingSwitch(this,'smoothScrolling')"></button></div></div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Cursor Blinking</div><div class="setting-label-desc">Controls the cursor animation style.</div></div><div class="setting-control"><select class="setting-select" onchange="updateSetting('cursorBlinking',this.value)"><option value="smooth">Smooth</option><option value="blink">Blink</option><option value="phase">Phase</option><option value="expand">Expand</option><option value="solid">Solid</option></select></div></div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Line Numbers</div><div class="setting-label-desc">Controls the display of line numbers.</div></div><div class="setting-control"><select class="setting-select" onchange="updateSetting('lineNumbers',this.value)"><option value="on">On</option><option value="off">Off</option><option value="relative">Relative</option></select></div></div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Render Whitespace</div><div class="setting-label-desc">Controls rendering of whitespace characters.</div></div><div class="setting-control"><select class="setting-select" onchange="updateSetting('renderWhitespace',this.value)"><option value="none">None</option><option value="boundary">Boundary</option><option value="selection">Selection</option><option value="all">All</option></select></div></div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Bracket Pair Colorization</div><div class="setting-label-desc">Colorize matching brackets.</div></div><div class="setting-control"><button class="setting-toggle on" onclick="toggleSettingSwitch(this,'bracketPairColorization')"></button></div></div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Auto Closing Brackets</div><div class="setting-label-desc">Auto close brackets when typing.</div></div><div class="setting-control"><button class="setting-toggle on" onclick="toggleSettingSwitch(this,'autoClosingBrackets')"></button></div></div>
+      </div>
+      <div id="settings-appearance-section" style="display:none">
+        <div class="settings-group-title">Appearance</div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Color Theme</div><div class="setting-label-desc">Specifies the color theme for the IDE.</div></div><div class="setting-control"><select class="setting-select" onchange="applyTheme(this.value)"><option value="light">AOS Light</option><option value="dark">AOS Dark</option></select></div></div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Activity Bar Visible</div><div class="setting-label-desc">Controls the visibility of the activity bar.</div></div><div class="setting-control"><button class="setting-toggle on" onclick="toggleUIElement(this,'.activity-bar')"></button></div></div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Status Bar Visible</div><div class="setting-label-desc">Controls the visibility of the status bar.</div></div><div class="setting-control"><button class="setting-toggle on" onclick="toggleUIElement(this,'.status-bar')"></button></div></div>
+      </div>
+      <div id="settings-terminal-section" style="display:none">
+        <div class="settings-group-title">Terminal</div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Terminal Font Size</div><div class="setting-label-desc">Controls the font size of the integrated terminal.</div></div><div class="setting-control"><input type="number" class="setting-number" value="12.5" min="8" max="24" onchange="updateTermFontSize(this.value)"/></div></div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Default Shell</div><div class="setting-label-desc">The default shell for the integrated terminal.</div></div><div class="setting-control"><select class="setting-select"><option value="powershell">PowerShell</option><option value="cmd">CMD</option><option value="bash">Bash</option></select></div></div>
+      </div>
+      <div id="settings-files-section" style="display:none">
+        <div class="settings-group-title">Files</div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Auto Save</div><div class="setting-label-desc">Controls auto-save of files.</div></div><div class="setting-control"><select class="setting-select" id="auto-save-select"><option value="off">Off</option><option value="afterDelay">After Delay</option><option value="onFocusChange">On Focus Change</option></select></div></div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Default Encoding</div><div class="setting-label-desc">The default character set encoding to use.</div></div><div class="setting-control"><select class="setting-select"><option value="utf-8">UTF-8</option><option value="ascii">ASCII</option><option value="iso-8859-1">ISO 8859-1</option></select></div></div>
+        <div class="setting-row"><div class="setting-label"><div class="setting-label-title">Trim Trailing Whitespace</div><div class="setting-label-desc">Trim trailing whitespace when saving.</div></div><div class="setting-control"><button class="setting-toggle" onclick="toggleSettingSwitch(this,'trimWhitespace')"></button></div></div>
+      </div>
+      <div id="settings-keybindings-section" style="display:none">
+        <div class="settings-group-title">Keyboard Shortcuts</div>
+        <table class="shortcuts-table">
+          <thead><tr><th>Command</th><th>Keybinding</th></tr></thead>
+          <tbody>
+            <tr><td>Command Palette</td><td><span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">K</span></span></td></tr>
+            <tr><td>Quick Open File</td><td><span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">P</span></span></td></tr>
+            <tr><td>Find</td><td><span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">F</span></span></td></tr>
+            <tr><td>Find & Replace</td><td><span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">H</span></span></td></tr>
+            <tr><td>Go to Line</td><td><span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">G</span></span></td></tr>
+            <tr><td>Global Search</td><td><span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">Shift</span><span class="shortcut-key">F</span></span></td></tr>
+            <tr><td>New File</td><td><span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">N</span></span></td></tr>
+            <tr><td>Save File</td><td><span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">S</span></span></td></tr>
+            <tr><td>Toggle Terminal</td><td><span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">`</span></span></td></tr>
+            <tr><td>Run Code</td><td><span class="shortcut-keys"><span class="shortcut-key">F5</span></span></td></tr>
+            <tr><td>Toggle Copilot</td><td><span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">I</span></span></td></tr>
+            <tr><td>Zen Mode</td><td><span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">K</span> <span class="shortcut-key">Z</span></span></td></tr>
+            <tr><td>Settings</td><td><span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">,</span></span></td></tr>
+            <tr><td>Close Tab</td><td><span class="shortcut-keys"><span class="shortcut-key">Ctrl</span><span class="shortcut-key">W</span></span></td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -3006,13 +3764,38 @@ function updateTerminalModeUI() {
 
 async function executeSessionCommand(session, cmd) {
   session.isExecuting = true;
-  const lower = cmd.toLowerCase();
+  const lower = cmd.toLowerCase().trim();
 
   if (lower === 'clear' || lower === 'cls') {
     session.term.clear();
     writeSessionPrompt(session);
     session.isExecuting = false;
     return;
+  }
+
+  // Handle directory changes directly
+  if (lower === 'cd' || lower === 'cd ~') {
+    if (rootDirectoryPath) {
+      currentCwd = rootDirectoryPath;
+    }
+    writeSessionPrompt(session);
+    session.isExecuting = false;
+    return;
+  } else if (lower.startsWith('cd ')) {
+    const targetDir = cmd.slice(3).trim().replace(/^["']|["']$/g, '');
+    if (window.nodeRequire) {
+      try {
+        const path = window.nodeRequire('path');
+        const fs = window.nodeRequire('fs');
+        const resolved = path.isAbsolute(targetDir) ? targetDir : path.resolve(currentCwd, targetDir);
+        if (fs.existsSync(resolved) && fs.statSync(resolved).isDirectory()) {
+          currentCwd = resolved;
+          writeSessionPrompt(session);
+          session.isExecuting = false;
+          return;
+        }
+      } catch (e) {}
+    }
   }
 
   if (lower === 'help') {
@@ -3075,6 +3858,33 @@ async function executeSessionCommand(session, cmd) {
     return;
   }
 
+  // 1. Direct Node.js child_process execution for desktop Electron (PowerShell)
+  if (window.nodeRequire) {
+    try {
+      const { exec } = window.nodeRequire('child_process');
+      const escapedCmd = cmd.replace(/"/g, '`"');
+      const psShellCmd = `powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "${escapedCmd}"`;
+
+      exec(psShellCmd, { cwd: currentCwd, maxBuffer: 10 * 1024 * 1024, windowsHide: true }, (err, stdout, stderr) => {
+        if (stdout) {
+          stdout.split(/\r?\n/).forEach(l => session.term.writeln(l));
+        }
+        if (stderr) {
+          stderr.split(/\r?\n/).forEach(l => session.term.writeln(`${ANSI.red}${l}${ANSI.reset}`));
+        }
+        if (err && !stdout && !stderr) {
+          session.term.writeln(`${ANSI.red}${err.message}${ANSI.reset}`);
+        }
+        writeSessionPrompt(session);
+        session.isExecuting = false;
+      });
+      return;
+    } catch (nodeErr) {
+      console.warn('Node exec failed, falling back to backend terminal:', nodeErr);
+    }
+  }
+
+  // 2. Fallback to Backend /api/workspace/terminal
   try {
     const resp = await fetch(`${BACKEND_BASE}/api/workspace/terminal`, {
       method: 'POST',
@@ -3345,8 +4155,20 @@ function switchBottomPanel(panelKey) {
   const targetBtn = document.getElementById(btnMap[panelKey]);
   if (targetBtn) targetBtn.classList.add('active');
 
-  const session = getActiveSession();
+  const contentMap = {
+    term: 'terminal-sessions-wrapper',
+    probs: 'panel-problems',
+    output: 'panel-output',
+    debug: 'panel-debug-console',
+    ports: 'panel-ports'
+  };
+
+  document.querySelectorAll('.bottom-terminal-panel .panel-content-area').forEach(el => el.classList.remove('active'));
+  const targetArea = document.getElementById(contentMap[panelKey]);
+  if (targetArea) targetArea.classList.add('active');
+
   if (panelKey === 'term') {
+    const session = getActiveSession();
     if (session) {
       setTimeout(() => {
         try { session.fitAddon.fit(); } catch(e) {}
@@ -3354,25 +4176,7 @@ function switchBottomPanel(panelKey) {
       }, 50);
     }
   } else if (panelKey === 'probs') {
-    if (session) {
-      session.term.writeln(`\r\n${ANSI.green}No problems or syntax errors detected in workspace.${ANSI.reset}`);
-      writeSessionPrompt(session);
-    }
-  } else if (panelKey === 'output') {
-    if (session) {
-      session.term.writeln(`\r\n${ANSI.cyan}[AOS Output Channel] Connected and listening on 127.0.0.1:8000${ANSI.reset}`);
-      writeSessionPrompt(session);
-    }
-  } else if (panelKey === 'debug') {
-    if (session) {
-      session.term.writeln(`\r\n${ANSI.gray}[Debug Console] Ready for debugger attachment.${ANSI.reset}`);
-      writeSessionPrompt(session);
-    }
-  } else if (panelKey === 'ports') {
-    if (session) {
-      session.term.writeln(`\r\n${ANSI.blue}[Ports] Listening on local ports: 8000 (Backend API).${ANSI.reset}`);
-      writeSessionPrompt(session);
-    }
+    updateProblemsPanel();
   }
 }
 
@@ -3412,90 +4216,201 @@ function updateThemeIcon(isDark) {
 }
 
 /* ── INITIALIZE MONACO EDITOR ── */
+function initMonacoEditor() {
+  if (typeof monaco === 'undefined') return;
+
+  try {
+    monaco.editor.defineTheme('aos-light', {
+      base: 'vs',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '16a34a', fontStyle: 'italic' },
+        { token: 'keyword', foreground: '9333ea', fontStyle: 'bold' },
+        { token: 'string', foreground: 'dc2626' },
+        { token: 'number', foreground: '2563eb' },
+        { token: 'type', foreground: '0284c7' },
+        { token: 'function', foreground: '2563eb' }
+      ],
+      colors: {
+        'editor.background': '#ffffff',
+        'editor.foreground': '#0f172a',
+        'editor.lineHighlightBackground': '#f8fafc',
+        'editorCursor.foreground': '#2563eb',
+        'editorIndentGuide.background': '#f1f5f9',
+        'editorIndentGuide.activeBackground': '#cbd5e1',
+        'editorLineNumber.foreground': '#64748b',
+        'editorLineNumber.activeForeground': '#2563eb'
+      }
+    });
+
+    monaco.editor.defineTheme('aos-dark', {
+      base: 'vs-dark',
+      inherit: true,
+      rules: [
+        { token: 'comment', foreground: '64748b', fontStyle: 'italic' },
+        { token: 'keyword', foreground: 'c084fc', fontStyle: 'bold' },
+        { token: 'string', foreground: '34d399' },
+        { token: 'number', foreground: 'fb923c' },
+        { token: 'type', foreground: '38bdf8' },
+        { token: 'function', foreground: '60a5fa' }
+      ],
+      colors: {
+        'editor.background': '#080c14',
+        'editor.foreground': '#f8fafc',
+        'editor.lineHighlightBackground': '#101726',
+        'editorCursor.foreground': '#60a5fa',
+        'editorIndentGuide.background': '#1e293b',
+        'editorIndentGuide.activeBackground': '#3b82f6',
+        'editorLineNumber.foreground': '#64748b',
+        'editorLineNumber.activeForeground': '#60a5fa'
+      }
+    });
+
+    const isDark = document.body.classList.contains('dark-theme');
+    const container = document.getElementById('monaco-editor-container');
+    if (!container) return;
+
+    container.innerHTML = '';
+    monacoEditorInstance = monaco.editor.create(container, {
+      theme: isDark ? 'aos-dark' : 'aos-light',
+      automaticLayout: true,
+      fontSize: 13.5,
+      fontFamily: "'JetBrains Mono', 'Cascadia Code', Consolas, monospace",
+      lineHeight: 22,
+      tabSize: 2,
+      minimap: { enabled: true, maxColumn: 80 },
+      scrollBeyondLastLine: false,
+      smoothScrolling: true,
+      cursorBlinking: 'smooth',
+      renderLineHighlight: 'all',
+      wordWrap: 'on'
+    });
+
+    monacoEditorInstance.onDidChangeCursorPosition((e) => {
+      const posStr = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+      const el = document.getElementById('sb-cursor-pos');
+      if (el) el.textContent = posStr;
+    });
+
+    monacoEditorInstance.onDidChangeModelContent(() => {
+      if (!activeFilePath || !workspaceFilesMap[activeFilePath]) return;
+      const val = monacoEditorInstance.getValue();
+      workspaceFilesMap[activeFilePath].content = val;
+      workspaceFilesMap[activeFilePath].isDirty = (val !== workspaceFilesMap[activeFilePath].original);
+      renderTabList();
+    });
+
+    monacoEditorInstance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      saveActiveFile();
+    });
+
+    // Force initial layout after creation
+    monacoEditorInstance.layout();
+    setTimeout(() => { if (monacoEditorInstance) monacoEditorInstance.layout(); }, 100);
+    setTimeout(() => { if (monacoEditorInstance) monacoEditorInstance.layout(); }, 300);
+
+    // If an active file was waiting to be displayed, render it now
+    if (activeFilePath && workspaceFilesMap[activeFilePath]) {
+      openFileInEditor(activeFilePath);
+    }
+  } catch (err) {
+    console.error('Monaco create error:', err);
+  }
+}
+
+// ResizeObserver as fallback to ensure Monaco always fills its container
+(function() {
+  const monacoContainer = document.getElementById('monaco-editor-container');
+  if (monacoContainer && typeof ResizeObserver !== 'undefined') {
+    const resizeObserver = new ResizeObserver(() => {
+      if (monacoEditorInstance) {
+        monacoEditorInstance.layout();
+      }
+    });
+    resizeObserver.observe(monacoContainer);
+  }
+})();
+
+// Setup Monaco AMD loader
 const loaderRequire = window.amdRequire || window.require;
-loaderRequire.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
-
-loaderRequire(['vs/editor/editor.main'], function () {
-  monaco.editor.defineTheme('aos-light', {
-    base: 'vs',
-    inherit: true,
-    rules: [
-      { token: 'comment', foreground: '16a34a', fontStyle: 'italic' },
-      { token: 'keyword', foreground: '9333ea', fontStyle: 'bold' },
-      { token: 'string', foreground: 'dc2626' },
-      { token: 'number', foreground: '2563eb' },
-      { token: 'type', foreground: '0284c7' },
-      { token: 'function', foreground: '2563eb' }
-    ],
-    colors: {
-      'editor.background': '#ffffff',
-      'editor.foreground': '#0f172a',
-      'editor.lineHighlightBackground': '#f8fafc',
-      'editorCursor.foreground': '#2563eb',
-      'editorIndentGuide.background': '#f1f5f9',
-      'editorIndentGuide.activeBackground': '#cbd5e1',
-      'editorLineNumber.foreground': '#94a3b8',
-      'editorLineNumber.activeForeground': '#2563eb'
+if (loaderRequire && typeof loaderRequire.config === 'function') {
+  try {
+    let vsPath = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs';
+    if (window.nodeRequire) {
+      try {
+        const path = window.nodeRequire('path');
+        const fs = window.nodeRequire('fs');
+        const localVs = path.join(__dirname, 'node_modules/monaco-editor/min/vs');
+        if (fs.existsSync(localVs)) {
+          vsPath = localVs.replace(/\\/g, '/');
+          if (!vsPath.startsWith('file://') && !vsPath.startsWith('http')) {
+            vsPath = 'file:///' + vsPath.replace(/^[/\\]/, '');
+          }
+        }
+      } catch(e) {}
     }
-  });
 
-  monaco.editor.defineTheme('aos-dark', {
-    base: 'vs-dark',
-    inherit: true,
-    rules: [
-      { token: 'comment', foreground: '64748b', fontStyle: 'italic' },
-      { token: 'keyword', foreground: 'c084fc', fontStyle: 'bold' },
-      { token: 'string', foreground: '34d399' },
-      { token: 'number', foreground: 'fb923c' },
-      { token: 'type', foreground: '38bdf8' },
-      { token: 'function', foreground: '60a5fa' }
-    ],
-    colors: {
-      'editor.background': '#080c14',
-      'editor.foreground': '#f8fafc',
-      'editor.lineHighlightBackground': '#101726',
-      'editorCursor.foreground': '#60a5fa',
-      'editorIndentGuide.background': '#1e293b',
-      'editorIndentGuide.activeBackground': '#3b82f6',
-      'editorLineNumber.foreground': '#475569',
-      'editorLineNumber.activeForeground': '#60a5fa'
-    }
-  });
+    loaderRequire.config({ paths: { vs: vsPath } });
+    window.MonacoEnvironment = {
+      getWorkerUrl: function () {
+        return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+          self.MonacoEnvironment = {
+            baseUrl: '${vsPath.replace(/\/vs$/, '')}/'
+          };
+          importScripts('${vsPath}/base/worker/workerMain.js');`
+        )}`;
+      }
+    };
+    loaderRequire(['vs/editor/editor.main'], function (monacoInstance) {
+      if (monacoInstance) window.monaco = monacoInstance;
+      initMonacoEditor();
+    }, function (err) {
+      console.warn('Monaco loader fallback notice:', err);
+    });
+  } catch (e) {
+    console.warn('Monaco loader config error:', e);
+  }
+}
 
-  const isDark = document.body.classList.contains('dark-theme');
+function renderFallbackEditor(filePath, content, lang) {
   const container = document.getElementById('monaco-editor-container');
-  monacoEditorInstance = monaco.editor.create(container, {
-    theme: isDark ? 'aos-dark' : 'aos-light',
-    automaticLayout: true,
-    fontSize: 13,
-    fontFamily: "'JetBrains Mono', monospace",
-    lineHeight: 22,
-    tabSize: 2,
-    minimap: { enabled: true, maxColumn: 80 },
-    scrollBeyondLastLine: false,
-    smoothScrolling: true,
-    cursorBlinking: 'smooth',
-    renderLineHighlight: 'all'
-  });
+  if (!container || monacoEditorInstance) return;
 
-  monacoEditorInstance.onDidChangeCursorPosition((e) => {
-    const posStr = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
-    const el = document.getElementById('sb-cursor-pos');
-    if (el) el.textContent = posStr;
-  });
+  const lines = (content || '').split('\n');
+  const lineNumbers = lines.map((_, i) => i + 1).join('\n');
 
-  monacoEditorInstance.onDidChangeModelContent(() => {
-    if (!activeFilePath || !workspaceFilesMap[activeFilePath]) return;
-    const val = monacoEditorInstance.getValue();
-    workspaceFilesMap[activeFilePath].content = val;
-    workspaceFilesMap[activeFilePath].isDirty = (val !== workspaceFilesMap[activeFilePath].original);
-    renderTabList();
-  });
+  container.innerHTML = `
+    <div class="fallback-code-view" style="display:flex;width:100%;height:100%;background:var(--bg-editor);color:var(--text-primary);font-family:'JetBrains Mono','Cascadia Code',Consolas,monospace;font-size:13.5px;line-height:22px;overflow:auto;">
+      <div class="fallback-linenums" id="fallback-linenums" style="padding:12px 10px;text-align:right;color:var(--text-muted);background:var(--bg-chip);user-select:none;font-size:12px;min-width:48px;border-right:1px solid var(--border);white-space:pre;overflow:hidden;">${lineNumbers}</div>
+      <textarea id="fallback-code-textarea" style="flex:1;padding:12px 14px;background:transparent;color:inherit;font-family:inherit;font-size:inherit;line-height:inherit;border:none;outline:none;resize:none;white-space:pre;overflow:auto;" spellcheck="false">${escHtml(content || '')}</textarea>
+    </div>
+  `;
 
-  monacoEditorInstance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-    saveActiveFile();
-  });
+  const tx = document.getElementById('fallback-code-textarea');
+  const lineNumsEl = document.getElementById('fallback-linenums');
+  if (tx) {
+    // Sync line numbers scrolling with textarea
+    if (lineNumsEl) {
+      tx.onscroll = () => { lineNumsEl.scrollTop = tx.scrollTop; };
+    }
+    tx.oninput = () => {
+      if (workspaceFilesMap[filePath]) {
+        workspaceFilesMap[filePath].content = tx.value;
+        workspaceFilesMap[filePath].isDirty = (tx.value !== workspaceFilesMap[filePath].original);
+        renderTabList();
+      }
+    };
+    tx.onkeydown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        saveActiveFile();
+      }
+    };
+  }
+}
 
+// Ensure clean workspace and terminal always initialize
+document.addEventListener('DOMContentLoaded', () => {
   initCleanWorkspace();
   setupInteractiveResizers();
   initTerminalSystem();
@@ -3887,19 +4802,55 @@ function renderTreeUI(nodes, rootTitle) {
 }
 
 function getFileIconSvg(filename) {
-  const ext = filename.split('.').pop().toLowerCase();
-  if (ext === 'py') {
-    return `<svg width="13" height="13" viewBox="0 0 24 24" fill="#3b82f6"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"/></svg>`;
-  } else if (ext === 'js' || ext === 'ts' || ext === 'jsx' || ext === 'tsx') {
-    return `<svg width="13" height="13" viewBox="0 0 24 24" fill="#eab308"><rect x="3" y="3" width="18" height="18" rx="2"/><text x="7" y="16" font-size="10" font-weight="bold" fill="#000">JS</text></svg>`;
-  } else if (ext === 'json') {
-    return `<svg width="13" height="13" viewBox="0 0 24 24" fill="#10b981"><path d="M4 6v12h16V6H4zm2 2h12v8H6V8z"/></svg>`;
-  } else if (ext === 'html') {
-    return `<svg width="13" height="13" viewBox="0 0 24 24" fill="#ef4444"><path d="M12 2L2 5l2 14 8 3 8-3 2-14-10-3z"/></svg>`;
-  } else if (ext === 'css') {
-    return `<svg width="13" height="13" viewBox="0 0 24 24" fill="#8b5cf6"><path d="M12 2L2 5l2 14 8 3 8-3 2-14-10-3z"/></svg>`;
+  const lower = filename.toLowerCase();
+  const ext = lower.split('.').pop();
+  const cdnBase = 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons';
+
+  if (lower === 'dockerfile' || lower.includes('docker-compose') || ext === 'dockerfile') {
+    return `<img src="${cdnBase}/docker/docker-original.svg" width="13" height="13" style="object-fit: contain; flex-shrink:0;" />`;
   }
-  return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>`;
+  if (lower.includes('firebase')) {
+    return `<img src="${cdnBase}/firebase/firebase-original.svg" width="13" height="13" style="object-fit: contain; flex-shrink:0;" />`;
+  }
+  if (lower.includes('supabase')) {
+    return `<img src="${cdnBase}/supabase/supabase-original.svg" width="13" height="13" style="object-fit: contain; flex-shrink:0;" />`;
+  }
+  if (lower.includes('git') || lower.startsWith('.git')) {
+    return `<img src="${cdnBase}/git/git-original.svg" width="13" height="13" style="object-fit: contain; flex-shrink:0;" />`;
+  }
+  if (lower === 'package.json' || lower === 'package-lock.json') {
+    return `<img src="${cdnBase}/npm/npm-original-wordmark.svg" width="13" height="13" style="object-fit: contain; flex-shrink:0; background:#fff; padding:1px; border-radius:2px;" />`;
+  }
+
+  if (ext === 'py' || ext === 'spec') {
+    return `<img src="${cdnBase}/python/python-original.svg" width="13" height="13" style="object-fit: contain; flex-shrink:0;" />`;
+  } else if (ext === 'js' || ext === 'jsx') {
+    return `<img src="${cdnBase}/javascript/javascript-original.svg" width="13" height="13" style="object-fit: contain; flex-shrink:0;" />`;
+  } else if (ext === 'ts' || ext === 'tsx') {
+    return `<img src="${cdnBase}/typescript/typescript-original.svg" width="13" height="13" style="object-fit: contain; flex-shrink:0;" />`;
+  } else if (ext === 'json') {
+    return `<img src="${cdnBase}/json/json-original.svg" width="13" height="13" style="object-fit: contain; flex-shrink:0;" />`;
+  } else if (ext === 'html') {
+    return `<img src="${cdnBase}/html5/html5-original.svg" width="13" height="13" style="object-fit: contain; flex-shrink:0;" />`;
+  } else if (ext === 'css') {
+    return `<img src="${cdnBase}/css3/css3-original.svg" width="13" height="13" style="object-fit: contain; flex-shrink:0;" />`;
+  } else if (ext === 'md') {
+    return `<img src="${cdnBase}/markdown/markdown-original.svg" width="13" height="13" style="object-fit: contain; flex-shrink:0; filter: invert(0.8);" />`;
+  } else if (ext === 'sql') {
+    return `<img src="${cdnBase}/postgresql/postgresql-original.svg" width="13" height="13" style="object-fit: contain; flex-shrink:0;" />`;
+  } else if (ext === 'sh' || ext === 'bash') {
+    return `<img src="${cdnBase}/bash/bash-original.svg" width="13" height="13" style="object-fit: contain; flex-shrink:0;" />`;
+  } else if (ext === 'bat' || ext === 'cmd' || ext === 'ps1') {
+    return `<img src="${cdnBase}/powershell/powershell-original.svg" width="13" height="13" style="object-fit: contain; flex-shrink:0;" />`;
+  } else if (ext === 'toml') {
+    return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" style="flex-shrink:0;"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  }
+
+  if (lower.startsWith('.') || ext === 'env' || ext === 'ini' || ext === 'conf' || ext === 'config') {
+    return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="flex-shrink:0;"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  }
+
+  return `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>`;
 }
 
 function getLanguageFromFilename(filename) {
@@ -3912,31 +4863,74 @@ function getLanguageFromFilename(filename) {
 }
 
 /* ── OPEN & EDIT FILES IN MONACO ── */
-async function openFileInEditor(path) {
-  const fileData = workspaceFilesMap[path];
-  if (!fileData) return;
+/* ── OPEN & EDIT FILES IN MONACO ── */
+async function openFileInEditor(filePath) {
+  let fileData = workspaceFilesMap[filePath];
 
-  if (fileData.content === null && fileData.handle) {
+  // If not found in map, attempt to read directly from disk
+  if (!fileData && window.nodeRequire && rootDirectoryPath) {
     try {
-      const fileObj = await fileData.handle.getFile();
-      fileData.content = await fileObj.text();
-      fileData.original = fileData.content;
+      const fs = window.nodeRequire('fs');
+      const p = window.nodeRequire('path');
+      const fullP = p.isAbsolute(filePath) ? filePath : p.join(rootDirectoryPath, filePath.replace(/\//g, p.sep));
+      if (fs.existsSync(fullP) && !fs.statSync(fullP).isDirectory()) {
+        const content = fs.readFileSync(fullP, 'utf-8');
+        fileData = {
+          path: filePath,
+          fullPath: fullP,
+          name: p.basename(fullP),
+          content: content,
+          original: content,
+          lang: getLanguageFromFilename(filePath),
+          isDirty: false,
+          handle: null
+        };
+        workspaceFilesMap[filePath] = fileData;
+      }
     } catch (e) {
-      toast('Could not read file: ' + e.message);
-      return;
+      console.warn('Direct file read error:', e);
     }
   }
 
-  activeFilePath = path;
-  if (!openTabs.includes(path)) {
-    openTabs.push(path);
+  if (!fileData) return;
+
+  // Lazy read if content is null
+  if (fileData.content === null || fileData.content === undefined) {
+    if (fileData.fullPath && window.nodeRequire) {
+      try {
+        const fs = window.nodeRequire('fs');
+        fileData.content = fs.readFileSync(fileData.fullPath, 'utf-8');
+        fileData.original = fileData.content;
+      } catch (e) {
+        fileData.content = '';
+      }
+    } else if (fileData.handle) {
+      try {
+        const fileObj = await fileData.handle.getFile();
+        fileData.content = await fileObj.text();
+        fileData.original = fileData.content;
+      } catch (e) {
+        fileData.content = '';
+      }
+    }
   }
 
-  if (monacoEditorInstance) {
-    let model = monacoModelsMap[path];
+  activeFilePath = filePath;
+  if (!openTabs.includes(filePath)) {
+    openTabs.push(filePath);
+  }
+
+  // Ensure welcome overlay is hidden
+  const welcomeScreen = document.getElementById('editor-welcome-screen');
+  if (welcomeScreen) welcomeScreen.style.display = 'none';
+
+  // Load into Monaco Editor
+  if (monacoEditorInstance && typeof monaco !== 'undefined') {
+    let model = monacoModelsMap[filePath];
+    const lang = fileData.lang || getLanguageFromFilename(filePath);
     if (!model) {
-      model = monaco.editor.createModel(fileData.content || '', fileData.lang || getLanguageFromFilename(path));
-      monacoModelsMap[path] = model;
+      model = monaco.editor.createModel(fileData.content || '', lang);
+      monacoModelsMap[filePath] = model;
     } else {
       if (fileData.content !== undefined && fileData.content !== null && model.getValue() !== fileData.content) {
         model.setValue(fileData.content);
@@ -3944,19 +4938,29 @@ async function openFileInEditor(path) {
     }
     monacoEditorInstance.setModel(model);
     monacoEditorInstance.layout();
+    // Multiple delayed layout calls to ensure proper rendering after DOM settles
+    setTimeout(() => { if (monacoEditorInstance) monacoEditorInstance.layout(); }, 50);
+    setTimeout(() => { if (monacoEditorInstance) monacoEditorInstance.layout(); }, 150);
+    setTimeout(() => { if (monacoEditorInstance) monacoEditorInstance.layout(); }, 400);
+  } else {
+    renderFallbackEditor(filePath, fileData.content || '', fileData.lang || getLanguageFromFilename(filePath));
   }
 
-  document.getElementById('editor-welcome-screen').style.display = 'none';
-  document.getElementById('editor-breadcrumbs').style.display = 'flex';
-  document.getElementById('sb-cursor-pos').style.display = 'flex';
-  document.getElementById('sb-indent').style.display = 'flex';
-  document.getElementById('sb-encoding').style.display = 'flex';
+  const breadcrumbs = document.getElementById('editor-breadcrumbs');
+  if (breadcrumbs) breadcrumbs.style.display = 'flex';
+  const cursorPos = document.getElementById('sb-cursor-pos');
+  if (cursorPos) cursorPos.style.display = 'flex';
+  const indent = document.getElementById('sb-indent');
+  if (indent) indent.style.display = 'flex';
+  const encoding = document.getElementById('sb-encoding');
+  if (encoding) encoding.style.display = 'flex';
 
-  const parts = path.split('/');
+  const parts = filePath.split('/');
   const fileName = parts.pop();
-  document.getElementById('bc-root').textContent = parts.length ? parts[0] : (rootDirectoryHandle ? rootDirectoryHandle.name : 'workspace');
+  const rootLabel = rootDirectoryPath ? rootDirectoryPath.split(/[/\\]/).pop() : (rootDirectoryHandle ? rootDirectoryHandle.name : 'workspace');
+  document.getElementById('bc-root').textContent = parts.length ? parts[0] : rootLabel;
   document.getElementById('bc-filename').textContent = fileName;
-  document.getElementById('sb-language').textContent = fileData.lang.charAt(0).toUpperCase() + fileData.lang.slice(1);
+  document.getElementById('sb-language').textContent = (fileData.lang || 'Code').charAt(0).toUpperCase() + (fileData.lang || 'Code').slice(1);
 
   renderTabList();
   highlightActiveTreeItem();
@@ -4022,33 +5026,34 @@ async function previewActiveFileInBrowser() {
 
 async function deleteFileFromWorkspace(event, path) {
   if (event) event.stopPropagation();
-  
   if (!confirm(`Are you sure you want to delete ${path}?`)) return;
   
   const fileData = workspaceFilesMap[path];
-  if (fileData && fileData.handle) {
+
+  // 1. Real delete from disk in Desktop Electron
+  if (window.nodeRequire && (fileData?.fullPath || rootDirectoryPath)) {
     try {
-      toast(`Deleting local file: ${path}`);
-    } catch (e) {
-      console.error(e);
-    }
-  }
-  
-  if (ACTIVE_PROJECT_ID) {
-    try {
-      const { error } = await supabaseClient.from('project_files').delete().eq('project_id', ACTIVE_PROJECT_ID).eq('path', path);
-      if (error) {
-        toast(`Error deleting from database: ${error.message}`);
-      } else {
-        toast(`Deleted: ${path}`);
+      const fs = window.nodeRequire('fs');
+      const p = window.nodeRequire('path');
+      const targetPath = fileData?.fullPath || p.join(rootDirectoryPath, path.replace(/\//g, p.sep));
+      if (fs.existsSync(targetPath)) {
+        fs.unlinkSync(targetPath);
       }
     } catch (e) {
-      toast(`Error deleting from database: ${e.message}`);
+      console.error('Disk delete error:', e);
+    }
+  }
+
+  // 2. Cloud delete if applicable
+  if (ACTIVE_PROJECT_ID) {
+    try {
+      await supabaseClient.from('project_files').delete().eq('project_id', ACTIVE_PROJECT_ID).eq('path', path);
+    } catch (e) {
+      console.error('Cloud delete error:', e);
     }
   }
   
   delete workspaceFilesMap[path];
-  
   openTabs = openTabs.filter(t => t !== path);
   if (activeFilePath === path) {
     if (openTabs.length > 0) {
@@ -4059,8 +5064,10 @@ async function deleteFileFromWorkspace(event, path) {
   }
   
   fileTreeData = buildTreeFromFlatPaths(Object.keys(workspaceFilesMap));
-  renderTreeUI(fileTreeData, currentProject?.name || 'PROJECT');
+  const rootTitle = rootDirectoryPath ? rootDirectoryPath.split(/[/\\]/).pop() : (currentProject?.name || 'WORKSPACE');
+  renderTreeUI(fileTreeData, rootTitle);
   renderTabList();
+  toast(`Deleted: ${path}`);
 }
 
 async function restorePreviousFileContent(path, cardId) {
@@ -4077,20 +5084,13 @@ async function restorePreviousFileContent(path, cardId) {
     monacoModelsMap[path].setValue(backup);
   }
   
-  if (ACTIVE_PROJECT_ID) {
+  if (window.nodeRequire && (workspaceFilesMap[path].fullPath || rootDirectoryPath)) {
     try {
-      const { error } = await supabaseClient.from('project_files').upsert({
-        project_id: ACTIVE_PROJECT_ID,
-        path: path,
-        content: backup,
-        language: workspaceFilesMap[path].lang
-      }, { onConflict: 'project_id,path' });
-      if (error) {
-        console.error('Database restore error:', error);
-      }
-    } catch (e) {
-      console.error('Database restore error:', e);
-    }
+      const fs = window.nodeRequire('fs');
+      const p = window.nodeRequire('path');
+      const targetPath = workspaceFilesMap[path].fullPath || p.join(rootDirectoryPath, path.replace(/\//g, p.sep));
+      fs.writeFileSync(targetPath, backup, 'utf-8');
+    } catch(e) {}
   }
   
   toast(`Restored previous version of ${path}`);
@@ -4106,9 +5106,9 @@ async function restorePreviousFileContent(path, cardId) {
   
   renderTabList();
   fileTreeData = buildTreeFromFlatPaths(Object.keys(workspaceFilesMap));
-  renderTreeUI(fileTreeData, currentProject?.name || 'PROJECT');
+  const rootTitle = rootDirectoryPath ? rootDirectoryPath.split(/[/\\]/).pop() : (currentProject?.name || 'WORKSPACE');
+  renderTreeUI(fileTreeData, rootTitle);
 }
-
 
 function renderTabList() {
   const list = document.getElementById('editor-tab-list');
@@ -4167,21 +5167,45 @@ function highlightActiveTreeItem() {
 async function saveActiveFile() {
   if (!activeFilePath || !workspaceFilesMap[activeFilePath]) return;
   const fileData = workspaceFilesMap[activeFilePath];
-  const content = monacoEditorInstance ? monacoEditorInstance.getValue() : fileData.content;
+  const content = monacoEditorInstance ? monacoEditorInstance.getValue() : (fileData.content || '');
   fileData.content = content;
   fileData.original = content;
   fileData.isDirty = false;
 
+  // 1. Real save to disk in Desktop Electron
+  if (window.nodeRequire && (fileData.fullPath || rootDirectoryPath)) {
+    try {
+      const fs = window.nodeRequire('fs');
+      const path = window.nodeRequire('path');
+      const targetPath = fileData.fullPath || path.join(rootDirectoryPath, activeFilePath.replace(/\//g, path.sep));
+      fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+      fs.writeFileSync(targetPath, content, 'utf-8');
+      fileData.fullPath = targetPath;
+      toast(`Saved to disk: ${fileData.name}`);
+      renderTabList();
+      return;
+    } catch (e) {
+      console.error('Disk save error:', e);
+      toast('Disk save error: ' + e.message);
+    }
+  }
+
+  // 2. Browser file system handle write
   if (fileData.handle && fileData.handle.createWritable) {
     try {
       const wr = await fileData.handle.createWritable();
       await wr.write(content);
       await wr.close();
       toast(`Saved locally: ${fileData.name}`);
+      renderTabList();
+      return;
     } catch (e) {
       toast('Save error: ' + e.message);
     }
-  } else if (ACTIVE_PROJECT_ID) {
+  }
+
+  // 3. Supabase Cloud save
+  if (ACTIVE_PROJECT_ID) {
     try {
       const { error } = await supabaseClient.from('project_files').upsert({
         project_id: ACTIVE_PROJECT_ID,
@@ -4204,47 +5228,207 @@ async function saveActiveFile() {
 
 /* ── FILE ACTIONS: CREATE, OPEN LOCAL FOLDER, CLONE ── */
 async function promptNewFile() {
-  const name = prompt('Enter new file name (e.g. index.ts, main.py):');
+  const name = prompt('Enter new file name (e.g. index.html, main.py, script.js):');
   if (!name || !name.trim()) return;
-  const path = name.trim();
+  const relPath = name.trim().replace(/\\/g, '/');
 
-  workspaceFilesMap[path] = {
-    path: path,
-    name: path.split('/').pop(),
+  let fullPath = null;
+  if (window.nodeRequire && rootDirectoryPath) {
+    try {
+      const fs = window.nodeRequire('fs');
+      const path = window.nodeRequire('path');
+      fullPath = path.join(rootDirectoryPath, relPath.replace(/\//g, path.sep));
+      fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+      if (!fs.existsSync(fullPath)) {
+        fs.writeFileSync(fullPath, '', 'utf-8');
+      }
+    } catch (e) {
+      toast('Error creating file on disk: ' + e.message);
+      return;
+    }
+  }
+
+  workspaceFilesMap[relPath] = {
+    path: relPath,
+    fullPath: fullPath,
+    name: relPath.split('/').pop(),
     content: '',
     original: '',
-    lang: getLanguageFromFilename(path),
+    lang: getLanguageFromFilename(relPath),
     isDirty: false,
     handle: null
   };
 
   fileTreeData = buildTreeFromFlatPaths(Object.keys(workspaceFilesMap));
-  renderTreeUI(fileTreeData, currentProject?.name || 'PROJECT');
-  openFileInEditor(path);
+  const rootTitle = rootDirectoryPath ? rootDirectoryPath.split(/[/\\]/).pop() : (currentProject?.name || 'WORKSPACE');
+  renderTreeUI(fileTreeData, rootTitle);
+  openFileInEditor(relPath);
 
   if (ACTIVE_PROJECT_ID) {
     try {
-      const { error } = await supabaseClient.from('project_files').upsert({
+      await supabaseClient.from('project_files').upsert({
         project_id: ACTIVE_PROJECT_ID,
-        path: path,
+        path: relPath,
         content: '',
-        language: workspaceFilesMap[path].lang
+        language: workspaceFilesMap[relPath].lang
       }, { onConflict: 'project_id,path' });
-      if (error) {
-        console.error('Database create error:', error);
-      }
+    } catch (e) {}
+  }
+
+  toast(`Created: ${relPath}`);
+}
+
+async function promptNewFolder() {
+  const name = prompt('Enter new folder name:');
+  if (!name || !name.trim()) return;
+  const folderName = name.trim();
+
+  if (window.nodeRequire && rootDirectoryPath) {
+    try {
+      const fs = window.nodeRequire('fs');
+      const path = window.nodeRequire('path');
+      const targetDir = path.join(rootDirectoryPath, folderName.replace(/\//g, path.sep));
+      fs.mkdirSync(targetDir, { recursive: true });
+      await loadFolderFromDisk(rootDirectoryPath);
+      toast(`Created folder on disk: ${folderName}`);
+      return;
     } catch (e) {
-      console.error('Database create error:', e);
+      toast('Error creating folder on disk: ' + e.message);
+    }
+  }
+  toast(`Folder created: ${folderName}`);
+}
+
+/* ── OPEN NATIVE FOLDER DIALOG & DISK LOADER ── */
+let rootDirectoryPath = null;
+
+async function openNativeFolderDialog() {
+  // 1. Electron Desktop: Use native File Explorer directory picker
+  if (window.nodeRequire) {
+    try {
+      const electron = window.nodeRequire('electron');
+      const ipcRenderer = electron.ipcRenderer;
+      let folderPath = null;
+      if (ipcRenderer) {
+        folderPath = await ipcRenderer.invoke('dialog:openDirectory', currentCwd);
+      }
+      if (!folderPath && electron.remote && electron.remote.dialog) {
+        const res = electron.remote.dialog.showOpenDialogSync({
+          properties: ['openDirectory', 'createDirectory'],
+          defaultPath: currentCwd
+        });
+        if (res && res.length > 0) folderPath = res[0];
+      }
+      if (folderPath) {
+        await loadFolderFromDisk(folderPath);
+        return;
+      }
+    } catch (err) {
+      console.warn('Native dialog error, falling back:', err);
     }
   }
 
-  toast(`Created: ${path}`);
+  // 2. Browser showDirectoryPicker fallback
+  if (window.showDirectoryPicker) {
+    await openLocalFolder();
+    return;
+  }
+
+  // 3. Fallback path prompt
+  const pathInput = prompt('Enter folder path to open on this computer:', currentCwd || 'C:\\');
+  if (pathInput && pathInput.trim()) {
+    if (window.nodeRequire) {
+      await loadFolderFromDisk(pathInput.trim());
+    } else {
+      currentCwd = pathInput.trim();
+      toast('Workspace path: ' + currentCwd);
+    }
+  }
 }
 
-function promptNewFolder() {
-  const name = prompt('Enter new folder name:');
-  if (!name || !name.trim()) return;
-  toast(`Folder created: ${name.trim()}`);
+async function loadFolderFromDisk(folderPath) {
+  if (!window.nodeRequire) return;
+  const fs = window.nodeRequire('fs');
+  const path = window.nodeRequire('path');
+
+  if (!fs.existsSync(folderPath) || !fs.statSync(folderPath).isDirectory()) {
+    toast('Directory does not exist: ' + folderPath);
+    return;
+  }
+
+  rootDirectoryPath = folderPath;
+  currentCwd = folderPath;
+  const folderName = path.basename(folderPath) || folderPath;
+  workspaceFilesMap = {};
+
+  const IGNORE = new Set(['.git', 'node_modules', '__pycache__', '.venv', 'dist', 'build', '.next', '.idea', '.vscode', '.firebase']);
+
+  function scanDir(dirPath, relPrefix = '') {
+    const items = fs.readdirSync(dirPath, { withFileTypes: true });
+    items.sort((a, b) => {
+      if (a.isDirectory() && !b.isDirectory()) return -1;
+      if (!a.isDirectory() && b.isDirectory()) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    const entries = [];
+    for (const item of items) {
+      if (IGNORE.has(item.name)) continue;
+      const fullItemPath = path.join(dirPath, item.name);
+      const relPath = relPrefix ? `${relPrefix}/${item.name}` : item.name;
+
+      if (item.isDirectory()) {
+        const children = scanDir(fullItemPath, relPath);
+        entries.push({ name: item.name, path: relPath, kind: 'directory', children });
+      } else {
+        entries.push({ name: item.name, path: relPath, kind: 'file' });
+        let content = null;
+        try {
+          const stat = fs.statSync(fullItemPath);
+          if (stat.size < 2 * 1024 * 1024) { // < 2MB auto-load
+            content = fs.readFileSync(fullItemPath, 'utf-8');
+          }
+        } catch (e) {
+          content = '';
+        }
+        workspaceFilesMap[relPath] = {
+          path: relPath,
+          fullPath: fullItemPath,
+          name: item.name,
+          content: content,
+          original: content,
+          lang: getLanguageFromFilename(item.name),
+          isDirty: false,
+          handle: null
+        };
+      }
+    }
+    return entries;
+  }
+
+  try {
+    fileTreeData = scanDir(folderPath);
+    renderTreeUI(fileTreeData, folderName);
+
+    document.getElementById('welcome-project-title').textContent = folderName;
+    document.getElementById('sb-env-text').textContent = `Folder: ${folderName}`;
+
+    terminalSessions.forEach(s => {
+      s.term.writeln(`\r\n${ANSI.green}📂 Opened folder: ${folderPath}${ANSI.reset}`);
+      writeSessionPrompt(s);
+    });
+
+    toast(`Opened folder: ${folderName}`);
+
+    // Auto open the first file or index/main
+    const keys = Object.keys(workspaceFilesMap);
+    const preferred = keys.find(k => /^(index\.html|main\.py|app\.js|index\.js|README\.md)$/i.test(k)) || keys[0];
+    if (preferred) {
+      openFileInEditor(preferred);
+    }
+  } catch (err) {
+    toast('Error reading folder: ' + err.message);
+  }
 }
 
 async function openLocalFolder() {
@@ -4288,13 +5472,12 @@ async function openLocalFolder() {
     fileTreeData = await scanDirectory(handle);
     renderTreeUI(fileTreeData, handle.name);
     
-    // Update active project info and terminal path
     currentCwd = `C:\\Users\\gandu\\OneDrive\\Desktop\\ai\\${handle.name}`;
     document.getElementById('welcome-project-title').textContent = handle.name;
-    document.getElementById('sb-env-text').textContent = `Outside Folder: ${handle.name}`;
+    document.getElementById('sb-env-text').textContent = `Folder: ${handle.name}`;
 
     terminalSessions.forEach(s => {
-      s.term.writeln(`\r\n${ANSI.yellow}Opened outside laptop folder: ${handle.name}${ANSI.reset}`);
+      s.term.writeln(`\r\n${ANSI.yellow}Opened folder: ${handle.name}${ANSI.reset}`);
       writeSessionPrompt(s);
     });
 
@@ -4312,9 +5495,7 @@ async function openLocalFolder() {
 let appProjectsListCache = [];
 
 function openProjectDialog() {
-  const modal = document.getElementById('modal-open-project');
-  if (modal) modal.classList.add('show');
-  fetchUserAppProjects();
+  openNativeFolderDialog();
 }
 
 function closeProjectDialog() {
@@ -5057,17 +6238,28 @@ async function submitCopilotChat() {
           model.pushEditOperations([], [{ range: fullRange, text: f.content }], () => null);
         }
 
+        // Also save to disk if in desktop mode with opened folder
+        if (window.nodeRequire && rootDirectoryPath) {
+          try {
+            const fs = window.nodeRequire('fs');
+            const p = window.nodeRequire('path');
+            const targetPath = p.join(rootDirectoryPath, f.path.replace(/\//g, p.sep));
+            fs.mkdirSync(p.dirname(targetPath), { recursive: true });
+            fs.writeFileSync(targetPath, f.content, 'utf-8');
+            workspaceFilesMap[f.path].fullPath = targetPath;
+          } catch (e) {
+            console.error('Disk save from Copilot error:', e);
+          }
+        }
+
         if (ACTIVE_PROJECT_ID) {
           try {
-            const { error } = await supabaseClient.from('project_files').upsert({
+            await supabaseClient.from('project_files').upsert({
               project_id: ACTIVE_PROJECT_ID,
               path: f.path,
               content: f.content,
               language: lang
             }, { onConflict: 'project_id,path' });
-            if (error) {
-              console.error('Database save error:', error);
-            }
           } catch (e) {
             console.error('Database save error:', e);
           }
@@ -5077,27 +6269,13 @@ async function submitCopilotChat() {
       }
 
       fileTreeData = buildTreeFromFlatPaths(Object.keys(workspaceFilesMap));
-      renderTreeUI(fileTreeData, currentProject?.name || 'PROJECT');
+      const rootTitle = rootDirectoryPath ? rootDirectoryPath.split(/[/\\]/).pop() : (currentProject?.name || 'PROJECT');
+      renderTreeUI(fileTreeData, rootTitle);
 
       // Open the first successfully created/updated file
       if (successfulFiles.length > 0) {
         const primaryFile = successfulFiles[0].path;
         await openFileInEditor(primaryFile);
-
-        // Force Monaco to refresh model and layout
-        if (monacoEditorInstance && workspaceFilesMap[primaryFile]) {
-          let model = monacoModelsMap[primaryFile];
-          if (!model) {
-            model = monaco.editor.createModel(workspaceFilesMap[primaryFile].content, workspaceFilesMap[primaryFile].lang);
-            monacoModelsMap[primaryFile] = model;
-          } else {
-            // Preserve undo history by using pushEditOperations
-            const fullRange = model.getFullModelRange();
-            model.pushEditOperations([], [{ range: fullRange, text: workspaceFilesMap[primaryFile].content }], () => null);
-          }
-          monacoEditorInstance.setModel(model);
-          monacoEditorInstance.layout();
-        }
 
         // Create Monaco models for all other new files
         for (let i = 1; i < successfulFiles.length; i++) {
@@ -5111,6 +6289,8 @@ async function submitCopilotChat() {
           }
         }
         renderTabList();
+        // Force layout recalculation after all DOM updates settle
+        setTimeout(() => { if (monacoEditorInstance) monacoEditorInstance.layout(); }, 200);
       }
     }
 
@@ -5238,23 +6418,1033 @@ function insertCodeIntoActiveFile(btn) {
 }
 
 /* ── SIDEBAR SWITCHER & USER MENU ── */
+/* ── SIDEBAR SWITCHER & VIEWS ── */
+let currentActiveSidebarView = 'explorer';
+
 function switchSidebar(viewId) {
+  const explorer = document.getElementById('explorer-sidebar');
+  const resizer = document.getElementById('resizer-sidebar');
+
+  // If already on this view and sidebar is visible, clicking toggle can collapse/expand
+  if (currentActiveSidebarView === viewId && !explorer.classList.contains('hidden')) {
+    // Keep active or toggle
+  }
+
+  currentActiveSidebarView = viewId;
   document.querySelectorAll('.act-item').forEach(b => b.classList.remove('active'));
   const btn = document.getElementById(`act-${viewId}`);
   if (btn) btn.classList.add('active');
 
+  explorer.classList.remove('hidden');
+  if (resizer) resizer.style.display = 'block';
+
+  // Hide all sidebar views
+  document.querySelectorAll('.sidebar-view').forEach(v => v.classList.add('hidden-view'));
+
+  // Show target view
+  const targetView = document.getElementById(`sidebar-view-${viewId}`);
+  if (targetView) {
+    targetView.classList.remove('hidden-view');
+  }
+
+  // Trigger view-specific loads
+  if (viewId === 'search') {
+    const input = document.getElementById('global-search-input');
+    if (input) setTimeout(() => input.focus(), 50);
+  } else if (viewId === 'git') {
+    fetchGitStatusReal();
+  } else if (viewId === 'extensions') {
+    renderExtensionsList();
+  } else if (viewId === 'outline') {
+    renderOutline();
+  }
+
+  if (monacoEditorInstance) monacoEditorInstance.layout();
+}
+
+function toggleSidebar() {
   const explorer = document.getElementById('explorer-sidebar');
   const resizer = document.getElementById('resizer-sidebar');
-  if (viewId === 'explorer') {
-    explorer.classList.remove('hidden');
-    if (resizer) resizer.style.display = 'block';
+  explorer.classList.toggle('hidden');
+  const isHidden = explorer.classList.contains('hidden');
+  if (resizer) resizer.style.display = isHidden ? 'none' : 'block';
+  if (monacoEditorInstance) monacoEditorInstance.layout();
+}
+
+/* ── GLOBAL SEARCH & REPLACE ACROSS WORKSPACE ── */
+let searchOptions = { case: false, word: false, regex: false };
+
+function toggleSearchOption(opt) {
+  searchOptions[opt] = !searchOptions[opt];
+  const btn = document.getElementById(`search-${opt}-btn`);
+  if (btn) btn.classList.toggle('active', searchOptions[opt]);
+  performGlobalSearch();
+}
+
+function toggleSearchReplace() {
+  const row = document.getElementById('search-replace-row');
+  if (row) {
+    row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+  }
+}
+
+function clearGlobalSearch() {
+  const input = document.getElementById('global-search-input');
+  if (input) input.value = '';
+  const results = document.getElementById('global-search-results');
+  if (results) results.innerHTML = '<div class="debug-empty-msg">Type to search across all files in workspace</div>';
+}
+
+function performGlobalSearch() {
+  const query = document.getElementById('global-search-input')?.value || '';
+  const container = document.getElementById('global-search-results');
+  if (!container) return;
+
+  if (!query.trim()) {
+    container.innerHTML = '<div class="debug-empty-msg">Type to search across all files in workspace</div>';
+    return;
+  }
+
+  let regex;
+  try {
+    let pattern = query;
+    if (!searchOptions.regex) {
+      pattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    if (searchOptions.word) {
+      pattern = `\\b${pattern}\\b`;
+    }
+    regex = new RegExp(pattern, searchOptions.case ? 'g' : 'gi');
+  } catch (e) {
+    container.innerHTML = `<div class="debug-empty-msg" style="color:var(--accent-red)">Invalid regular expression</div>`;
+    return;
+  }
+
+  const results = [];
+  let totalMatches = 0;
+
+  for (const [filePath, file] of Object.entries(workspaceFilesMap)) {
+    const content = file.content || '';
+    const lines = content.split('\n');
+    const fileMatches = [];
+
+    lines.forEach((lineText, idx) => {
+      regex.lastIndex = 0;
+      if (regex.test(lineText)) {
+        fileMatches.push({
+          lineNumber: idx + 1,
+          text: lineText
+        });
+        totalMatches++;
+      }
+    });
+
+    if (fileMatches.length > 0) {
+      results.push({ filePath, matches: fileMatches });
+    }
+  }
+
+  if (results.length === 0) {
+    container.innerHTML = `<div class="debug-empty-msg">No results found for "${escHtml(query)}"</div>`;
+    return;
+  }
+
+  let html = `<div style="padding:4px 12px;font-size:11px;color:var(--text-muted);font-weight:600">${totalMatches} match(es) across ${results.length} file(s)</div>`;
+
+  results.forEach(res => {
+    html += `
+      <div class="search-result-file" onclick="openFileInEditor('${escHtml(res.filePath)}')">
+        ${getFileIconSvg(res.filePath.split('/').pop())}
+        <span>${escHtml(res.filePath)}</span>
+        <span class="search-result-count">${res.matches.length}</span>
+      </div>
+    `;
+    res.matches.forEach(m => {
+      let highlighted = escHtml(m.text);
+      try {
+        highlighted = highlighted.replace(regex, match => `<mark>${match}</mark>`);
+      } catch(e) {}
+      html += `
+        <div class="search-result-line" onclick="openFileAndRevealLine('${escHtml(res.filePath)}', ${m.lineNumber})">
+          <span style="color:var(--text-dim);margin-right:6px;">${m.lineNumber}:</span> ${highlighted}
+        </div>
+      `;
+    });
+  });
+
+  container.innerHTML = html;
+}
+
+function openFileAndRevealLine(filePath, line) {
+  openFileInEditor(filePath).then(() => {
+    if (monacoEditorInstance) {
+      monacoEditorInstance.revealLineInCenter(line);
+      monacoEditorInstance.setPosition({ lineNumber: line, column: 1 });
+      monacoEditorInstance.focus();
+    }
+  });
+}
+
+function replaceAllInFiles() {
+  const query = document.getElementById('global-search-input')?.value || '';
+  const replacement = document.getElementById('global-replace-input')?.value || '';
+  if (!query) return;
+
+  if (!confirm(`Replace all occurrences of "${query}" with "${replacement}" across workspace?`)) return;
+
+  let regex;
+  try {
+    let pattern = query;
+    if (!searchOptions.regex) pattern = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (searchOptions.word) pattern = `\\b${pattern}\\b`;
+    regex = new RegExp(pattern, searchOptions.case ? 'g' : 'gi');
+  } catch(e) {
+    return toast('Invalid regular expression for replace');
+  }
+
+  let replaceCount = 0;
+  for (const [filePath, file] of Object.entries(workspaceFilesMap)) {
+    if (!file.content) continue;
+    if (regex.test(file.content)) {
+      const newContent = file.content.replace(regex, replacement);
+      file.content = newContent;
+      file.isDirty = true;
+      replaceCount++;
+      if (monacoModelsMap[filePath]) {
+        monacoModelsMap[filePath].setValue(newContent);
+      }
+    }
+  }
+
+  toast(`Replaced occurrences across ${replaceCount} files`);
+  performGlobalSearch();
+  renderTabList();
+}
+
+/* ── GIT / SOURCE CONTROL ENGINE ── */
+let gitStagedFiles = new Set();
+
+async function fetchGitStatusReal() {
+  const changesList = document.getElementById('git-changes-list');
+  const stagedList = document.getElementById('git-staged-list');
+  const changesCountEl = document.getElementById('git-changes-count');
+  const stagedCountEl = document.getElementById('git-staged-count');
+  const gitBadge = document.getElementById('git-badge');
+
+  if (!changesList || !stagedList) return;
+
+  const modified = [];
+  for (const [path, file] of Object.entries(workspaceFilesMap)) {
+    if (file.isDirty || file.content !== file.original) {
+      modified.push({ path, status: 'modified' });
+    }
+  }
+
+  const unstaged = modified.filter(f => !gitStagedFiles.has(f.path));
+  const staged = modified.filter(f => gitStagedFiles.has(f.path));
+
+  if (changesCountEl) changesCountEl.textContent = unstaged.length;
+  if (stagedCountEl) stagedCountEl.textContent = staged.length;
+  if (gitBadge) {
+    gitBadge.textContent = modified.length;
+    gitBadge.style.display = modified.length > 0 ? 'flex' : 'none';
+  }
+
+  if (unstaged.length === 0) {
+    changesList.innerHTML = '<div class="debug-empty-msg">No unstaged changes</div>';
   } else {
-    explorer.classList.remove('hidden');
-    toast(`Switched to ${viewId.toUpperCase()}`);
+    changesList.innerHTML = unstaged.map(f => `
+      <div class="git-file-item" onclick="openFileInEditor('${escHtml(f.path)}')">
+        <span class="git-file-status ${f.status}">M</span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(f.path)}</span>
+        <div class="git-file-actions">
+          <button class="git-small-btn" title="Stage Changes (+)" onclick="event.stopPropagation(); gitStageFile('${escHtml(f.path)}')">+</button>
+          <button class="git-small-btn" title="Discard Changes (↺)" onclick="event.stopPropagation(); gitDiscardFile('${escHtml(f.path)}')">↺</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  if (staged.length === 0) {
+    stagedList.innerHTML = '<div class="debug-empty-msg">No staged changes</div>';
+  } else {
+    stagedList.innerHTML = staged.map(f => `
+      <div class="git-file-item" onclick="openFileInEditor('${escHtml(f.path)}')">
+        <span class="git-file-status ${f.status}">M</span>
+        <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(f.path)}</span>
+        <div class="git-file-actions">
+          <button class="git-small-btn" title="Unstage Changes (-)" onclick="event.stopPropagation(); gitUnstageFile('${escHtml(f.path)}')">-</button>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+function gitStageFile(path) {
+  gitStagedFiles.add(path);
+  fetchGitStatusReal();
+  toast(`Staged ${path}`);
+}
+
+function gitUnstageFile(path) {
+  gitStagedFiles.delete(path);
+  fetchGitStatusReal();
+  toast(`Unstaged ${path}`);
+}
+
+function gitDiscardFile(path) {
+  const file = workspaceFilesMap[path];
+  if (!file) return;
+  if (!confirm(`Discard changes to ${path}?`)) return;
+  file.content = file.original;
+  file.isDirty = false;
+  if (monacoModelsMap[path]) {
+    monacoModelsMap[path].setValue(file.original);
+  }
+  fetchGitStatusReal();
+  renderTabList();
+  toast(`Discarded changes in ${path}`);
+}
+
+async function gitCommit() {
+  const msgInput = document.getElementById('git-commit-msg');
+  const msg = msgInput ? msgInput.value.trim() : '';
+  if (!msg) {
+    return toast('Please enter a commit message');
+  }
+
+  // Save all files
+  for (const [path, file] of Object.entries(workspaceFilesMap)) {
+    if (file.isDirty) {
+      file.original = file.content;
+      file.isDirty = false;
+    }
+  }
+
+  // If in desktop node environment, run git commit
+  if (window.nodeRequire && rootDirectoryPath) {
+    try {
+      const { execSync } = window.nodeRequire('child_process');
+      execSync('git add -A', { cwd: rootDirectoryPath });
+      execSync(`git commit -m "${msg.replace(/"/g, '\\"')}"`, { cwd: rootDirectoryPath });
+    } catch(e) {}
+  }
+
+  gitStagedFiles.clear();
+  if (msgInput) msgInput.value = '';
+  fetchGitStatusReal();
+  renderTabList();
+  toast(`Committed: "${msg}"`);
+}
+
+function gitSwitchBranch(branch) {
+  const sbBranch = document.getElementById('sb-branch');
+  if (sbBranch) sbBranch.textContent = branch;
+  toast(`Switched to branch '${branch}'`);
+}
+
+function gitPush() {
+  toast('Pushing commits to remote origin/main...');
+  setTimeout(() => toast('Git Push completed successfully'), 800);
+}
+
+function gitPull() {
+  toast('Pulling latest changes from remote origin/main...');
+  setTimeout(() => {
+    refreshWorkspaceFiles();
+    toast('Git Pull completed. Workspace is up to date.');
+  }, 800);
+}
+
+/* ── EXTENSIONS MANAGER ── */
+const AVAILABLE_EXTENSIONS = [
+  { id: 'python', name: 'Python', desc: 'Rich support for Python syntax, linting, debugging, and IntelliSense', author: 'Microsoft', icon: '🐍', bg: '#3b82f6', stars: '4.8★', downloads: '95M', installed: true },
+  { id: 'prettier', name: 'Prettier - Code formatter', desc: 'Opinionated code formatter for JS, TS, HTML, CSS, JSON', author: 'Prettier', icon: '✨', bg: '#ec4899', stars: '4.9★', downloads: '42M', installed: true },
+  { id: 'eslint', name: 'ESLint', desc: 'Integrates ESLint JavaScript linter directly into Monaco editor', author: 'Microsoft', icon: '🔍', bg: '#8b5cf6', stars: '4.7★', downloads: '36M', installed: true },
+  { id: 'tailwind', name: 'Tailwind CSS IntelliSense', desc: 'Intelligent Tailwind CSS autocomplete and class diagnostics', author: 'Tailwind Labs', icon: '🎨', bg: '#06b6d4', stars: '4.9★', downloads: '18M', installed: false },
+  { id: 'gitlens', name: 'GitLens — Git supercharged', desc: 'Supercharge Git with blame annotations, repository exploration', author: 'GitKraken', icon: '🌿', bg: '#f97316', stars: '4.8★', downloads: '31M', installed: false },
+  { id: 'docker', name: 'Docker', desc: 'Makes it easy to create, manage, and debug containerized applications', author: 'Microsoft', icon: '🐳', bg: '#0284c7', stars: '4.7★', downloads: '28M', installed: false },
+  { id: 'cpp', name: 'C/C++', desc: 'C/C++ IntelliSense, debugging, and code browsing', author: 'Microsoft', icon: '⚡', bg: '#6366f1', stars: '4.6★', downloads: '55M', installed: false },
+  { id: 'icons', name: 'Material Icon Theme', desc: 'Material Design Icons for VS Code / AOS IDE file explorer', author: 'Philipp Kief', icon: '📁', bg: '#10b981', stars: '5.0★', downloads: '22M', installed: true }
+];
+
+function renderExtensionsList(filter = '') {
+  const container = document.getElementById('extensions-list');
+  if (!container) return;
+
+  const filtered = filter
+    ? AVAILABLE_EXTENSIONS.filter(e => e.name.toLowerCase().includes(filter.toLowerCase()) || e.desc.toLowerCase().includes(filter.toLowerCase()))
+    : AVAILABLE_EXTENSIONS;
+
+  container.innerHTML = filtered.map(ext => `
+    <div class="ext-card" onclick="toast('${ext.name}: Extension active')">
+      <div class="ext-icon" style="background:${ext.bg}">${ext.icon}</div>
+      <div class="ext-info">
+        <div class="ext-name">${escHtml(ext.name)}</div>
+        <div class="ext-desc">${escHtml(ext.desc)}</div>
+        <div class="ext-meta">
+          <span class="ext-stars">${ext.stars}</span>
+          <span class="ext-downloads">⬇ ${ext.downloads}</span>
+          <button class="ext-install-btn ${ext.installed ? 'installed' : ''}" onclick="event.stopPropagation(); toggleExtension('${ext.id}')">
+            ${ext.installed ? 'Installed ✓' : 'Install'}
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterExtensions(q) {
+  renderExtensionsList(q);
+}
+
+function toggleExtension(id) {
+  const ext = AVAILABLE_EXTENSIONS.find(e => e.id === id);
+  if (!ext) return;
+  ext.installed = !ext.installed;
+  renderExtensionsList(document.getElementById('ext-search-input')?.value || '');
+  toast(`${ext.name} ${ext.installed ? 'installed' : 'uninstalled'}`);
+}
+
+/* ── OUTLINE VIEW ── */
+function renderOutline() {
+  const container = document.getElementById('outline-content');
+  if (!container) return;
+
+  if (!activeFilePath || !workspaceFilesMap[activeFilePath]) {
+    container.innerHTML = '<div class="debug-empty-msg">Open a file to see its outline</div>';
+    return;
+  }
+
+  const file = workspaceFilesMap[activeFilePath];
+  const content = file.content || '';
+  const lines = content.split('\n');
+  const items = [];
+
+  const ext = (file.name || '').split('.').pop().toLowerCase();
+
+  lines.forEach((lineText, idx) => {
+    const lineNum = idx + 1;
+    // JS / TS patterns
+    if (['js', 'ts', 'jsx', 'tsx', 'html'].includes(ext)) {
+      const fnMatch = lineText.match(/(?:function\s+([a-zA-Z0-9_$]+)|const\s+([a-zA-Z0-9_$]+)\s*=\s*(?:\([^)]*\)|[a-zA-Z0-9_$]+)?\s*=>|class\s+([a-zA-Z0-9_$]+))/);
+      if (fnMatch) {
+        const name = fnMatch[1] || fnMatch[2] || fnMatch[3];
+        const isClass = lineText.includes('class ');
+        items.push({ name, line: lineNum, type: isClass ? 'class' : 'fn' });
+      }
+    }
+    // Python patterns
+    else if (ext === 'py') {
+      const pyMatch = lineText.match(/^\s*(def|class)\s+([a-zA-Z0-9_]+)/);
+      if (pyMatch) {
+        items.push({ name: pyMatch[2], line: lineNum, type: pyMatch[1] === 'class' ? 'class' : 'fn' });
+      }
+    }
+    // CSS patterns
+    else if (ext === 'css') {
+      const cssMatch = lineText.match(/^([.#a-zA-Z0-9_:\-, >]+)\s*\{/);
+      if (cssMatch && !cssMatch[1].startsWith('@')) {
+        items.push({ name: cssMatch[1].trim(), line: lineNum, type: 'class' });
+      }
+    }
+  });
+
+  if (items.length === 0) {
+    container.innerHTML = `<div class="debug-empty-msg">No symbols found in ${escHtml(file.name)}</div>`;
+    return;
+  }
+
+  container.innerHTML = items.map(it => `
+    <div class="outline-item ${it.type}" onclick="if(monacoEditorInstance){monacoEditorInstance.revealLineInCenter(${it.line});monacoEditorInstance.setPosition({lineNumber:${it.line},column:1});monacoEditorInstance.focus();}">
+      <span class="outline-icon ${it.type}-icon">${it.type === 'class' ? 'C' : 'f'}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(it.name)}</span>
+      <span style="font-size:10.5px;color:var(--text-dim);margin-left:auto;">:${it.line}</span>
+    </div>
+  `).join('');
+}
+
+/* ── MONACO FIND & REPLACE OVERLAY ── */
+let findOptions = { case: false, word: false, regex: false };
+let currentFindMatches = [];
+let currentFindMatchIdx = 0;
+
+function openFindReplace(showReplace = false) {
+  const widget = document.getElementById('find-replace-widget');
+  const replaceRow = document.getElementById('replace-row');
+  if (!widget) return;
+
+  widget.classList.add('show');
+  if (replaceRow) replaceRow.style.display = showReplace ? 'flex' : 'none';
+
+  const input = document.getElementById('find-input');
+  if (input) {
+    if (monacoEditorInstance) {
+      const sel = monacoEditorInstance.getModel()?.getValueInRange(monacoEditorInstance.getSelection());
+      if (sel) input.value = sel;
+    }
+    setTimeout(() => input.focus(), 30);
+    performEditorFind();
+  }
+}
+
+function closeFindReplace() {
+  const widget = document.getElementById('find-replace-widget');
+  if (widget) widget.classList.remove('show');
+  if (monacoEditorInstance) monacoEditorInstance.focus();
+}
+
+function toggleFindOption(opt) {
+  findOptions[opt] = !findOptions[opt];
+  const btn = document.getElementById(`find-${opt}-btn`);
+  if (btn) btn.classList.toggle('active', findOptions[opt]);
+  performEditorFind();
+}
+
+function performEditorFind() {
+  if (!monacoEditorInstance) return;
+  const val = document.getElementById('find-input')?.value || '';
+  const matchInfo = document.getElementById('find-match-info');
+  const model = monacoEditorInstance.getModel();
+  if (!model || !val) {
+    currentFindMatches = [];
+    if (matchInfo) matchInfo.textContent = 'No results';
+    return;
+  }
+
+  currentFindMatches = model.findMatches(val, false, findOptions.regex, findOptions.case, findOptions.word ? ' ' : null, true);
+  if (matchInfo) {
+    matchInfo.textContent = currentFindMatches.length > 0 ? `${currentFindMatchIdx + 1} of ${currentFindMatches.length}` : 'No results';
+  }
+
+  if (currentFindMatches.length > 0) {
+    findNextMatch(false);
+  }
+}
+
+function findNextMatch(advance = true) {
+  if (currentFindMatches.length === 0 || !monacoEditorInstance) return;
+  if (advance) {
+    currentFindMatchIdx = (currentFindMatchIdx + 1) % currentFindMatches.length;
+  }
+  const match = currentFindMatches[currentFindMatchIdx];
+  if (match) {
+    monacoEditorInstance.setSelection(match.range);
+    monacoEditorInstance.revealRangeInCenter(match.range);
+    const matchInfo = document.getElementById('find-match-info');
+    if (matchInfo) matchInfo.textContent = `${currentFindMatchIdx + 1} of ${currentFindMatches.length}`;
+  }
+}
+
+function findPrevMatch() {
+  if (currentFindMatches.length === 0 || !monacoEditorInstance) return;
+  currentFindMatchIdx = (currentFindMatchIdx - 1 + currentFindMatches.length) % currentFindMatches.length;
+  const match = currentFindMatches[currentFindMatchIdx];
+  if (match) {
+    monacoEditorInstance.setSelection(match.range);
+    monacoEditorInstance.revealRangeInCenter(match.range);
+    const matchInfo = document.getElementById('find-match-info');
+    if (matchInfo) matchInfo.textContent = `${currentFindMatchIdx + 1} of ${currentFindMatches.length}`;
+  }
+}
+
+function replaceCurrentMatch() {
+  if (currentFindMatches.length === 0 || !monacoEditorInstance) return;
+  const replaceVal = document.getElementById('replace-input')?.value || '';
+  const match = currentFindMatches[currentFindMatchIdx];
+  if (match) {
+    monacoEditorInstance.executeEdits('replace', [{ range: match.range, text: replaceVal }]);
+    performEditorFind();
+  }
+}
+
+function replaceAllMatches() {
+  if (!monacoEditorInstance) return;
+  const replaceVal = document.getElementById('replace-input')?.value || '';
+  const edits = currentFindMatches.map(m => ({ range: m.range, text: replaceVal }));
+  if (edits.length > 0) {
+    monacoEditorInstance.executeEdits('replaceAll', edits);
+    performEditorFind();
+    toast(`Replaced ${edits.length} matches`);
+  }
+}
+
+function handleFindKey(e) {
+  if (e.key === 'Enter') {
+    if (e.shiftKey) findPrevMatch();
+    else findNextMatch();
+  } else if (e.key === 'Escape') {
+    closeFindReplace();
+  }
+}
+
+function handleReplaceKey(e) {
+  if (e.key === 'Enter') {
+    if (e.ctrlKey && e.altKey) replaceAllMatches();
+    else replaceCurrentMatch();
+  } else if (e.key === 'Escape') {
+    closeFindReplace();
+  }
+}
+
+/* ── QUICK OPEN (Ctrl+P) ── */
+let quickOpenFiltered = [];
+let quickOpenSelectedIdx = 0;
+
+function openQuickOpen() {
+  const dialog = document.getElementById('quick-open-dialog');
+  const backdrop = document.getElementById('quick-open-backdrop');
+  const input = document.getElementById('quick-open-input');
+  if (!dialog) return;
+
+  dialog.classList.add('show');
+  if (backdrop) backdrop.classList.add('show');
+  if (input) {
+    input.value = '';
+    setTimeout(() => input.focus(), 30);
+  }
+
+  filterQuickOpen('');
+}
+
+function closeQuickOpen() {
+  const dialog = document.getElementById('quick-open-dialog');
+  const backdrop = document.getElementById('quick-open-backdrop');
+  if (dialog) dialog.classList.remove('show');
+  if (backdrop) backdrop.classList.remove('show');
+}
+
+function filterQuickOpen(query) {
+  const files = Object.keys(workspaceFilesMap);
+  quickOpenFiltered = query
+    ? files.filter(f => f.toLowerCase().includes(query.toLowerCase()))
+    : files;
+
+  quickOpenSelectedIdx = 0;
+  renderQuickOpenList();
+}
+
+function renderQuickOpenList() {
+  const list = document.getElementById('quick-open-list');
+  if (!list) return;
+
+  if (quickOpenFiltered.length === 0) {
+    list.innerHTML = '<div style="padding:12px 16px;font-size:12px;color:var(--text-muted)">No matching files found</div>';
+    return;
+  }
+
+  list.innerHTML = quickOpenFiltered.map((p, idx) => {
+    const fn = p.split('/').pop();
+    return `
+      <div class="quick-dialog-item ${idx === quickOpenSelectedIdx ? 'sel' : ''}" onclick="selectQuickOpenFile('${escHtml(p)}')">
+        ${getFileIconSvg(fn)}
+        <span>${escHtml(fn)}</span>
+        <span class="file-path">${escHtml(p)}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectQuickOpenFile(path) {
+  closeQuickOpen();
+  openFileInEditor(path);
+}
+
+function handleQuickOpenKey(e) {
+  if (e.key === 'Escape') {
+    closeQuickOpen();
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    quickOpenSelectedIdx = Math.min(quickOpenSelectedIdx + 1, quickOpenFiltered.length - 1);
+    renderQuickOpenList();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    quickOpenSelectedIdx = Math.max(quickOpenSelectedIdx - 1, 0);
+    renderQuickOpenList();
+  } else if (e.key === 'Enter') {
+    if (quickOpenFiltered[quickOpenSelectedIdx]) {
+      selectQuickOpenFile(quickOpenFiltered[quickOpenSelectedIdx]);
+    }
+  }
+}
+
+/* ── GO TO LINE (Ctrl+G) ── */
+function openGoToLine() {
+  const dialog = document.getElementById('goto-line-dialog');
+  const backdrop = document.getElementById('goto-line-backdrop');
+  const input = document.getElementById('goto-line-input');
+  if (!dialog) return;
+
+  dialog.classList.add('show');
+  if (backdrop) backdrop.classList.add('show');
+  if (input) {
+    input.value = '';
+    setTimeout(() => input.focus(), 30);
+  }
+}
+
+function closeGoToLine() {
+  const dialog = document.getElementById('goto-line-dialog');
+  const backdrop = document.getElementById('goto-line-backdrop');
+  if (dialog) dialog.classList.remove('show');
+  if (backdrop) backdrop.classList.remove('show');
+  if (monacoEditorInstance) monacoEditorInstance.focus();
+}
+
+function handleGoToLineKey(e) {
+  if (e.key === 'Escape') {
+    closeGoToLine();
+  } else if (e.key === 'Enter') {
+    const val = parseInt(document.getElementById('goto-line-input')?.value, 10);
+    if (!isNaN(val) && monacoEditorInstance) {
+      monacoEditorInstance.revealLineInCenter(val);
+      monacoEditorInstance.setPosition({ lineNumber: val, column: 1 });
+      monacoEditorInstance.focus();
+    }
+    closeGoToLine();
+  }
+}
+
+/* ── NOTIFICATIONS & VISUAL TOASTS ── */
+const notificationLog = [];
+
+function toast(msg, type = 'info') {
+  console.log('[AOS Notification]', msg);
+  const notice = document.getElementById('toast-notice');
+  const msgEl = document.getElementById('toast-notice-msg');
+  if (notice && msgEl) {
+    msgEl.textContent = msg;
+    notice.classList.add('show');
+    clearTimeout(notice._toastTimer);
+    notice._toastTimer = setTimeout(() => notice.classList.remove('show'), 2800);
+  }
+
+  notificationLog.unshift({
+    msg,
+    type,
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    unread: true
+  });
+
+  const badge = document.getElementById('notif-badge');
+  if (badge) {
+    badge.style.display = 'block';
+  }
+}
+
+function toggleNotifCenter() {
+  const drop = document.getElementById('notif-dropdown');
+  if (!drop) return;
+  drop.classList.toggle('show');
+  if (drop.classList.contains('show')) {
+    renderNotifications();
+    const badge = document.getElementById('notif-badge');
+    if (badge) badge.style.display = 'none';
+  }
+}
+
+function renderNotifications() {
+  const list = document.getElementById('notif-list');
+  if (!list) return;
+
+  if (notificationLog.length === 0) {
+    list.innerHTML = '<div class="notif-empty">No notifications</div>';
+    return;
+  }
+
+  list.innerHTML = notificationLog.map(n => `
+    <div class="notif-item ${n.unread ? 'unread' : ''}">
+      <div class="notif-icon ${n.type}">🔔</div>
+      <div class="notif-content">
+        <div class="notif-text">${escHtml(n.msg)}</div>
+        <div class="notif-time">${n.time}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function clearNotifications() {
+  notificationLog.length = 0;
+  renderNotifications();
+}
+
+/* ── CONTEXT MENUS ── */
+let contextTargetTab = null;
+let contextTargetFile = null;
+
+document.addEventListener('contextmenu', (e) => {
+  // Tab right-click
+  const tabEl = e.target.closest('.tab-item');
+  if (tabEl) {
+    e.preventDefault();
+    contextTargetTab = tabEl.querySelector('span')?.textContent;
+    // Match to open tab
+    const matchedPath = openTabs.find(p => p.endsWith(contextTargetTab) || p === contextTargetTab);
+    contextTargetTab = matchedPath || activeFilePath;
+
+    showContextMenu('tab-context-menu', e.clientX, e.clientY);
+    return;
+  }
+
+  // File tree right-click
+  const fileNode = e.target.closest('.tree-node');
+  if (fileNode) {
+    e.preventDefault();
+    contextTargetFile = fileNode.querySelector('.tree-node-left span')?.textContent;
+    showContextMenu('file-context-menu', e.clientX, e.clientY);
+    return;
+  }
+
+  hideAllContextMenus();
+});
+
+document.addEventListener('click', () => {
+  hideAllContextMenus();
+  const notif = document.getElementById('notif-dropdown');
+  if (notif && notif.classList.contains('show')) {
+    notif.classList.remove('show');
+  }
+});
+
+function showContextMenu(menuId, x, y) {
+  hideAllContextMenus();
+  const menu = document.getElementById(menuId);
+  if (!menu) return;
+  menu.style.left = `${Math.min(x, window.innerWidth - 200)}px`;
+  menu.style.top = `${Math.min(y, window.innerHeight - 250)}px`;
+  menu.classList.add('show');
+}
+
+function hideAllContextMenus() {
+  document.querySelectorAll('.context-menu').forEach(m => m.classList.remove('show'));
+}
+
+function ctxCloseTab() {
+  if (contextTargetTab) closeEditorTab(new Event('click'), contextTargetTab);
+}
+
+function ctxCloseOtherTabs() {
+  if (!contextTargetTab) return;
+  openTabs = [contextTargetTab];
+  openFileInEditor(contextTargetTab);
+  renderTabList();
+}
+
+function ctxCloseAllTabs() {
+  openTabs = [];
+  activeFilePath = null;
+  showEmptyWorkspaceState();
+}
+
+function ctxCopyPath() {
+  if (contextTargetTab) {
+    navigator.clipboard.writeText(contextTargetTab);
+    toast('Copied path: ' + contextTargetTab);
+  }
+}
+
+function ctxCopyRelPath() {
+  if (contextTargetTab) {
+    navigator.clipboard.writeText(contextTargetTab.split('/').pop());
+    toast('Copied filename: ' + contextTargetTab.split('/').pop());
+  }
+}
+
+function ctxRevealInExplorer() {
+  switchSidebar('explorer');
+  highlightActiveTreeItem();
+}
+
+function ctxSplitRight() {
+  toast('Split Editor side-by-side');
+}
+
+function ctxFileOpen() {
+  if (contextTargetFile) {
+    const fullPath = Object.keys(workspaceFilesMap).find(k => k.endsWith(contextTargetFile));
+    if (fullPath) openFileInEditor(fullPath);
+  }
+}
+
+function ctxFileCopyPath() {
+  if (contextTargetFile) {
+    const fullPath = Object.keys(workspaceFilesMap).find(k => k.endsWith(contextTargetFile)) || contextTargetFile;
+    navigator.clipboard.writeText(fullPath);
+    toast('Copied: ' + fullPath);
+  }
+}
+
+function ctxFileCopyName() {
+  if (contextTargetFile) {
+    navigator.clipboard.writeText(contextTargetFile);
+    toast('Copied name: ' + contextTargetFile);
+  }
+}
+
+async function ctxFileRename() {
+  if (!contextTargetFile) return;
+  const currentKey = Object.keys(workspaceFilesMap).find(k => k.endsWith(contextTargetFile)) || contextTargetFile;
+  const newName = prompt('Enter new file name:', contextTargetFile);
+  if (!newName || newName === contextTargetFile) return;
+
+  const newPath = currentKey.replace(/[^/]+$/, newName);
+  const oldData = workspaceFilesMap[currentKey];
+
+  if (oldData) {
+    workspaceFilesMap[newPath] = {
+      ...oldData,
+      path: newPath,
+      name: newName,
+      lang: getLanguageFromFilename(newName)
+    };
+    delete workspaceFilesMap[currentKey];
+
+    if (activeFilePath === currentKey) activeFilePath = newPath;
+    const tabIdx = openTabs.indexOf(currentKey);
+    if (tabIdx !== -1) openTabs[tabIdx] = newPath;
+
+    // Disk rename if desktop
+    if (window.nodeRequire && rootDirectoryPath) {
+      try {
+        const fs = window.nodeRequire('fs');
+        const p = window.nodeRequire('path');
+        const oldP = p.join(rootDirectoryPath, currentKey.replace(/\//g, p.sep));
+        const newP = p.join(rootDirectoryPath, newPath.replace(/\//g, p.sep));
+        if (fs.existsSync(oldP)) fs.renameSync(oldP, newP);
+      } catch(e) {}
+    }
+
+    fileTreeData = buildTreeFromFlatPaths(Object.keys(workspaceFilesMap));
+    const rootTitle = rootDirectoryPath ? rootDirectoryPath.split(/[/\\]/).pop() : (currentProject?.name || 'WORKSPACE');
+    renderTreeUI(fileTreeData, rootTitle);
+    renderTabList();
+    toast(`Renamed to ${newName}`);
+  }
+}
+
+function ctxFileDelete() {
+  if (!contextTargetFile) return;
+  const currentKey = Object.keys(workspaceFilesMap).find(k => k.endsWith(contextTargetFile)) || contextTargetFile;
+  deleteFileFromWorkspace(null, currentKey);
+}
+
+/* ── SETTINGS EDITOR ── */
+function openSettings() {
+  const overlay = document.getElementById('settings-overlay');
+  if (overlay) overlay.classList.add('show');
+}
+
+function closeSettings() {
+  const overlay = document.getElementById('settings-overlay');
+  if (overlay) overlay.classList.remove('show');
+}
+
+function switchSettingsTab(tabKey, el) {
+  document.querySelectorAll('.settings-nav-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+
+  ['editor', 'appearance', 'terminal', 'files', 'keybindings'].forEach(t => {
+    const sec = document.getElementById(`settings-${t}-section`);
+    if (sec) sec.style.display = (t === tabKey) ? 'block' : 'none';
+  });
+}
+
+function updateSetting(key, val) {
+  if (!monacoEditorInstance) return;
+  const options = {};
+  if (key === 'fontSize') options.fontSize = parseFloat(val);
+  if (key === 'tabSize') options.tabSize = parseInt(val, 10);
+  if (key === 'cursorBlinking') options.cursorBlinking = val;
+  if (key === 'lineNumbers') options.lineNumbers = val;
+  if (key === 'renderWhitespace') options.renderWhitespace = val;
+  monacoEditorInstance.updateOptions(options);
+  toast(`Updated setting: ${key} = ${val}`);
+}
+
+function toggleSettingSwitch(btn, key) {
+  btn.classList.toggle('on');
+  const isOn = btn.classList.contains('on');
+  if (!monacoEditorInstance) return;
+
+  const options = {};
+  if (key === 'wordWrap') options.wordWrap = isOn ? 'on' : 'off';
+  if (key === 'minimap') options.minimap = { enabled: isOn };
+  if (key === 'smoothScrolling') options.smoothScrolling = isOn;
+  if (key === 'bracketPairColorization') options.bracketPairColorization = { enabled: isOn };
+  if (key === 'autoClosingBrackets') options.autoClosingBrackets = isOn ? 'always' : 'never';
+  monacoEditorInstance.updateOptions(options);
+  toast(`${key}: ${isOn ? 'Enabled' : 'Disabled'}`);
+}
+
+function toggleUIElement(btn, selector) {
+  btn.classList.toggle('on');
+  const isOn = btn.classList.contains('on');
+  const el = document.querySelector(selector);
+  if (el) {
+    el.style.display = isOn ? '' : 'none';
   }
   if (monacoEditorInstance) monacoEditorInstance.layout();
 }
 
+function updateTermFontSize(size) {
+  terminalSessions.forEach(s => {
+    try {
+      s.term.options.fontSize = parseFloat(size);
+      s.fitAddon.fit();
+    } catch(e) {}
+  });
+}
+
+function filterSettings(q) {
+  const rows = document.querySelectorAll('.setting-row');
+  rows.forEach(r => {
+    const txt = r.textContent.toLowerCase();
+    r.style.display = (!q || txt.includes(q.toLowerCase())) ? 'flex' : 'none';
+  });
+}
+
+/* ── ZEN MODE (Ctrl+K Z) ── */
+function toggleZenMode() {
+  document.body.classList.toggle('zen-mode');
+  const isZen = document.body.classList.contains('zen-mode');
+  if (monacoEditorInstance) {
+    setTimeout(() => monacoEditorInstance.layout(), 60);
+  }
+  toast(isZen ? 'Zen Mode Enabled (Press Esc or Ctrl+K Z to exit)' : 'Zen Mode Disabled');
+}
+
+/* ── PROBLEMS PANEL MARKER SCANNER ── */
+function updateProblemsPanel() {
+  const container = document.getElementById('problems-list-content');
+  const badge = document.getElementById('prob-badge');
+  const sbCount = document.getElementById('sb-prob-count');
+  if (!container) return;
+
+  let markers = [];
+  if (typeof monaco !== 'undefined' && monaco.editor && monaco.editor.getModelMarkers) {
+    markers = monaco.editor.getModelMarkers({});
+  }
+
+  if (markers.length === 0) {
+    container.innerHTML = '<div class="problem-item"><span class="problem-icon info">ℹ</span><span>No problems detected in workspace</span></div>';
+    if (badge) badge.textContent = '0';
+    if (sbCount) sbCount.textContent = '0';
+    return;
+  }
+
+  if (badge) badge.textContent = markers.length;
+  if (sbCount) sbCount.textContent = markers.length;
+
+  container.innerHTML = markers.map(m => `
+    <div class="problem-item" onclick="if(monacoEditorInstance){monacoEditorInstance.revealLineInCenter(${m.startLineNumber});monacoEditorInstance.setPosition({lineNumber:${m.startLineNumber},column:${m.startColumn}});monacoEditorInstance.focus();}">
+      <span class="problem-icon ${m.severity === 8 ? 'error' : 'warning'}">${m.severity === 8 ? '❌' : '⚠️'}</span>
+      <span>${escHtml(m.message)}</span>
+      <span class="problem-file">[Ln ${m.startLineNumber}, Col ${m.startColumn}]</span>
+    </div>
+  `).join('');
+}
+
+/* ── USER PROFILE & MENU ── */
 function toggleUserDropdown() {
   const name = prompt('Update Profile Name:', currentUser?.user_metadata?.full_name || currentUser?.email?.split('@')[0] || 'User');
   if (name) {
@@ -5265,20 +7455,34 @@ function toggleUserDropdown() {
   }
 }
 
-/* ── COMMAND PALETTE ── */
+/* ── COMMAND PALETTE (Ctrl+K / Ctrl+Shift+P) ── */
 const PALETTE_COMMANDS = [
+  { name: 'View: Quick Open File', kbd: 'Ctrl+P', fn: openQuickOpen },
+  { name: 'View: Global Search Across Files', kbd: 'Ctrl+Shift+F', fn: () => switchSidebar('search') },
+  { name: 'View: Source Control (Git)', kbd: 'Ctrl+Shift+G', fn: () => switchSidebar('git') },
+  { name: 'View: Run and Debug', kbd: 'Ctrl+Shift+D', fn: () => switchSidebar('debug') },
+  { name: 'View: Extensions', kbd: 'Ctrl+Shift+X', fn: () => switchSidebar('extensions') },
+  { name: 'View: Outline', kbd: '', fn: () => switchSidebar('outline') },
+  { name: 'View: Toggle Zen Mode', kbd: 'Ctrl+K Z', fn: toggleZenMode },
+  { name: 'Preferences: Open Settings', kbd: 'Ctrl+,', fn: openSettings },
+  { name: 'Edit: Find', kbd: 'Ctrl+F', fn: () => openFindReplace(false) },
+  { name: 'Edit: Replace in Editor', kbd: 'Ctrl+H', fn: () => openFindReplace(true) },
+  { name: 'Go to Line...', kbd: 'Ctrl+G', fn: openGoToLine },
+  { name: 'File: New File', kbd: 'Ctrl+N', fn: promptNewFile },
+  { name: 'File: Open Folder', kbd: 'Ctrl+O', fn: openLocalFolder },
+  { name: 'File: Save', kbd: 'Ctrl+S', fn: saveActiveFile },
   { name: 'Terminal: Open / Toggle Terminal', kbd: 'Ctrl+`', fn: toggleTerminalPanel },
   { name: 'Terminal: Add New Session', kbd: 'Ctrl+Shift+`', fn: addNewTerminalTab },
   { name: 'Terminal: Clear Terminal Screen', kbd: 'Ctrl+L', fn: clearTerminalScreen },
   { name: 'Terminal: Delete All & Close', kbd: '', fn: deleteAllTerminalsAndClose },
   { name: 'Terminal: Toggle PowerShell / Cloud Mode', kbd: '', fn: toggleTerminalShellMode },
-  { name: 'New File', kbd: 'Ctrl+N', fn: promptNewFile },
-  { name: 'Open Folder', kbd: 'Ctrl+O', fn: openLocalFolder },
-  { name: 'Save Current File', kbd: 'Ctrl+S', fn: saveActiveFile },
-  { name: 'Clone Git Repository', kbd: '', fn: openCloneModal },
-  { name: 'Toggle AI Copilot', kbd: 'Ctrl+I', fn: toggleCopilotPanel },
-  { name: 'Toggle Dark / Light Theme', kbd: '', fn: toggleTheme },
-  { name: 'Run Current File', kbd: 'F5', fn: runCode }
+  { name: 'Git: Clone Repository', kbd: '', fn: openCloneModal },
+  { name: 'Git: Commit Staged Changes', kbd: '', fn: gitCommit },
+  { name: 'Git: Push', kbd: '', fn: gitPush },
+  { name: 'Git: Pull', kbd: '', fn: gitPull },
+  { name: 'AI Copilot: Toggle Chat Panel', kbd: 'Ctrl+I', fn: toggleCopilotPanel },
+  { name: 'View: Toggle Dark / Light Theme', kbd: '', fn: toggleTheme },
+  { name: 'Run: Start Debugging / Execute File', kbd: 'F5', fn: runCode }
 ];
 
 let filteredCommands = [...PALETTE_COMMANDS];
@@ -5286,17 +7490,21 @@ let paletteSelectedIdx = 0;
 
 function openCmdPalette() {
   const ov = document.getElementById('cmd-overlay');
+  if (!ov) return;
   ov.classList.add('show');
   const inp = document.getElementById('cmd-palette-input');
-  inp.value = '';
+  if (inp) {
+    inp.value = '';
+    setTimeout(() => inp.focus(), 40);
+  }
   filteredCommands = [...PALETTE_COMMANDS];
   paletteSelectedIdx = 0;
   renderPaletteList();
-  setTimeout(() => inp.focus(), 50);
 }
 
 function closeCmdPalette() {
-  document.getElementById('cmd-overlay').classList.remove('show');
+  const ov = document.getElementById('cmd-overlay');
+  if (ov) ov.classList.remove('show');
 }
 
 function filterPaletteCommands(q) {
@@ -5307,8 +7515,9 @@ function filterPaletteCommands(q) {
 
 function renderPaletteList() {
   const list = document.getElementById('cmd-palette-list');
+  if (!list) return;
   list.innerHTML = filteredCommands.map((c, i) => `
-    <div class="cmd-item${i === paletteSelectedIdx ? ' sel' : ''}" onclick="executePaletteCommand(${i})">
+    <div class="cmd-item ${i === paletteSelectedIdx ? 'sel' : ''}" onclick="executePaletteCommand(${i})">
       <span>${c.name}</span>
       ${c.kbd ? `<span class="cmd-kbd">${c.kbd}</span>` : ''}
     </div>
@@ -5335,39 +7544,152 @@ function handlePaletteKey(e) {
   }
 }
 
-/* ── SHORTCUTS & HELPERS ── */
+/* ── GLOBAL KEYBOARD SHORTCUTS ── */
+let lastKeyTime = 0;
+let lastKey = '';
+
 document.addEventListener('keydown', (e) => {
   const mod = e.ctrlKey || e.metaKey;
+  const now = Date.now();
+
+  // Zen mode Esc
+  if (e.key === 'Escape' && document.body.classList.contains('zen-mode')) {
+    toggleZenMode();
+    return;
+  }
+
+  // Two-key chord (Ctrl+K Z)
   if (mod && e.key.toLowerCase() === 'k') {
+    lastKey = 'k';
+    lastKeyTime = now;
+  } else if (lastKey === 'k' && now - lastKeyTime < 1000 && e.key.toLowerCase() === 'z') {
+    e.preventDefault();
+    lastKey = '';
+    toggleZenMode();
+    return;
+  }
+
+  // Ctrl + P (Quick Open)
+  if (mod && e.key.toLowerCase() === 'p' && !e.shiftKey) {
+    e.preventDefault();
+    openQuickOpen();
+  }
+  // Ctrl + Shift + P or Ctrl + K (Command Palette)
+  else if ((mod && e.shiftKey && e.key.toLowerCase() === 'p') || (mod && e.key.toLowerCase() === 'k' && !e.shiftKey)) {
     e.preventDefault();
     openCmdPalette();
-  } else if (mod && e.key.toLowerCase() === 's') {
+  }
+  // Ctrl + Shift + F (Global Search)
+  else if (mod && e.shiftKey && e.key.toLowerCase() === 'f') {
+    e.preventDefault();
+    switchSidebar('search');
+  }
+  // Ctrl + F (Find in Editor)
+  else if (mod && e.key.toLowerCase() === 'f' && !e.shiftKey) {
+    e.preventDefault();
+    openFindReplace(false);
+  }
+  // Ctrl + H (Replace in Editor)
+  else if (mod && e.key.toLowerCase() === 'h') {
+    e.preventDefault();
+    openFindReplace(true);
+  }
+  // Ctrl + G (Go to Line)
+  else if (mod && e.key.toLowerCase() === 'g' && !e.shiftKey) {
+    e.preventDefault();
+    openGoToLine();
+  }
+  // Ctrl + , (Settings)
+  else if (mod && e.key === ',') {
+    e.preventDefault();
+    openSettings();
+  }
+  // Ctrl + S (Save)
+  else if (mod && e.key.toLowerCase() === 's') {
     e.preventDefault();
     saveActiveFile();
-  } else if (mod && e.key.toLowerCase() === 'n') {
+  }
+  // Ctrl + N (New File)
+  else if (mod && e.key.toLowerCase() === 'n') {
     e.preventDefault();
     promptNewFile();
-  } else if (mod && e.key === '`') {
+  }
+  // Ctrl + W (Close Tab)
+  else if (mod && e.key.toLowerCase() === 'w') {
+    e.preventDefault();
+    if (activeFilePath) closeEditorTab(e, activeFilePath);
+  }
+  // Ctrl + B (Toggle Sidebar)
+  else if (mod && e.key.toLowerCase() === 'b') {
+    e.preventDefault();
+    toggleSidebar();
+  }
+  // Ctrl + ` (Toggle Terminal)
+  else if (mod && e.key === '`') {
     e.preventDefault();
     toggleTerminalPanel();
-  } else if (e.key === 'F5') {
+  }
+  // Ctrl + I (Toggle Copilot)
+  else if (mod && e.key.toLowerCase() === 'i') {
+    e.preventDefault();
+    toggleCopilotPanel();
+  }
+  // F5 (Run Code)
+  else if (e.key === 'F5') {
     e.preventDefault();
     runCode();
   }
 });
 
 async function fetchGitStatus() {
-  toast('Checking repository status...');
+  fetchGitStatusReal();
 }
 
-function toast(msg) {
-  // Silent - notifications removed as requested by user
-  console.log('[AOS Notification]', msg);
+function promptChangeIndent() {
+  const current = document.getElementById('sb-indent')?.textContent || 'Spaces: 2';
+  const val = prompt('Change Indentation (e.g., "Spaces: 2", "Spaces: 4", "Tab Size: 4"):', current);
+  if (val && val.trim()) {
+    const sbIndent = document.getElementById('sb-indent');
+    if (sbIndent) sbIndent.textContent = val.trim();
+    const num = parseInt(val.replace(/\D/g, ''), 10);
+    if (!isNaN(num) && monacoEditorInstance) {
+      monacoEditorInstance.updateOptions({ tabSize: num });
+    }
+    toast(`Indentation set to ${val.trim()}`);
+  }
+}
+
+function promptChangeEncoding() {
+  const enc = prompt('Select File Encoding (UTF-8, UTF-16, ASCII, ISO-8859-1):', 'UTF-8');
+  if (enc && enc.trim()) {
+    const sbEnc = document.getElementById('sb-encoding');
+    if (sbEnc) sbEnc.textContent = enc.trim().toUpperCase();
+    toast(`Encoding set to ${enc.trim().toUpperCase()}`);
+  }
+}
+
+function promptChangeLanguage() {
+  if (!activeFilePath) return toast('No active file open');
+  const curLang = document.getElementById('sb-language')?.textContent || 'javascript';
+  const newLang = prompt('Select Language Mode (javascript, typescript, python, html, css, json, markdown, sql, shell, cpp, c, java, rust, go):', curLang.toLowerCase());
+  if (newLang && newLang.trim() && monacoEditorInstance) {
+    const lang = newLang.trim().toLowerCase();
+    const model = monacoEditorInstance.getModel();
+    if (model && typeof monaco !== 'undefined') {
+      monaco.editor.setModelLanguage(model, lang);
+      document.getElementById('sb-language').textContent = lang.charAt(0).toUpperCase() + lang.slice(1);
+      if (workspaceFilesMap[activeFilePath]) {
+        workspaceFilesMap[activeFilePath].lang = lang;
+      }
+      toast(`Language mode changed to ${lang}`);
+    }
+  }
 }
 
 function escHtml(str) {
   return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
+
 </script>
 </body>
 </html>

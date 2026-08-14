@@ -1,12 +1,46 @@
-const { app, BrowserWindow, dialog } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain } = require('electron');
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, exec } = require('child_process');
 const http = require('http');
 
 let backendProcess = null;
 let mainWindow = null;
+let isAppQuitting = false;
 
-function startBackend() {
+// Register IPC handler to open native folder picker
+ipcMain.handle('dialog:openDirectory', async (event, defaultPath) => {
+  const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+  const result = await dialog.showOpenDialog(win, {
+    properties: ['openDirectory', 'createDirectory'],
+    defaultPath: defaultPath || undefined,
+    title: 'Select Folder to Open in AOS IDE'
+  });
+  if (result.canceled || !result.filePaths || result.filePaths.length === 0) {
+    return null;
+  }
+  return result.filePaths[0];
+});
+
+function checkBackendRunning() {
+  return new Promise((resolve) => {
+    const req = http.get('http://127.0.0.1:8000/docs', (res) => {
+      resolve(res.statusCode === 200 || res.statusCode === 307);
+    });
+    req.on('error', () => resolve(false));
+    req.setTimeout(1000, () => {
+      req.destroy();
+      resolve(false);
+    });
+  });
+}
+
+async function startBackend() {
+  const alreadyRunning = await checkBackendRunning();
+  if (alreadyRunning) {
+    console.log('[Backend] Existing backend already running on port 8000. Reusing instance.');
+    return;
+  }
+
   console.log('Starting backend process...');
   
   let cmd;
@@ -26,54 +60,68 @@ function startBackend() {
 
   console.log(`Spawning backend: ${cmd} ${args.join(' ')} (cwd: ${cwd})`);
 
-  backendProcess = spawn(cmd, args, {
-    cwd: cwd,
-    stdio: 'pipe',
-    env: { ...process.env, PATH: process.env.PATH }
-  });
+  try {
+    backendProcess = spawn(cmd, args, {
+      cwd: cwd,
+      stdio: 'pipe',
+      env: { ...process.env, PATH: process.env.PATH }
+    });
 
-  backendProcess.stdout.on('data', (data) => {
-    console.log(`[Backend] stdout: ${data}`);
-  });
+    backendProcess.stdout.on('data', (data) => {
+      console.log(`[Backend] stdout: ${data}`);
+    });
 
-  backendProcess.stderr.on('data', (data) => {
-    console.error(`[Backend] stderr: ${data}`);
-  });
+    backendProcess.stderr.on('data', (data) => {
+      console.error(`[Backend] stderr: ${data}`);
+    });
 
-  backendProcess.on('error', (err) => {
-    console.error('Failed to start backend:', err);
-    let message = "Could not start the backend.\n\n";
-    if (app.isPackaged) {
-      message += `Expected packaged binary at: ${cmd}\n\n`;
-    } else {
-      message += "Please make sure Python is installed and in your PATH, and you have run 'pip install -r requirements.txt'.\n\n";
-    }
-    message += "Details: " + err.message;
-    dialog.showErrorBox("Backend Startup Failed", message);
-  });
+    backendProcess.on('error', (err) => {
+      console.error('Failed to start backend:', err);
+      if (isAppQuitting) return;
+      let message = "Could not start the backend.\n\n";
+      if (app.isPackaged) {
+        message += `Expected packaged binary at: ${cmd}\n\n`;
+      } else {
+        message += "Please make sure Python is installed and in your PATH, and you have run 'pip install -r requirements.txt'.\n\n";
+      }
+      message += "Details: " + err.message;
+      dialog.showErrorBox("Backend Startup Failed", message);
+    });
 
-  backendProcess.on('close', (code) => {
-    console.log(`Backend process exited with code ${code}`);
-    if (code !== 0 && code !== null) {
-      dialog.showErrorBox(
-        "Backend Crashed",
-        `The backend process exited unexpectedly with code ${code}.\n\nPlease check that your .env file is present and all dependencies are installed.`
-      );
-    }
-  });
+    backendProcess.on('close', async (code) => {
+      console.log(`Backend process exited with code ${code}`);
+      if (isAppQuitting) return;
+
+      // Check if another backend process is already serving port 8000
+      const isAlive = await checkBackendRunning();
+      if (isAlive) {
+        console.log('[Backend] Port 8000 is still serving requests. No error box needed.');
+        return;
+      }
+
+      if (code !== 0 && code !== null) {
+        dialog.showErrorBox(
+          "Backend Crashed",
+          `The backend process exited with code ${code}.\n\nPlease check that port 8000 is available and all Python dependencies are installed.`
+        );
+      }
+    });
+  } catch (err) {
+    console.error('Spawn exception:', err);
+  }
 }
 
 /**
  * Wait for the backend HTTP server to be ready before loading the UI.
- * Polls http://localhost:8000/docs every 500ms, up to maxAttempts times.
+ * Polls http://127.0.0.1:8000/docs every 500ms, up to maxAttempts times.
  */
 function waitForBackend(maxAttempts = 30) {
   return new Promise((resolve) => {
     let attempts = 0;
     const check = () => {
       attempts++;
-      const req = http.get('http://localhost:8000/docs', (res) => {
-        if (res.statusCode === 200) {
+      const req = http.get('http://127.0.0.1:8000/docs', (res) => {
+        if (res.statusCode === 200 || res.statusCode === 307) {
           resolve(true);
         } else if (attempts < maxAttempts) {
           setTimeout(check, 500);
@@ -107,7 +155,7 @@ async function createWindow() {
     height: 900,
     title: "AOS — AI Operating System",
     icon: path.join(__dirname, 'aos_logo.png'),
-    show: false, // Don't show until ready
+    show: false,
     backgroundColor: '#f4f7fb',
     webPreferences: {
       nodeIntegration: true,
@@ -146,26 +194,36 @@ async function createWindow() {
   `);
   mainWindow.show();
 
-  // Apply a custom User-Agent containing 'Electron' to allow detection in frontend
   mainWindow.webContents.setUserAgent(mainWindow.webContents.getUserAgent() + " Electron");
 
-  // Wait for backend to be ready
   console.log('Waiting for backend to become ready...');
   const backendReady = await waitForBackend(30);
   
   if (backendReady) {
     console.log('Backend is ready! Loading application...');
-    mainWindow.loadFile('index.html');
+    mainWindow.loadFile('ide.html');
   } else {
     console.warn('Backend did not respond in time. Loading app anyway...');
-    // Load anyway — the frontend may work partially or show its own error
-    mainWindow.loadFile('index.html');
+    mainWindow.loadFile('ide.html');
   }
 }
 
-app.whenReady().then(() => {
-  // Start the python backend first, then open window
-  startBackend();
+function killBackendProcess() {
+  isAppQuitting = true;
+  if (backendProcess) {
+    try {
+      if (process.platform === 'win32') {
+        exec(`taskkill /pid ${backendProcess.pid} /T /F`, () => {});
+      } else {
+        backendProcess.kill('SIGTERM');
+      }
+    } catch(e) {}
+    backendProcess = null;
+  }
+}
+
+app.whenReady().then(async () => {
+  await startBackend();
   createWindow();
 
   app.on('activate', () => {
@@ -176,17 +234,13 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  // Gracefully terminate python backend
-  if (backendProcess) {
-    backendProcess.kill();
-  }
+  killBackendProcess();
   if (process.platform !== 'darwin') {
     app.quit();
   }
 });
 
 app.on('will-quit', () => {
-  if (backendProcess) {
-    backendProcess.kill();
-  }
+  killBackendProcess();
 });
+

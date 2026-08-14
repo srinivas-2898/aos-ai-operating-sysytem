@@ -31,6 +31,10 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+echo [0/6] Closing running app instances to release file locks...
+taskkill /F /IM main.exe >nul 2>&1
+taskkill /F /IM electron.exe >nul 2>&1
+
 echo [1/6] Installing Python requirements...
 pip install -r requirements.txt
 if %errorlevel% neq 0 (
@@ -46,7 +50,8 @@ if %errorlevel% neq 0 (
 )
 
 echo [3/6] Compiling Python Backend to executable...
-python -m PyInstaller --onedir --clean --name main --distpath dist-backend --paths backend main.py
+if exist "build\main" rmdir /s /q "build\main" >nul 2>&1
+python -m PyInstaller --onedir --noconfirm --clean --name main --distpath dist-backend --paths backend main.py
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to compile Python Backend with PyInstaller.
     pause
