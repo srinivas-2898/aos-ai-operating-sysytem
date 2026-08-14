@@ -3342,7 +3342,7 @@ let copilotConversationHistory = [];
 let terminalSessions = [];
 let activeSessionId = null;
 let nextSessionNum = 1;
-let currentCwd = 'C:\\Users\\gandu\\OneDrive\\Desktop\\ai';
+let currentCwd = window.nodeProcess ? window.nodeProcess.cwd() : 'C:\\Users\\gandu\\OneDrive\\Desktop\\ai';
 let currentRelCwd = '.';
 let isPowerShellMode = true;
 
@@ -4419,6 +4419,15 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ── REAL WORKSPACE DATA INITIALIZER ── */
 async function initCleanWorkspace() {
   initTheme();
+
+  if (window.nodeRequire) {
+    try {
+      await loadFolderFromDisk(currentCwd);
+      return;
+    } catch (err) {
+      console.warn("Failed to auto-load workspace directory:", err);
+    }
+  }
 
   try {
     const { data: { session } } = await supabaseClient.auth.getSession();
